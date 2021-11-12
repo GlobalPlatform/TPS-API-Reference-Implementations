@@ -25,9 +25,15 @@ Contributions *and their dependencies* must be MIT licensed or provided under a
 compatible license. Dual-licensed (Apache 2 OR MIT) dependencies, which are
 common in the Rust language ecosystem, are fine.
 
+The easiest way to verify license conditions is to install `cargo license` and
+run it inside each crate.
+
 ## Components
 
 - [**`rs_minicbor`**](rs_minicbor/README.md): An implementation of
   [RFC 8949 Concise Binary Object Representation (CBOR)](https://www.rfc-editor.org/rfc/rfc8949) 
   intended for use on embedded platforms, or other places where the developer requires more
   control over serialization and deserialization than something like SERDE CBOR.
+- [**`rs_cddl`**](rs_cddl/README.md): Tooling for working with
+  [RFC8610 Concise Data Definition Language](https://www.rfc-editor.org/rfc/rfc8610.txt). This
+  tooling is at an early development phase, but does include a complete CDDL parser and AST.
