@@ -1,0 +1,324 @@
+;**************************************************************************************************
+; Copyright (c) 2021 Jeremy O'Donoghue. All rights reserved.
+;
+; Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+; and associated documentation files (the “Software”), to deal in the Software without
+; restriction, including without limitation the rights to use, copy, modify, merge, publish,
+; distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+; Software is furnished to do so, subject to the following conditions:
+;
+; The above copyright notice and this permission notice shall be included in all copies or
+; substantial portions of the Software.
+;
+; THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+; BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+; NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+; DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+;**************************************************************************************************
+;
+; See "The Entity Attestation Token (EAT)", draft-ietf-rats-eat-11, Section 8.4
+;
+; This is the fundamental definition of a Claims-Set for both CBOR
+; and JSON. It is a set of label-value pairs each of which is a
+; claim.
+;
+; In CBOR the labels can be integers or strings with a strong
+; preference for integers.  For JSON, the labels are always strings.
+;
+; The values can be anything, with some consideration for types that
+; can work in both CBOR and JSON.
+
+Claims-Set = {
+  * $$claims-set-claims,
+  * Claim-Label .feature "extended-label" => any
+}
+
+Claim-Label = int / text
+string-or-uri = tstr
+
+time-int = #6.1(int)
+
+ ; This is CDDL for the 7 individual claims that are defined in CWT
+ ; and JWT.  This CDDL works for either CBOR format CWT or JSON format
+ ; JWT The integer format CWT Claim Keys (the labels) are defined in
+ ; cwt-labels.cddl.  The string format JWT Claim Names (the labels)
+ ; are defined in jwt-labels.cddl.
+
+ ; $$claims-set-claims is defined in claims-set.cddl
+
+ $$claims-set-claims //= (iss-label => text)
+ $$claims-set-claims //= (sub-label => text)
+ $$claims-set-claims //= (aud-label => text)
+ $$claims-set-claims //= (exp-label => ~time)
+ $$claims-set-claims //= (nbf-label => ~time)
+ $$claims-set-claims //= (iat-label => ~time)
+
+ ; TODO: how does the bstr get handled in JSON validation with the
+ ; cddl tool?  TODO: should this be a text for JSON?
+ ; $$claims-set-claims //= (cti-label : bytes)
+ $$claims-set-claims //=
+   (nonce-label => nonce-type / [ 2* nonce-type ])
+
+ nonce-type = bstr .size (8..64)
+
+ $$claims-set-claims //= (ueid-label => ueid-type)
+
+ ueid-type = bstr .size (7..33)
+ $$claims-set-claims //= (sueids-label => sueids-type)
+
+ sueids-type = {
+    + tstr => ueid-type
+ }
+
+ oemid-pen = int
+ oemid-ieee = bstr .size 3
+ oemid-random = bstr .size 16
+
+$$claims-set-claims //= (
+  oemid-label =>
+    oemid-random / oemid-ieee / oemid-pen
+)
+
+$$claims-set-claims //=  (
+  chip-version-label => hw-version-type
+)
+
+$$claims-set-claims //=  (
+  board-version-label => hw-version-type
+)
+
+$$claims-set-claims //=  (
+  device-version-label => hw-version-type
+)
+
+hw-version-type = [
+  version:  tstr,
+  scheme:  $version-scheme
+]
+
+$$claims-set-claims //= ( sw-name-label => tstr )
+
+$$claims-set-claims //= (
+  security-level-label =>
+    security-level-cbor-type /
+    security-level-json-type
+)
+
+security-level-cbor-type = &(
+  unrestricted: 1,
+  restricted: 2,
+  secure-restricted: 3,
+  hardware: 4
+)
+
+security-level-json-type =
+  "unrestricted" /
+  "restricted" /
+  "secure-restricted" /
+  "hardware"
+
+$$claims-set-claims //= (secure-boot-label => bool)
+
+$$claims-set-claims //=  (
+  debug-status-label =>
+    debug-status-cbor-type / debug-status-json-type
+)
+
+debug-status-cbor-type = &(
+  enabled: 0,
+  disabled: 1,
+  disabled-since-boot: 2,
+  disabled-permanently: 3,
+  disabled-fully-and-permanently: 4
+)
+
+debug-status-json-type =
+  "enabled" /
+  "disabled" /
+  "disabled-since-boot" /
+  "disabled-permanently" /
+  "disabled-fully-and-permanently"
+
+$$claims-set-claims //= (location-label => location-type)
+
+location-type = {
+    latitude => number,
+    longitude => number,
+  ? altitude => number,
+  ? accuracy => number,
+  ? altitude-accuracy => number,
+  ? heading => number,
+  ? speed => number,
+  ? timestamp => ~time-int,
+  ? age => uint
+}
+
+latitude = 1 / "latitude"
+longitude = 2 / "longitude"
+altitude = 3 / "altitude"
+accuracy = 4 / "accuracy"
+altitude-accuracy = 5 / "altitude-accuracy"
+heading = 6 / "heading"
+speed = 7 / "speed"
+timestamp = 8 / "timestamp"
+age = 9 / "age"
+
+$$claims-set-claims //= (uptime-label => uint)
+
+$$claims-set-claims //=  (boot-seed-label => bytes)
+  $$claims-set-claims //= (
+    intended-use-label =>
+      intended-use-cbor-type / intended-use-json-type
+)
+
+intended-use-cbor-type = &(
+  generic: 1,
+  registration: 2,
+  provisioning: 3,
+  csr: 4,
+  pop: 5
+)
+
+intended-use-json-type =
+  "generic" /
+  "registration" /
+  "provisioning" /
+  "csr" /
+  "pop"
+
+$$claims-set-claims //= (
+  dloas-label => [ + dloa-type ]
+)
+
+dloa-type = [
+    dloa_registrar: ~uri
+    dloa_platform_label: text
+  ? dloa_application_label: text
+]
+
+
+$$claims-set-claims //= (profile-label => ~uri / ~oid)
+
+oid = #6.4000(bstr) ; TODO: Replace with CDDL from OID RFC
+
+$$claims-set-claims //= (
+  manifests-label => manifests-type
+)
+
+manifests-type = [+ $$manifest-formats]
+
+; Must be a CoSWID payload type
+; TODO: signed CoSWIDs
+coswid-that-is-a-cbor-tag-xx = tagged-coswid<concise-swid-tag>
+
+$$manifest-formats /= bytes .cbor coswid-that-is-a-cbor-tag-xx
+
+; TODO: make this work too
+;$$manifest-formats /= bytes .cbor SUIT_Envelope_Tagged
+
+$$claims-set-claims //= (
+  swevidence-label => swevidence-type
+)
+
+swevidence-type = [+ $$swevidence-formats]
+
+; Must be a CoSWID evidence type that is a CBOR tag
+; TODO: fix the CDDL so a signed CoSWID is allowed too
+coswid-that-is-a-cbor-tag = tagged-coswid<concise-swid-tag>
+
+$$swevidence-formats /= bytes .cbor coswid-that-is-a-cbor-tag
+
+$$claims-set-claims //= (swresults-label => [ + swresult-type ])
+
+verification-result-cbor-type = &(
+  verification-not-run: 1,
+  verification-indeterminate: 2,
+  verification-failed: 3,
+  fully-verified: 4,
+  partially-verified: 5,
+)
+
+verification-result-json-type =
+  "verification-not-run" /
+  "verification-indeterminate" /
+  "verification-failed" /
+  "fully-verified" /
+  "partially-verified"
+
+verification-objective-cbor-type = &(
+  all: 1,
+  firmware: 2,
+  kernel: 3,
+  privileged: 4,
+  system-libs: 5,
+  partial: 6,
+)
+
+verification-objective-json-type =
+  "all" /
+  "firmware" /
+  "kernel" /
+  "privileged" /
+  "system-libs" /
+  "partial"
+
+swresult-type = [
+  verification-system: tstr,
+  objective: verification-objective-cbor-type /
+    verification-objective-json-type,
+  result: verification-result-cbor-type /
+    verification-result-json-type,
+  ? objective-name: tstr
+]
+
+; This is the part of a token that contains all the submodules.  It
+; is a peer with the claims in the token, but not a claim, only a
+; map/object to hold all the submodules.
+
+$$claims-set-claims //= (submods-label => { + text => Submodule })
+
+; A submodule can be:
+; - A simple Claims-Set (encoded in the same format as the token)
+; - A digest of a detached Claims-Set (encoded in the same format as
+;    the token)
+; - A nested token which may be either CBOR or JSON format. Further,
+;   the mechanism for identifying and containing the nested token
+;   depends on the format of the surrounding token, particularly
+;   because JSON doesn't have any equivalent of a CBOR tag so a
+;   JSON-specific mechanism is invented. Also, there is the issue
+;   that binary data must be B64 encoded when carried in
+;   JSON. Nested-Token is defined in the format specific CDDL, not
+;   here.
+
+; Note that at nested token can either be a signed token like a CWT
+; or JWT, an unsigned token like a UCCS or UJCS, or a DEB (detached
+; EAT bundle).  The specific encoding of these is format-specific
+; so it doesn't appear here.
+
+Submodule = Claims-Set / Nested-Token / Detached-Submodule-Digest
+
+
+; This is for both JSON and CBOR.  JSON uses text label for
+; algorithm from JOSE registry. CBOR uses integer label for
+; algorithm from COSE registry. In JSON the digest is base64
+; encoded.
+
+Detached-Submodule-Digest = [
+   algorithm : int / text,
+   digest : bstr
+]
+
+; Top-level definition of a DEB for CBOR and JSON
+
+Detached-EAT-Bundle = [
+  main-token : Nested-Token,
+  detached-claims-sets: {
+    + tstr => cbor-wrapped-claims-set / json-wrapped-claims-set
+  }
+]
+
+; text content is a base64url encoded JSON-format Claims-Set
+
+json-wrapped-claims-set = tstr .regexp "[A-Za-z0-9_=-]+"
+cbor-wrapped-claims-set = bstr .cbor Claims-Set

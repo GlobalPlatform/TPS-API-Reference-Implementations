@@ -1,0 +1,122 @@
+;**************************************************************************************************
+; Copyright (c) 2020-2021 Jeremy O'Donoghue. All rights reserved.
+;
+; Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+; and associated documentation files (the “Software”), to deal in the Software without
+; restriction, including without limitation the rights to use, copy, modify, merge, publish,
+; distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+; Software is furnished to do so, subject to the following conditions:
+;
+; The above copyright notice and this permission notice shall be included in all copies or
+; substantial portions of the Software.
+;
+; THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+; BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+; NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+; DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+;**************************************************************************************************
+;------------------------------------------------------------------------------
+; CDDL Prelude from RFC8610, Appendix D, Figure 14.
+; Annotated with the AST generated for each definition...
+;------------------------------------------------------------------------------
+
+;; TypeDef("any", None, Assign, Types([Any]))
+any = #
+
+;------------------------------------------------------------------------------
+; integers
+;------------------------------------------------------------------------------
+;; TypeDef("uint", None, Assign, Types([Major(0, None)]))
+uint = #0
+;; TypeDef("nint", None, Assign, Types([Major(1, None)]))
+nint = #1
+;; TypeDef("int", None, Assign, Types([Rule("uint", []), Rule("nint", [])]))
+int = uint / nint
+
+;; TypeDef("bstr", None, Assign, Types([Major(2, None)]))
+bstr = #2
+;; TypeDef("bytes", None, Assign, Types([Rule("bstr", [])]))
+bytes = bstr
+;; TypeDef("tstr", None, Assign, Types([Major(3, None)]))
+tstr = #3
+;; TypeDef("text", None, Assign, Types([Rule("tstr", [])]))
+text = tstr
+
+;; TypeDef("tdate", None, Assign, Types([Tagged(Some(0), Types([Rule("tstr", [])]))]))
+tdate = #6.0(tstr)
+
+;; TypeDef("time", None, Assign, Types([Tagged(Some(1), Types([Rule("number", [])]))]))
+time = #6.1(number)
+
+;; TypeDef("number", None, Assign, Types([Rule("int", []), Rule("float", [])]))
+number = int / float
+;; TypeDef("biguint", None, Assign, Types([Tagged(Some(2), Types([Rule("bstr", [])]))]))
+biguint = #6.2(bstr)
+;; TypeDef("bignint", None, Assign, Types([Tagged(Some(3), Types([Rule("bstr", [])]))]))
+bignint = #6.3(bstr)
+;; TypeDef("bigint", None, Assign, Types([Rule("biguint", []), Rule("bignint", [])]))
+bigint = biguint / bignint
+;; TypeDef("integer", None, Assign, Types([Rule("int", []), Rule("bigint", [])]))
+integer = int / bigint
+;; TypeDef("unsigned", None, Assign, Types([Rule("uint", []), Rule("biguint", [])]))
+unsigned = uint / biguint
+;; TypeDef("decfrac", None, Assign, Types([Tagged(Some(4),
+;;    Types([GroupArray([Key(Some(FromValue(St("e10"))), Types([Rule("int", [])]), Occurs { from: 1, to: 1 }),
+;;                       Key(Some(FromValue(St("m"))), Types([Rule("integer", [])]), Occurs { from: 1, to: 1 })])]))]))
+decfrac = #6.4([e10: int, m: integer])
+;; TypeDef("bigfloat", None, Assign, Types([Tagged(Some(5),
+;;    Types([GroupArray([Key(Some(FromValue(St("e2"))), Types([Rule("int", [])]), Occurs { from: 1, to: 1 }),
+;;                       Key(Some(FromValue(St("m"))), Types([Rule("integer", [])]), Occurs { from: 1, to: 1 })])]))]))
+bigfloat = #6.5([e2: int, m: integer])
+
+;; TypeDef("eb64url", None, Assign, Types([Tagged(Some(21), Types([Rule("any", [])]))]))
+eb64url = #6.21(any)
+;; TypeDef("eb64legacy", None, Assign, Types([Tagged(Some(22), Types([Rule("any", [])]))]))
+eb64legacy = #6.22(any)
+;; TypeDef("eb16", None, Assign, Types([Tagged(Some(23), Types([Rule("any", [])]))]))
+eb16 = #6.23(any)
+
+;; TypeDef("encoded-cbor", None, Assign, Types([Tagged(Some(24), Types([Rule("bstr", [])]))]))
+encoded-cbor = #6.24(bstr)
+;; TypeDef("uri", None, Assign, Types([Tagged(Some(32), Types([Rule("tstr", [])]))]))
+uri = #6.32(tstr)
+;; TypeDef("b64url", None, Assign, Types([Tagged(Some(33), Types([Rule("tstr", [])]))]))
+b64url = #6.33(tstr)
+;; TypeDef("b64legacy", None, Assign, Types([Tagged(Some(34), Types([Rule("tstr", [])]))]))
+b64legacy = #6.34(tstr)
+;; TypeDef("regexp", None, Assign, Types([Tagged(Some(35), Types([Rule("tstr", [])]))]))
+regexp = #6.35(tstr)
+;; TypeDef("mime-message", None, Assign, Types([Tagged(Some(36), Types([Rule("tstr", [])]))]))
+mime-message = #6.36(tstr)
+;; TypeDef("cbor-any", None, Assign, Types([Tagged(Some(55799), Types([Rule("any", [])]))]))
+cbor-any = #6.55799(any)
+
+;------------------------------------------------------------------------------
+; floats
+;------------------------------------------------------------------------------
+;; TypeDef("float16", None, Assign, Types([Major(7, Some(25))]))
+float16 = #7.25
+;; TypeDef("float32", None, Assign, Types([Major(7, Some(26))]))
+float32 = #7.26
+;; TypeDef("float64", None, Assign, Types([Major(7, Some(27))]))
+float64 = #7.27
+;; TypeDef("float16-32", None, Assign, Types([Rule("float16", []), Rule("float32", [])]))
+float16-32 = float16 / float32
+;; TypeDef("float32-64", None, Assign, Types([Rule("float32", []), Rule("float64", [])]))
+float32-64 = float32 / float64
+TypeDef("float", None, Assign, Types([Rule("float16-32", []), Rule("float64", [])]))
+float = float16-32 / float64
+
+;; TypeDef("false", None, Assign, Types([Major(7, Some(20))]))
+false = #7.20
+;; TypeDef("true", None, Assign, Types([Major(7, Some(21))]))
+true = #7.21
+;; TypeDef("bool", None, Assign, Types([Rule("false", []), Rule("true", [])]))
+bool = false / true
+;; TypeDef("nil", None, Assign, Types([Major(7, Some(22))]))
+nil = #7.22
+;; TypeDef("null", None, Assign, Types([Rule("nil", [])]))
+null = nil
+;; TypeDef("undefined", None, Assign, Types([Major(7, Some(23))]))
+undefined = #7.23

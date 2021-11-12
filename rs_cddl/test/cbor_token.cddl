@@ -1,0 +1,116 @@
+;**************************************************************************************************
+; Copyright (c) 2021 Jeremy O'Donoghue. All rights reserved.
+;
+; Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+; and associated documentation files (the “Software”), to deal in the Software without
+; restriction, including without limitation the rights to use, copy, modify, merge, publish,
+; distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+; Software is furnished to do so, subject to the following conditions:
+;
+; The above copyright notice and this permission notice shall be included in all copies or
+; substantial portions of the Software.
+;
+; THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+; BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+; NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+; DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+;**************************************************************************************************
+;
+; See "The Entity Attestation Token (EAT)", draft-ietf-rats-eat-11, Section 8.5
+;
+; The top-level definition of a CBOR-encoded token.
+
+CBOR-Token = Tagged-CBOR-Token / Untagged-CBOR-Token
+
+
+; All forms of a CBOR-encoded token that are a CBOR tag.
+
+Tagged-CBOR-Token  = CWT-Tagged-Message
+Tagged-CBOR-Token /= UCCS-Tagged-Message
+Tagged-CBOR-Token /= DEB-Tagged-Message
+
+
+; All forms of a CBOR-encoded token that are not a CBOR tag.
+
+Untagged-CBOR-Token  = CWT-Untagged-Message
+Untagged-CBOR-Token /= UCCS-Untagged-Message
+Untagged-CBOR-Token /= DEB-Untagged-Message
+
+
+; The payload of the COSE message is always a Claims-Set
+
+CWT-Tagged-Message = COSE_Tagged_Message
+CWT-Untagged-Message = COSE_Untagged_Message
+
+
+UCCS-Message = UCCS-Tagged-Message / UCCS-Untagged-Message
+UCCS-Tagged-Message = #6.601(UCCS-Untagged-Message)
+UCCS-Untagged-Message = Claims-Set
+
+
+DEB-Tagged-Message = #6.602(DEB-Untagged-Message)
+DEB-Untagged-Message = Detached-EAT-Bundle
+
+
+; This specifies how one fully-formed token is nested inside a
+; CBOR-format token.  The fully-formed nested token is any valid
+; token, CBOR or JSON (JWT, CWT, UCCS, DEB...)  The mechanism for
+; identifying the type of the nested token is specific to the format
+; of the surrounding token, CBOR in this case.
+;
+; A primary reason this is encoding-specific is that JSON does not
+; have an equivalent to CBOR tags.
+;
+; If the data type here is text, then the nested token is JSON
+; format, one of a JWT, UJCS or JSON-encoded DEB. The means for
+; distinguishing which is in the definition of JSON-encoded
+; Nested-Token.  If the data type is bstr, then the nested token
+; is CBOR format. It is byte-string wrapped and identified by a
+;CBOR tag.
+
+Nested-Token =
+    tstr / ; A JSON-encoded Nested-Token (see json-nested-token.cddl)
+    bstr .cbor Tagged-CBOR-Token
+
+
+; This is the CDDL definition of the labels for a CBOR format web
+; token, a CWT.  The CDDL for the claims is in web-token-claims.cddl
+
+iss-label = 1
+sub-label = 2
+aud-label = 3
+exp-label = 4
+nbf-label = 5
+iat-label = 6
+cti-label = 7; The following Claim Keys (labels) are pre-assigned by IANA.
+; They are for CBOR-based tokens (CWT and UCCS).
+; They are not expected to change in the final publication as an RFC.
+
+nonce-label = 10
+ueid-label = 11
+oemid-label = 13
+security-level-label = 14
+secure-boot-label = 15
+debug-status-label = 16
+location-label = 17
+profile-label = 18
+submods-label = 20
+
+; These are not yet assigned in any way and may change.
+; These are intentionally above 24 so as to not use up
+; single-byte labels.
+
+sueids-label = 64200
+chip-version-label = 64201
+board-version-label = 64202
+device-version-label = 64203
+sw-name-label = 64204
+sw-version-label = 64205
+uptime-label = 64206
+boot-seed-label = 64207
+intended-use-label = 64208
+dloas-label = 64209
+manifests-label = 64210
+swevidence-label = 64211
+swresults-label = 64212

@@ -1,0 +1,197 @@
+;**************************************************************************************************
+; Copyright (c) 2021 Jeremy O'Donoghue. All rights reserved.
+;
+; Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+; and associated documentation files (the “Software”), to deal in the Software without
+; restriction, including without limitation the rights to use, copy, modify, merge, publish,
+; distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+; Software is furnished to do so, subject to the following conditions:
+;
+; The above copyright notice and this permission notice shall be included in all copies or
+; substantial portions of the Software.
+;
+; THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+; BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+; NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+; DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+;**************************************************************************************************
+;
+; CDDL definition for a COSE_Keyset. See RFC8152 (CBOR Object Signing and Encrypton), Section 7+ 
+;
+; Compared to the RFC, which uses "* label => values" to allow extension of key parameters, in
+; this definition the different key parameters have been made explicit ("ec2_key_params" etc.)
+; and IANA values have been used for keys and values as required.
+;
+COSE_KeySet = [+COSE_Key]
+COSE_Key = {
+    1 => Kty,              ; kty
+  ? 2 => bstr,             ; kid
+  ? 3 => Alg,              ; alg
+  ? 4 => [+ Key_Ops]       ; key ops
+  ? 5 => bstr              ; Base IV
+  ? ec2_key_params,
+  ? okp_key_params,
+  ? symmetric_key_params,
+  ? rsa_key_params
+}
+
+Key_Ops = sign / verify / encrypt  / decrypt  / wrap  / unwrap / derive_key  / derive_bits /
+          mac_create / mac_verify
+
+sign        =  1
+verify      =  2
+encrypt     =  3
+decrypt     =  4
+wrap        =  5
+unwrap      =  6
+derive_key  =  7
+derive_bits =  8
+mac_create  =  9
+mac_verify  = 10
+
+Alg = ecdsa / eddsa / hmac / aes_mac / aes_gcm / aes_ccm / chacha20 / direct / direct_kdf /
+      kw / ecdh / rsa_algs
+
+ecdsa = es256 / es384 / es512
+es256 = -7
+es384 = -35
+es512 = -36
+eddsa = -8
+
+hmac = hmac_256_64 / hmac_256_256 / hmac_384_384 / hmac_512_512
+hmac_256_64  = 4
+hmac_256_256 = 5
+hmac_384_384 = 6
+hmac_512_512 = 7
+
+aes_hmac = aes_mac_256_64 / aes_mac_256_256 / aes_mac_384_384 / aes_mac_512_512
+aes_mac_128_64  = 14
+aes_mac_256_64  = 15
+aes_mac_128_128 = 25
+aes_mac_256_128 = 26
+
+aes_gcm = aes128_gcvm / aes192_gcm / aes256_gcm
+aes128_gcm = 1
+aes192_gcm = 2
+aes256_gcm = 3
+
+aes_ccm = aes_ccm_16_64_128 / aes_ccm_16_64_256 / aes_ccm_64_64_128 / aes_ccm_64_64_256 /
+          aes_ccm_16_128_128 / aes_ccm_16_128_256 / aes_ccm_64_128_128 / aes_ccm_64_128_256
+aes_ccm_16_64_128  = 10
+aes_ccm_16_64_256  = 11
+aes_ccm_64_64_128  = 12
+aes_ccm_64_64_256  = 13
+aes_ccm_16_128_128 = 30
+aes_ccm_16_128_256 = 31
+aes_ccm_64_128_128 = 32
+aes_ccm_64_128_256 = 33
+
+chacha20 = 24
+
+direct = -6
+
+direct_kdf = direct_hkdf_sha256 / direct_hkdf_sha512 / direct_hkdf_aes128 / direct_hkdf_aes256
+direct_hkdf_sha256 = -10
+direct_hkdf_sha512 = -11
+direct_hkdf_aes128 = -12
+direct_hkdf_aes256 = -13
+
+kw = a128kw / a192kw / a256kw
+a128kw = -3
+a192kw = -4
+a256kw = -5
+
+ecdh = es256 / es512 / ss256 / ss512 / es128kw / es192kw / es256kw / ss128kw / ss192kw / ss256kw
+es256   = -25
+es512   = -26
+ss256   = -27
+ss512   = -28
+es128kw = -29
+es192kw = -30
+es256kw = -31
+ss128kw = -32
+ss192kw = -33
+ss256kw = -34
+
+Kty = okp / ec2 / symmetric / rsa
+okp = 1
+ec2 = 2
+symmetric = 4
+
+ec2_key_params = (
+  -1 : ec_id,
+  -2 : bstr,        ; x co-ord
+  -3 : bstr / bool, ; y co-ord
+  -4 : bstr         ; private key
+)
+
+okp_key_params = (
+  -1 : ec_id,
+  -2 : bstr,      ; public key
+  -4 : bstr       ; private key
+)
+
+ec_id = p256 / p384 / p521 / x25519 / x448 / ed25519 / ed448
+p256    = 1
+p384    = 2
+p521    = 3
+x25519  = 4
+x448    = 5
+ed25519 = 6
+ed448   = 7
+
+symmetric_key_params = (
+  -1 => bstr
+)
+
+; RSA may be a configurable option
+rsa_algs = rsassa_pss / rsaes_oaep
+
+rsassa_pss = ps256 / ps384 / ps512
+ps256 = -37
+ps384 = -38
+ps512 = -39
+
+rsaes_oaep = rsaes_default / rsaes_sha256 / rsaes_sha512
+rsaes_default = -40
+rsaes_sha256  = -41
+rsaes_sha512  = -42
+
+rsa = 3
+
+rsa_key_params = (
+  -1 : bstr, ; modulus,
+  -2 : bstr, ; public exponent
+  -3 : bstr, ; private exponent
+  -4 : bstr, ; prime factor p of n
+  -5 : bstr, ; prime factor q of n
+  -6 : bstr,
+  -7 : bstr,
+  -8 : bstr,
+  -9 : [rsa_more_primes],
+)
+
+rsa_more_primes = (
+  -10 : bstr,
+  -11 : bstr,
+  -12 : bstr
+)
+
+COSE_KDF_Context = [
+  AlgorithmId : Alg
+  PartyUInfo : [PartyInfo],
+  PartyVInfo : [PartyInfo],
+  SuppPubInfo : [
+    keyDataLength: uint,
+    protected: empty_or_serialized_map,
+    ? other : bstr
+  ],
+  ? SuppPrivInfo : bstr
+]
+
+PartyInfo = (
+  identity : bstr / nil,
+  nonce : bstr / int / nil,
+  other : bstr / nil
+)
