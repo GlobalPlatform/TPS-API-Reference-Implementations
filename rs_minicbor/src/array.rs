@@ -1,5 +1,5 @@
 /***************************************************************************************************
- * Copyright (c) 2021 Jeremy O'Donoghue. All rights reserved.
+ * Copyright (c) 2021, 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the “Software”), to deal in the Software without
@@ -28,10 +28,15 @@ use crate::decode::{DecodeBufIterator, DecodeBufIteratorSource};
 
 #[cfg(feature = "trace")]
 use func_trace::trace;
+use crate::encode::{EncodeBuffer, EncodeContext, EncodeItem};
+use crate::error::CBORError;
 
 #[cfg(feature = "trace")]
 func_trace::init_depth_var!();
 
+/***************************************************************************************************
+ * Decoding Arrays
+ **************************************************************************************************/
 /// A buffer which contains a CBOR Array to be decoded. The buffer has lifetime `'buf`,
 /// which must be longer than any borrow from the buffer itself. This is generally used to represent
 /// a CBOR array with an exposed slice-like API.
@@ -97,4 +102,65 @@ impl<'buf> IntoIterator for ArrayBuf<'buf> {
             source: DecodeBufIteratorSource::Array,
         }
     }
+}
+
+/***************************************************************************************************
+ * Encoding Arrays
+ **************************************************************************************************/
+
+/// A container structure for the closure used to manage encoding of CBOR arrays, and in particular
+/// to ensure that the correct lifetime bounds are specified.
+///
+/// The user is able to encode members of the array within a closure, and the array length will
+/// automatically be correctly constructed. Arbitrary nesting of arrays and maps is supported.
+///
+/// Users should never need to directly instantiate `Array`. Instead, see [`array`].
+pub struct Array<F>
+where F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError> {
+    f: F
+}
+
+/// `Array` provides a constructor to contain the closure that constructs it
+impl<F> Array<F> where
+    F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError> {
+    pub fn new(f: F) -> Array<F> { Array { f } }
+}
+
+/// The [`EncodeItem`] instance for `Array` performs the required manipulations to correctly
+/// calculate the size of the array.
+impl<F> EncodeItem for Array<F>
+where F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError>
+{
+    fn encode<'f, 'buf>(&self, buf: &'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError> {
+        let mut array_ctx = EncodeContext::new();
+        buf.array_start(&mut array_ctx)?;
+        let _ = (self.f)(buf)?;
+        buf.array_finalize(&array_ctx)?;
+        Ok(buf)
+    }
+}
+
+/// A convenience function for the user to create an instance of a CBOR array. The user provides a
+/// closure which constructs the array contents.
+///
+/// ```
+///# use rs_minicbor::encoder::CBORBuilder;
+///# use rs_minicbor::error::CBORError;
+///# use rs_minicbor::types::array;
+///# fn main() -> Result<(), CBORError> {
+///    let mut buffer = [0u8; 16];
+///    let expected : &[u8] = &[132, 1, 2, 3, 4];
+///
+///    let mut encoder = CBORBuilder::new(&mut buffer);
+///    encoder.insert(&array(|buff| {
+///        buff.insert(&1)?.insert(&2)?.insert(&3)?.insert(&4)
+///    }));
+///    assert_eq!(encoder.encoded()?, expected);
+///#    Ok(())
+///# }
+/// ```
+pub fn array<F>(f: F) -> Array<F>
+    where F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError>
+{
+    Array::new(f)
 }

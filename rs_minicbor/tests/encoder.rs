@@ -1,5 +1,5 @@
 /***************************************************************************************************
- * Copyright (c) 2020, 2021 Jeremy O'Donoghue. All rights reserved.
+ * Copyright (c) 2020-2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the “Software”), to deal in the Software without
@@ -24,10 +24,11 @@
 
 extern crate rs_minicbor;
 
+use half::f16;
 use rs_minicbor::decoder::*;
 use rs_minicbor::encoder::*;
 use rs_minicbor::error::CBORError;
-use rs_minicbor::types::CBOR;
+use rs_minicbor::types::{array, map, tag, CBOR};
 
 #[test]
 fn rfc8949_encode_int() -> Result<(), CBORError> {
@@ -145,8 +146,8 @@ fn rfc8949_encode_int() -> Result<(), CBORError> {
     {
         println!("<======================= Concatenate 2 x u32 =====================>");
         let mut buf = EncodeBuffer::new(&mut bytes);
-        &(1000000u32).encode(&mut buf)?;
-        &(1000001u32).encode(&mut buf)?;
+        let _ = &(1000000u32).encode(&mut buf)?;
+        let _ = &(1000001u32).encode(&mut buf)?;
         assert_eq!(
             buf.encoded()?,
             &[0x1a, 0x00, 0x0f, 0x42, 0x40, 0x1a, 0x00, 0x0f, 0x42, 0x41]
@@ -401,19 +402,324 @@ fn rfc8949_encode_simple() -> Result<(), CBORError> {
 }
 
 #[test]
+fn rfc8949_encode_float() -> Result<(), CBORError> {
+    println!("<======================= rfc8949_encode_float ======================>");
+    let mut bytes = [0u8; 32];
+
+    {
+        let mut buf = EncodeBuffer::new(&mut bytes);
+        let val = &(0.0);
+        val.encode(&mut buf)?;
+        assert_eq!(buf.encoded()?, &[0xf9, 0x00, 0x00]);
+    }
+    {
+        let mut buf = EncodeBuffer::new(&mut bytes);
+        let val = &(-0.0);
+        val.encode(&mut buf)?;
+        assert_eq!(buf.encoded()?, &[0xf9, 0x80, 0x00]);
+    }
+    {
+        let mut buf = EncodeBuffer::new(&mut bytes);
+        let val = &(1.0);
+        val.encode(&mut buf)?;
+        assert_eq!(buf.encoded()?, &[0xf9, 0x3c, 0x00]);
+    }
+    {
+        let mut buf = EncodeBuffer::new(&mut bytes);
+        let val = &(1.1);
+        val.encode(&mut buf)?;
+        assert_eq!(buf.encoded()?, &[0xfb, 0x3f, 0xf1, 0x99, 0x99, 0x99, 0x99, 0x99, 0x9a]);
+    }
+    {
+        let mut buf = EncodeBuffer::new(&mut bytes);
+        let val = &(1.5);
+        val.encode(&mut buf)?;
+        assert_eq!(buf.encoded()?, &[0xf9, 0x3e, 0x00]);
+    }
+    {
+        let mut buf = EncodeBuffer::new(&mut bytes);
+        let val = &(65504.0);
+        val.encode(&mut buf)?;
+        assert_eq!(buf.encoded()?, &[0xf9, 0x7b, 0xff]);
+    }
+    {
+        let mut buf = EncodeBuffer::new(&mut bytes);
+        let val = &(100000.0);
+        val.encode(&mut buf)?;
+        assert_eq!(buf.encoded()?, &[0xfa, 0x47, 0xc3, 0x50, 0x00]);
+    }
+    {
+        let mut buf = EncodeBuffer::new(&mut bytes);
+        let val = &(3.4028234663852886e+38);
+        val.encode(&mut buf)?;
+        assert_eq!(buf.encoded()?, &[0xfa, 0x7f, 0x7f, 0xff, 0xff]);
+    }
+    {
+        let mut buf = EncodeBuffer::new(&mut bytes);
+        let val = &(1.0e+300);
+        val.encode(&mut buf)?;
+        assert_eq!(buf.encoded()?, &[0xfb, 0x7e, 0x37, 0xe4, 0x3c, 0x88, 0x00, 0x75, 0x9c]);
+    }
+    {
+        let mut buf = EncodeBuffer::new(&mut bytes);
+        let val = &(5.960464477539063e-8);
+        val.encode(&mut buf)?;
+        assert_eq!(buf.encoded()?, &[0xf9, 0x00, 0x01]);
+    }
+    {
+        let mut buf = EncodeBuffer::new(&mut bytes);
+        let val = &(0.00006103515625);
+        val.encode(&mut buf)?;
+        assert_eq!(buf.encoded()?, &[0xf9, 0x04, 0x00]);
+    }
+    {
+        let mut buf = EncodeBuffer::new(&mut bytes);
+        let val = &(-4.0);
+        val.encode(&mut buf)?;
+        assert_eq!(buf.encoded()?, &[0xf9, 0xc4, 0x00]);
+    }
+    {
+        let mut buf = EncodeBuffer::new(&mut bytes);
+        let val = &(-4.1);
+        val.encode(&mut buf)?;
+        assert_eq!(buf.encoded()?, &[0xfb, 0xc0, 0x10, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66]);
+    }
+    {
+        let mut buf = EncodeBuffer::new(&mut bytes);
+        let val = &(f16::INFINITY);
+        val.encode(&mut buf)?;
+        assert_eq!(buf.encoded()?, &[0xf9, 0x7c, 0x00]);
+    }
+    {
+        let mut buf = EncodeBuffer::new(&mut bytes);
+        let val = &(f16::NAN);
+        val.encode(&mut buf)?;
+        assert_eq!(buf.encoded()?, &[0xf9, 0x7e, 0x00]);
+    }
+    {
+        let mut buf = EncodeBuffer::new(&mut bytes);
+        let val = &(f16::NEG_INFINITY);
+        val.encode(&mut buf)?;
+        assert_eq!(buf.encoded()?, &[0xf9, 0xfc, 0x00]);
+    }
+    Ok(())
+}
+
+#[test]
+fn rfc8949_encode_tag() -> Result<(), CBORError> {
+    println!("<==================== rfc8949_encode_empty_array ===================>");
+    let mut buffer = [0u8; 64];
+    {
+        let expected: &[u8] = &[0xc1, 0x1a, 0x51, 0x4b, 0x67, 0xb0];
+
+        let mut encoder = CBORBuilder::new(&mut buffer);
+        let _ = encoder.insert(&tag(1, |buff| {
+            buff.insert(&1363896240)
+        }))?;
+        assert_eq!(encoder.encoded()?, expected);
+    }
+    {
+        let expected: &[u8] = &[0xc1, 0xfb, 0x41, 0xd4, 0x52, 0xd9, 0xec, 0x20, 0x00, 0x00];
+
+        let mut encoder = CBORBuilder::new(&mut buffer);
+        let _ = encoder.insert(&tag(1, |buff| {
+            buff.insert(&1363896240.5)
+        }))?;
+        assert_eq!(encoder.encoded()?, expected);
+    }
+    {
+        let expected: &[u8] = &[0xd7, 0x44, 0x01, 0x02, 0x03, 0x04];
+
+        let mut encoder = CBORBuilder::new(&mut buffer);
+        let _ = encoder.insert(&tag(23, |buff| {
+            buff.insert(&[1u8, 2u8, 3u8, 4u8].as_slice())
+        }))?;
+        assert_eq!(encoder.encoded()?, expected);
+    }
+    {
+        let expected: &[u8] = &[0xd7, 0x44, 0x01, 0x02, 0x03, 0x04];
+
+        let mut encoder = CBORBuilder::new(&mut buffer);
+        let _ = encoder.insert(&tag(23, |buff| {
+            buff.insert(&[1u8, 2u8, 3u8, 4u8].as_slice())
+        }))?;
+        assert_eq!(encoder.encoded()?, expected);
+
+    }
+    Ok(())
+}
+
+#[test]
+fn rfc8949_encode_empty_array() -> Result<(), CBORError> {
+    println!("<==================== rfc8949_encode_empty_array ===================>");
+    let mut buffer = [0u8; 64];
+    let expected: &[u8] = &[0x80];
+
+    let mut encoder = CBORBuilder::new(&mut buffer);
+    let _ = encoder.insert(&array(|buff| Ok(buff)))?;
+    assert_eq!(encoder.encoded()?, expected);
+    Ok(())
+}
+
+#[test]
+fn rfc8949_encode_array() -> Result<(), CBORError> {
+    println!("<======================= rfc8949_encode_array ======================>");
+    let mut buffer = [0u8; 64];
+    let expected: &[u8] = &[0x83, 0x01, 0x02, 0x03];
+
+    let mut encoder = CBORBuilder::new(&mut buffer);
+    let _ = encoder.insert(&array(|buff| {
+        buff.insert(&01u8)?.insert(&02u8)?.insert(&03u8)
+    }))?;
+    assert_eq!(encoder.encoded()?, expected);
+    Ok(())
+}
+
+#[test]
+fn rfc8949_encode_nested_array() -> Result<(), CBORError> {
+    println!("<=================== rfc8949_encode_nested_array ===================>");
+    let mut buffer = [0u8; 64];
+    let expected: &[u8] = &[0x83, 0x01, 0x82, 0x02, 0x03, 0x82, 0x04, 0x05];
+
+    let mut encoder = CBORBuilder::new(&mut buffer);
+    let _ = encoder.insert(&array(|buff| {
+        buff.insert(&1u8)?
+            .insert(&array(|buff| buff.insert(&2u8)?.insert(&3u8)))?
+            .insert(&array(|buff| buff.insert(&4u8)?.insert(&5u8)))
+    }))?;
+    assert_eq!(encoder.encoded()?, expected);
+    Ok(())
+}
+
+#[test]
+fn rfc8949_encode_array_long() -> Result<(), CBORError> {
+    println!("<==================== rfc8949_encode_array_long ====================>");
+    let mut buffer = [0u8; 64];
+    let expected: &[u8] = &[
+        0x98, 0x19, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d,
+        0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x18, 0x18, 0x19,
+    ];
+
+    let mut encoder = CBORBuilder::new(&mut buffer);
+    let _ = encoder.insert(&array(|buff| {
+        buff.insert(&1)?
+            .insert(&2)?
+            .insert(&3)?
+            .insert(&4)?
+            .insert(&5)?
+            .insert(&6)?
+            .insert(&7)?
+            .insert(&8)?
+            .insert(&9)?
+            .insert(&10)?
+            .insert(&11)?
+            .insert(&12)?
+            .insert(&13)?
+            .insert(&14)?
+            .insert(&15)?
+            .insert(&16)?
+            .insert(&17)?
+            .insert(&18)?
+            .insert(&19)?
+            .insert(&20)?
+            .insert(&21)?
+            .insert(&22)?
+            .insert(&23)?
+            .insert(&24)?
+            .insert(&25)
+    }))?;
+    assert_eq!(encoder.encoded()?, expected);
+    Ok(())
+}
+
+#[test]
+fn rfc8949_encode_array_with_map() -> Result<(), CBORError> {
+    println!("<================== rfc8949_encode_array_with_map ==================>");
+    let mut buffer = [0u8; 64];
+    let expected: &[u8] = &[0x82, 0x61, 0x61, 0xa1, 0x61, 0x62, 0x61, 0x63];
+
+    let mut encoder = CBORBuilder::new(&mut buffer);
+    let _ = encoder.insert(&array(|buff| {
+        buff.insert(&"a")?
+            .insert(&map(|buff| buff.insert_key_value(&"b", &"c")))
+    }))?;
+    assert_eq!(encoder.encoded()?, expected);
+    Ok(())
+}
+
+#[test]
+fn rfc8949_encode_empty_map() -> Result<(), CBORError> {
+    println!("<===================== rfc8949_encode_empty_map ====================>");
+    let mut buffer = [0u8; 64];
+    let expected: &[u8] = &[0xa0];
+
+    let mut encoder = CBORBuilder::new(&mut buffer);
+    let _ = encoder.insert(&map(|buff| Ok(buff)))?;
+    assert_eq!(encoder.encoded()?, expected);
+    Ok(())
+}
+
+#[test]
+fn rfc8949_encode_map() -> Result<(), CBORError> {
+    println!("<======================== rfc8949_encode_map =======================>");
+    let mut buffer = [0u8; 64];
+    let expected: &[u8] = &[0xa2, 0x01, 0x02, 0x03, 0x04];
+
+    let mut encoder = CBORBuilder::new(&mut buffer);
+    let _ = encoder.insert(&map(|buff| {
+        buff.insert_key_value(&0x01u8, &0x02u8)?
+            .insert_key_value(&0x03u8, &0x04u8)
+    }))?;
+    assert_eq!(encoder.encoded()?, expected);
+    Ok(())
+}
+
+#[test]
+fn rfc8949_encode_map_with_str_keys() -> Result<(), CBORError> {
+    println!("<================= rfc8949_encode_map_with_str_keys ================>");
+    let mut buffer = [0u8; 64];
+    let expected: &[u8] = &[0xa2, 0x61, 0x61, 0x01, 0x61, 0x62, 0x82, 0x02, 0x03];
+
+    let mut encoder = CBORBuilder::new(&mut buffer);
+    let _ = encoder.insert(&map(|buff| {
+        buff.insert_key_value(&"a", &1)?
+            .insert_key_value(&"b", &array(|buff| buff.insert(&2)?.insert(&3)))
+    }))?;
+    assert_eq!(encoder.encoded()?, expected);
+    Ok(())
+}
+
+#[test]
+fn rfc8949_encode_map_long() -> Result<(), CBORError> {
+    println!("<====================+ rfc8949_encode_map_long =====================>");
+    let mut buffer = [0u8; 64];
+    let expected: &[u8] = &[
+        0xa5, 0x61, 0x61, 0x61, 0x41, 0x61, 0x62, 0x61, 0x42, 0x61, 0x63, 0x61, 0x43, 0x61, 0x64,
+        0x61, 0x44, 0x61, 0x65, 0x61, 0x45,
+    ];
+
+    let mut encoder = CBORBuilder::new(&mut buffer);
+    let _ = encoder.insert(&map(|buff| {
+        buff.insert_key_value(&"a", &"A")?
+            .insert_key_value(&"b", &"B")?
+            .insert_key_value(&"c", &"C")?
+            .insert_key_value(&"d", &"D")?
+            .insert_key_value(&"e", &"E")
+    }))?;
+    assert_eq!(encoder.encoded()?, expected);
+    Ok(())
+}
+
+#[test]
 fn encode_decode_cbor_ast() -> Result<(), CBORError> {
     // Encode-decode round trip test
-    println!("<======================= rfc8949_encode_decode_cbor_ast =====================>");
+    println!("<======================= encode_decode_cbor_ast =====================>");
     let mut bytes = [0u8; 128];
 
     {
         let val: &[u8] = &[1, 2, 3, 4];
 
         // values
-        let uval = CBOR::UInt(32);
-        let nval = CBOR::NInt(0xa5a5a5);
-        let sval = CBOR::Tstr("新年快乐");
-        let bval = CBOR::Bstr(&val);
         let s1 = CBOR::Simple(17);
         let s2 = CBOR::Simple(234);
         let s3 = CBOR::False;
@@ -427,41 +733,47 @@ fn encode_decode_cbor_ast() -> Result<(), CBORError> {
         let mval2 = CBOR::UInt(1025);
         let mkey3 = CBOR::NInt(1);
         let mval3 = CBOR::NInt(1024);
+        let mut tag_val: u64 = 0;
 
-        let mut array_ctx = EncodeContext::new();
-        let mut map_ctx = EncodeContext::new();
-        let mut encoded_cbor = CBOREncoder::new(&mut bytes);
+        let mut encoded_cbor = CBORBuilder::new(&mut bytes);
         encoded_cbor
-            .insert(&uval)?
-            .insert(&nval)?
-            .insert(&sval)?
-            .insert(&bval)?
+            .insert(&32u8)?
+            .insert(&(-(0xa5a5a5i32)))?
+            .insert(&"新年快乐")?
+            .insert(&val)?
             .insert(&s1)?
             .insert(&s2)?
             .insert(&s3)?
-            .tag_next_item(37)?
-            .insert(&tval)?
-            .array_start(&mut array_ctx)?
-            .insert(&aval1)?
-            .insert(&aval2)?
-            .insert(&aval3)?
-            .array_finalize(&array_ctx)?
-            .map_start(&mut map_ctx)?
-            .insert_key_value(&mkey1, &mval1)?
-            .insert_key_value(&mkey2, &mval2)?
-            .insert_key_value(&mkey3, &mval3)?
-            .map_finalize(&map_ctx)?;
+            .insert(&tag(37, |buf| buf.insert(&tval)))?
+            .insert(&array(|buf| {
+                buf.insert(&"usine à gaz")?
+                    .insert(&42u8)?
+                    .insert(&CBOR::Undefined)
+            }))?
+            .insert(&map(|buf| {
+                buf.insert_key_value(&1u8, &1023u32)?
+                    .insert_key_value(&2u8, &1025u32)?
+                    .insert_key_value(&(-1i8), &(-1024i32))
+            }))?;
 
         let _decoder = CBORDecoder::new(encoded_cbor.build()?)
-            .decode_with(is_uint(), |cbor| Ok(assert_eq!(cbor, uval)))?
-            .decode_with(is_nint(), |cbor| Ok(assert_eq!(cbor, nval)))?
-            .decode_with(is_tstr(), |cbor| Ok(assert_eq!(cbor, sval)))?
-            .decode_with(is_bstr(), |cbor| Ok(assert_eq!(cbor, bval)))?
+            .decode_with(is_uint(), |cbor| {
+                Ok(assert_eq!(cbor.try_into_u32()?, 32u32))
+            })?
+            .decode_with(is_nint(), |cbor| {
+                Ok(assert_eq!(cbor.try_into_i32()?, -(0xa5a5a5i32)))
+            })?
+            .decode_with(is_tstr(), |cbor| {
+                Ok(assert_eq!(cbor.try_into_str()?, "新年快乐"))
+            })?
+            .decode_with(is_bstr(), |cbor| {
+                Ok(assert_eq!(cbor.try_into_u8slice()?, val))
+            })?
             .decode_with(is_simple(), |cbor| Ok(assert_eq!(cbor, s1)))?
             .decode_with(is_simple(), |cbor| Ok(assert_eq!(cbor, s2)))?
             .decode_with(is_false(), |cbor| Ok(assert_eq!(cbor, s3)))?
-            .decode_with(is_tag_with_value(37), |cbor| {
-                CBORDecoder::from_tag(cbor)?
+            .decode_with(is_tag(), |cbor| {
+                CBORDecoder::from_tag(cbor, &mut tag_val)?
                     .decode_with(is_uint(), |cbor| Ok(assert_eq!(cbor, tval)))?
                     .finalize()
             })?
@@ -494,22 +806,111 @@ fn encode_decode_cbor_ast() -> Result<(), CBORError> {
                 }
             })?;
     }
-    {
-        let date_time_str = "2013-03-21T20:04:00Z";
-        match chrono::DateTime::parse_from_rfc3339(date_time_str) {
-            Ok(date_time_val) => {
-                let date_time = CBOR::DateTime(date_time_val);
-                let epoch = CBOR::Epoch(1626198094);
+    Ok(())
+}
 
-                let mut encoded_cbor = CBOREncoder::new(&mut bytes);
-                encoded_cbor.insert(&date_time)?.insert(&epoch)?;
+// / This is an example of a token produced by a HW block            /
+// / purpose-built for attestation.  Only the nonce claim changes    /
+// / from one attestation to the next as the rest  either come       /
+// / directly from the hardware or from one-time-programmable memory /
+// / (e.g. a fuse). 47 bytes encoded in CBOR (8 byte nonce, 16 byte  /
+// / UEID). /
+//
+// {
+// / nonce /           10: h'948f8860d13a463e',
+// / UEID /           256: h'0198f50a4ff6c05861c8860d13a638ea',
+// / OEMID /          258: 64242, / Private Enterprise Number /
+// / security-level / 261: 3, / hardware level security /
+// / secure-boot /    262: true,
+// / debug-status /   263: 3, / disabled-permanently /
+// / HW version /     260: [ "3.1", 1 ] / Type is multipartnumeric /
+// }
+#[test]
+fn encode_tee_eat() -> Result<(), CBORError> {
+    // Encode-decode round trip test
+    println!("<========================== encode_tee_eat =========================>");
+    let mut bytes = [0u8; 1024];
+    let expected: &[u8] = &[
+        167, 10, 72, 148, 143, 136, 96, 209, 58, 70, 62, 25, 1, 0, 80, 1, 152, 245, 10, 79, 246,
+        192, 88, 97, 200, 134, 13, 19, 166, 56, 234, 25, 1, 2, 25, 250, 242, 25, 1, 5, 3, 25, 1, 6,
+        245, 25, 1, 7, 3, 25, 1, 4, 130, 99, 51, 46, 49, 1,
+    ];
+    let nonce: &[u8] = &[0x94, 0x8f, 0x88, 0x60, 0xd1, 0x3a, 0x46, 0x3e];
+    let ueid: &[u8] = &[
+        0x01, 0x98, 0xf5, 0x0a, 0x4f, 0xf6, 0xc0, 0x58, 0x61, 0xc8, 0x86, 0x0d, 0x13, 0xa6, 0x38,
+        0xea,
+    ];
 
-                let _decoder = CBORDecoder::new(encoded_cbor.build()?)
-                    .decode_with(is_date_time(), |cbor| Ok(assert_eq!(cbor, date_time)))?
-                    .decode_with(is_epoch(), |cbor| Ok(assert_eq!(cbor, epoch)))?;
+    let mut encoded_cbor = CBORBuilder::new(&mut bytes);
+    encoded_cbor.insert(&map(|buff| {
+        buff.insert_key_value(&10, &nonce)?
+            .insert_key_value(&256, &ueid)?
+            .insert_key_value(&258, &64242)?
+            .insert_key_value(&261, &3)?
+            .insert_key_value(&262, &true)?
+            .insert_key_value(&263, &3)?
+            .insert_key_value(&260, &array(|buf| buf.insert(&"3.1")?.insert(&1)))
+    }))?;
+
+    assert_eq!(encoded_cbor.encoded()?, expected);
+    Ok(())
+}
+
+#[test]
+fn decode_tee_eat() -> Result<(), CBORError> {
+    let mut input: &[u8] = &[
+        167, 10, 72, 148, 143, 136, 96, 209, 58, 70, 62, 25, 1, 0, 80, 1, 152, 245, 10, 79, 246,
+        192, 88, 97, 200, 134, 13, 19, 166, 56, 234, 25, 1, 2, 25, 250, 242, 25, 1, 5, 3, 25, 1, 6,
+        245, 25, 1, 7, 3, 25, 1, 4, 130, 99, 51, 46, 49, 1,
+    ];
+    let mut nonce = None;
+    let mut ueid = None;
+    let mut oemid = None;
+    let mut sec_level = None;
+    let mut sec_boot = None;
+    let mut debug_state = None;
+    let mut hw_ver_int = None;
+
+    let mut decoder = CBORDecoder::from_slice(&mut input);
+    decoder.decode_with(is_map(), |cbor| {
+        if let CBOR::Map(map) = cbor {
+            nonce = map.get_int(10);
+            ueid = map.get_int(256);
+            oemid = map.get_int(258);
+            sec_level = map.get_int(261);
+            sec_boot = map.get_int(262);
+            debug_state = map.get_int(263);
+            if let Some(CBOR::Array(ab)) = map.get_int(260) {
+                hw_ver_int = match ab.index(1) {
+                    None => None,
+                    Some(CBOR::UInt(vi)) => Some(vi.clone()),
+                    _ => None
+                };
             }
-            Err(_) => assert!(false),
         }
-    }
+        Ok(())
+    })?;
+
+    assert_eq!(oemid, Some(CBOR::UInt(64242)));
+    assert_eq!(sec_level, Some(CBOR::UInt(3)));
+    assert_eq!(sec_boot, Some(CBOR::True));
+    assert_eq!(debug_state, Some(CBOR::UInt(3)));
+    assert_eq!(hw_ver_int, Some(1));
+    Ok(())
+}
+
+#[test]
+fn encode_array_array() -> Result<(), CBORError> {
+
+    println!("<=================== rfc8949_encode_nested_array ===================>");
+    let mut buffer = [0u8; 64];
+    let expected: &[u8] = &[130, 130, 1, 2, 130, 3, 4];
+
+    let mut encoder = CBORBuilder::new(&mut buffer);
+    let _ = encoder.insert(&array(|buff| {
+        buff.insert(&array(|buff| buff.insert(&1u8)?.insert(&2u8)))?
+            .insert(&array(|buff| buff.insert(&3u8)?.insert(&4u8)))
+    }))?;
+    assert_eq!(encoder.encoded()?, expected);
     Ok(())
 }

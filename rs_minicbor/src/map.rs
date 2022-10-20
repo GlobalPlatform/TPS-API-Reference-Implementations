@@ -1,5 +1,5 @@
 /***************************************************************************************************
- * Copyright (c) 2021 Jeremy O'Donoghue. All rights reserved.
+ * Copyright (c) 2021, 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the “Software”), to deal in the Software without
@@ -29,10 +29,14 @@ use crate::error::CBORError;
 
 #[cfg(feature = "trace")]
 use func_trace::trace;
+use crate::encode::{EncodeBuffer, EncodeContext, EncodeItem};
 
 #[cfg(feature = "trace")]
 func_trace::init_depth_var!();
 
+/***************************************************************************************************
+ * Decoding Maps
+ **************************************************************************************************/
 /// A buffer which contains a CBOR Map to be decoded. The buffer has lifetime `'buf`,
 /// which must be longer than any borrow from the buffer itself. This is generally used to represent
 /// a CBOR map with an exposed map-like API.
@@ -196,4 +200,71 @@ impl<'buf> IntoIterator for MapBuf<'buf> {
             source: DecodeBufIteratorSource::Map,
         }
     }
+}
+
+
+/***************************************************************************************************
+ * Encoding Maps
+ **************************************************************************************************/
+
+/// A container structure for the closure used to manage encoding of CBOR maps, and in particular
+/// to ensure that the correct lifetime bounds are specified.
+///
+/// The user is able to encode members of the map within a closure, and the map length will
+/// automatically be correctly constructed. Arbitrary nesting of arrays and maps is supported.
+///
+/// Users should never need to directly instantiate `Map`. Instead, see [`map`].
+pub struct Map<F>
+    where F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError> {
+    f: F
+}
+
+/// `Map` provides a constructor to contain the closure that constructs it
+impl<F> Map<F> where
+    F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError> {
+    pub fn new(f: F) -> Map<F> { Map { f } }
+}
+
+/// The [`EncodeItem`] instance for `Map` performs the required manipulations to correctly
+/// calculate the size of the map and ensure that the number of items inserted is a multiple of two.
+impl<F> EncodeItem for Map<F>
+    where F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError>
+{
+    fn encode<'f, 'buf>(&self, buf: &'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError> {
+        let mut map_ctx = EncodeContext::new();
+        buf.map_start(&mut map_ctx)?;
+        let _ = (self.f)(buf)?;
+        buf.map_finalize(&map_ctx)?;
+        Ok(buf)
+    }
+}
+
+
+/// A convenience function for the user to create an instance of a CBOR map. The user provides a
+/// closure which constructs the map contents.
+///
+/// The user can insert the map keys and values separately, but the use of the convenience function
+/// [`insert_key_value`] helps to avoid errors.
+///
+/// ```
+///# use rs_minicbor::encoder::CBORBuilder;
+///# use rs_minicbor::error::CBORError;
+///# use rs_minicbor::types::map;
+///# fn main() -> Result<(), CBORError> {
+///    let mut buffer = [0u8; 16];
+///    let expected : &[u8] = &[162, 1, 101, 72, 101, 108, 108, 111, 2, 101, 87, 111, 114, 108, 100];
+///
+///    let mut encoder = CBORBuilder::new(&mut buffer);
+///    encoder.insert(&map(|buff| {
+///        buff.insert_key_value(&1, &"Hello")?
+///            .insert_key_value(&2, &"World")
+///    }));
+///    assert_eq!(encoder.encoded()?, expected);
+///#    Ok(())
+///# }
+/// ```
+pub fn map<F>(f: F) -> Map<F>
+    where F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError>
+{
+    Map::new(f)
 }

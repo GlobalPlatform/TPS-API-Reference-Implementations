@@ -1,5 +1,5 @@
 /***************************************************************************************************
- * Copyright (c) 2021 Jeremy O'Donoghue. All rights reserved.
+ * Copyright (c) 2021, 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the “Software”), to deal in the Software without
