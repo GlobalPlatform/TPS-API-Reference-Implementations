@@ -7,37 +7,128 @@ systems where the Serde implementation is not necessarily well suited.
 
 `rs_minicbor` is MIT licensed. See LICENSE.
 
-## API requirements
+## Features
 
-- Needs to work in a `#[no_std]` environment.
-- Needs to handle unaligned data for primitive types.
-    - Decode Trait?
-- Should support Iterator traits, consistent with small implementation.
-  - `fn core::iter::Iterator::next(&mut self) -> Option<Self::Item>`
-  - `fn core::iter::IntoIterator::into_iter(self) -> Self::IntoIter`
-    - Shared reference to collection as input -> iterator producing shatred references to items
-  - `fn iter()` and `fn iter_mut()`.
-    - `iter()` also produces a shared reference to items
-    - `iter_mut()` produces mutable references to items
-    - See [Stackoverflow answer](https://stackoverflow.com/questions/34733811/what-is-the-difference-between-iter-and-into-iter/34745885#34745885).
-- Should be able to turn a `tstr` into `&str`, retaining the lifetime of the
-  underlying buffer.
-- Should be able to nest into arrays and maps to at least a reasonable depth.
-- Should support CBOR sequences encoded as `bstr`
-- Nice to have: can be driven by CDDL, or by some form of CDDL state machine.
-  Reasonable restrictions are allowed.
-- Needs to support search in maps
-- CBOR arrays will be treated as slices from an API perspective, but note that we
-  do not always have same type for each array entry.
-  - `fn len(&self) -> usize` returns array length.
-  - `fn first(&self) -> Option<&T>` returns first element (None if empty).
-  - `fn split_first(&self) -> Option<(&T, &[T])>` splits at first element and rest.
-  - `fn last(&self) -> Option<&T>` returns last element.
-  - `fn get<I>(&self, index: I) n-> Option<&<I as SliceIndex<[T]>>::Output>`
-- CBOR maps will be treated as similar to HashMap from an API perspective. Again
-  we do not always have the same type for each map entry.
-  - `fn len(&self) -> usize` returns number of elements in map.
-  - `fn get<Q: ?Sized>(&self, k: &Q) -> Option<&V>` where Q is the type of keys and
-    V is the type of values (which can be any CBOR value). It is allowed to constrain
-    keys to integers and `tstr`s.
+- Designed to constrained embedded environments requiring `#[no_std]` support.
+- High-level encoding and decoding APIs make serialization and deserialization
+  flows easier to write correctly.
+- Supports most CBOR constructions (see limitations)
+  - All primitive types (positive and negative integers, tstr, bstr, simple types, tags,
+    floats (including 16 bit floats).
+- Arbitrary nesting of arrays and maps with automatic calculation of the correct
+  number of items.
+- Supports a subset of standard tags (Date/Time and Unix Epoch). Note that these require
+  an allocator to be available.
+- Conversions to/from Rust primitive types.
+- Automatic preferred serialization for integers and floats.
+- Iterators and indexing over arrays and maps when deserializing
+- Extensive test cases, including test cases for all supported features from RFC8949
+  - Note that floating point +Infinity, NaN and -Infinity are always serialized as f16 
+    format because this is the preferred representation. Deserialisation works for all
+    cases.
+- Deserialization of non-preferred representations is supported.
 
+## Current Limitations
+
+- Does not support Canonical CBOR
+- Does not support preferred serialization for arrays and maps
+- Does not support indefinite length encoding
+- Does not support Bignum, DecFrac or BigFloat
+
+## A flavour of the APIs
+
+### CBOR Encoding
+
+Despite the small memory footprint, the CBOR serialization API is quite high-level,
+supporting arbitrary nesting of arrays and maps. 
+
+The example below is an implementation of [Simple TEE Attestation](https://www.ietf.org/archive/id/draft-ietf-rats-eat-14.html#name-eat-produced-by-attestation)
+from draft 14 of the Entity Attestation Token specification under development at the IETF.
+
+In CBOR diagnostic format, this is displayed as:
+
+```
+{
+    / nonce /           10: h'948f8860d13a463e',
+    / UEID /           256: h'0198f50a4ff6c05861c8860d13a638ea',
+    / OEMID /          258: 64242, / Private Enterprise Number /
+    / security-level / 261: 3, / hardware level security /
+    / secure-boot /    262: true,
+    / debug-status /   263: 3, / disabled-permanently /
+    / HW version /     260: [ "3.1", 1 ] / Type is multipartnumeric /
+}
+```
+
+This is encoded in rs_minicbor as:
+
+```rust
+fn encode_tee_eat() -> Result<(), CBORError> {
+    // Encode-decode round trip test
+    println!("<========================== encode_tee_eat =========================>");
+    let mut bytes = [0u8; 1024];
+    let nonce: &[u8] = &[0x94, 0x8f, 0x88, 0x60, 0xd1, 0x3a, 0x46, 0x3e];
+    let ueid: &[u8] = &[
+        0x01, 0x98, 0xf5, 0x0a, 0x4f, 0xf6, 0xc0, 0x58, 0x61, 0xc8, 0x86, 0x0d, 0x13,
+        0xa6, 0x38, 0xea,
+    ];
+
+    let mut encoded_cbor = CBORBuilder::new(&mut bytes);
+    encoded_cbor.insert(&map(|buff| {
+        buff.insert_key_value(&10, &nonce)?
+            .insert_key_value(&256, &ueid)?
+            .insert_key_value(&258, &64242)?
+            .insert_key_value(&261, &3)?
+            .insert_key_value(&262, &true)?
+            .insert_key_value(&263, &3)?
+            .insert_key_value(&260, &array(|buf| buf.insert(&"3.1")?.insert(&1)))
+    }))?;
+
+    // do_something_with(encoded_cbor.encoded()?);
+    Ok(())
+}
+```
+
+The only work to do 'by hand' is turning the `bstr` values into suitable references.
+
+### CBOR Decoding
+
+The example below shows one way to decode the payload generated above.
+
+```rust
+fn decode_tee_eat() -> Result<(), CBORError> {
+    let mut input: &[u8] = &[
+        167, 10, 72, 148, 143, 136, 96, 209, 58, 70, 62, 25, 1, 0, 80, 1, 152, 245,
+        10, 79, 246, 192, 88, 97, 200, 134, 13, 19, 166, 56, 234, 25, 1, 2, 25, 250,
+        242, 25, 1, 5, 3, 25, 1, 6,  245, 25, 1, 7, 3, 25, 1, 4, 130, 99, 51, 46,
+        49, 1,
+    ];
+    let mut nonce = None;
+    let mut ueid = None;
+    let mut oemid = None;
+    let mut sec_level = None;
+    let mut sec_boot = None;
+    let mut debug_state = None;
+    let mut hw_ver_int = None;
+
+    let mut decoder = CBORDecoder::from_slice(&mut input);
+    decoder.decode_with(is_map(), |cbor| {
+        if let CBOR::Map(map) = cbor {
+            nonce = map.get_int(10);
+            ueid = map.get_int(256);
+            oemid = map.get_int(258);
+            sec_level = map.get_int(261);
+            sec_boot = map.get_int(262);
+            debug_state = map.get_int(263);
+            if let Some(CBOR::Array(ab)) = map.get_int(260) {
+                hw_ver_int = match ab.index(1) {
+                    None => None,
+                    Some(CBOR::UInt(vi)) => Some(vi.clone()),
+                    _ => None
+                };
+            }
+        }
+        Ok(())
+    })?;
+ Ok(())
+}
+```

@@ -1,5 +1,5 @@
 /***************************************************************************************************
- * Copyright (c) 2021 Jeremy O'Donoghue. All rights reserved.
+ * Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the “Software”), to deal in the Software without
@@ -28,10 +28,15 @@ use crate::decode::{DecodeBufIterator, DecodeBufIteratorSource};
 
 #[cfg(feature = "trace")]
 use func_trace::trace;
+use crate::encode::{EncodeBuffer, EncodeContext, EncodeItem};
+use crate::error::CBORError;
 
 #[cfg(feature = "trace")]
 func_trace::init_depth_var!();
 
+/***************************************************************************************************
+ * Decoding Tags
+ **************************************************************************************************/
 /// A buffer which contains a tagged item to be decoded. The buffer has lifetime `'buf`,
 /// which must be longer than any borrow from the buffer itself. This is generally used to represent
 /// a CBOR map with an exposed map-like API.
@@ -71,4 +76,45 @@ impl<'buf> IntoIterator for TagBuf<'buf> {
             source: DecodeBufIteratorSource::Tag,
         }
     }
+}
+
+/***************************************************************************************************
+ * Encoding Tags
+ **************************************************************************************************/
+
+/// A container structure for the closure used to manage encoding of CBOR tags, and in particular
+/// to ensure that the correct lifetime bounds are specified.
+///
+/// The user is able to encode the tagged value within a closure, and the tag will
+/// automatically be correctly constructed. There is a run-time check to ensure that only a single
+/// CBOR item is tagged (CBOR tag applies only to the next item.
+///
+/// Users should never need to directly instantiate `Map`. Instead, see [`map`].
+pub struct Tag<F>
+    where F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError> {
+    tag: u64,
+    f: F
+}
+
+impl<F> Tag<F> where
+    F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError> {
+    pub fn new(tag: u64, f: F) -> Tag<F> { Tag { tag, f } }
+}
+
+impl<F> EncodeItem for Tag<F>
+    where F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError>
+{
+    fn encode<'f, 'buf>(&self, buf: &'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError> {
+        let mut tag_ctx = EncodeContext::new();
+        buf.tag_start(&mut tag_ctx)?;
+        let _ = buf.tag_next_item(self.tag)?;
+        let _ = (self.f)(buf)?;
+        buf.tag_finalize(&tag_ctx)
+    }
+}
+
+pub fn tag<F>(tag: u64, f: F) -> Tag<F>
+    where F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError>
+{
+    Tag::new(tag, f)
 }

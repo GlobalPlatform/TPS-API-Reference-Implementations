@@ -1,5 +1,5 @@
 /***************************************************************************************************
- * Copyright (c) 2021 Jeremy O'Donoghue. All rights reserved.
+ * Copyright (c) 2021, 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the “Software”), to deal in the Software without
@@ -67,8 +67,9 @@ impl<'buf> CBORDecoder<'buf> {
     /// Construct an instance of `CBORDecoder` from the CBOR item enclosed within a Tag, allowing
     /// decode within a CBOR Tag using the CBORDecoder API.
     #[inline]
-    pub fn from_tag(cbor: CBOR<'buf>) -> Result<Self, CBORError> {
+    pub fn from_tag(cbor: CBOR<'buf>, tag_value: &mut u64) -> Result<Self, CBORError> {
         if let CBOR::Tag(tb) = cbor {
+            *tag_value = tb.get_tag();
             Ok(Self {
                 decode_buf_iter: tb.into_iter(),
             })
@@ -200,11 +201,11 @@ impl<'buf> CBORDecoder<'buf> {
         min: usize,
         max: usize,
         parser: F,
-        closure: C,
+        mut closure: C,
     ) -> Result<&mut Self, CBORError>
     where
         F: Fn(DecodeBufIterator<'buf>) -> DCResult<'buf>,
-        C: Fn(usize, CBOR<'buf>) -> Result<(), CBORError>,
+        C: FnMut(usize, CBOR<'buf>) -> Result<(), CBORError>,
     {
         let mut no_parse = 0;
 
@@ -240,7 +241,7 @@ impl<'buf> CBORDecoder<'buf> {
     pub fn many0<F, C>(&mut self, parser: F, closure: C) -> Result<&mut Self, CBORError>
     where
         F: Fn(DecodeBufIterator<'buf>) -> DCResult<'buf>,
-        C: Fn(usize, CBOR<'buf>) -> Result<(), CBORError>,
+        C: FnMut(usize, CBOR<'buf>) -> Result<(), CBORError>
     {
         self.range(0, usize::MAX, parser, closure)
     }
@@ -622,7 +623,7 @@ pub fn is_map<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     }
 }
 
-/// Match a CBOR tagget value
+/// Match a CBOR tagged value
 #[cfg(feature = "combinators")]
 pub fn is_tag<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     move |mut iter| {

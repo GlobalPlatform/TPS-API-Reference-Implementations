@@ -1,4 +1,4 @@
-# Copyright (c) 2020, 2021 Jeremy O'Donoghue. All rights reserved.
+# Copyright (c) 2020-2022 Qualcomm Innovation Center, Inc. All rights reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software
 # and associated documentation files (the “Software”), to deal in the Software without
@@ -19,11 +19,13 @@
 
 [package]
 name = "rs_minicbor"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Jeremy O'Donoghue<quic_jodonogh@quicinc.com"]
 edition = "2018"
-license = "MIT"
 license-file = "LICENSE.txt"
+description = "A CBOR encoder and decoder suitable for `no_std` embedded targets."
+homepage = "https://globalplatform.org"
+repository = "https://github.com/GlobalPlatform/TPS-API-Reference-Implementations"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -48,10 +50,10 @@ combinators = []            # Support higher-level APIs for encoding and decodin
 # Where dependencies are dual-licensed, this project uses the MIT license
 
 [dependencies]
-thiserror = "1.0.30"        # Dual-licensed, MIT or Apache-2.0
-half = "1.8.2"              # Dual-licensed, MIT or Apache-2.0
+thiserror = "1.0.37"        # Dual-licensed, MIT or Apache-2.0
+half = "2.1.0"              # Dual-licensed, MIT or Apache-2.0
 func_trace = "1.0.3"        # MIT licensed
-chrono = "0.4.19"           # Dual-licensed, MIT or Apache-2.0
+chrono = "0.4.22"           # Dual-licensed, MIT or Apache-2.0
 
 [profile.release]
 opt-level = 'z'   # Optimize for size.

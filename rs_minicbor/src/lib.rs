@@ -1,5 +1,5 @@
 /***************************************************************************************************
- * Copyright (c) 2020, 2021 Jeremy O'Donoghue. All rights reserved.
+ * Copyright (c) 2020-2022, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the “Software”), to deal in the Software without
@@ -46,6 +46,9 @@ extern crate half;
 #[cfg(any(feature = "std_tags", test))]
 extern crate chrono;
 
+#[cfg(any(feature = "std_tags", test))]
+extern crate alloc;
+
 pub(crate) mod array;
 pub(crate) mod ast;
 pub(crate) mod constants;
@@ -60,6 +63,9 @@ pub mod error;
 
 pub mod types {
     pub use super::ast::CBOR;
+    pub use super::array::array;
+    pub use super::map::map;
+    pub use super::tag::tag;
 }
 
 pub mod decoder {
@@ -88,5 +94,5 @@ pub mod decoder {
 }
 
 pub mod encoder {
-    pub use super::encode::{CBOREncoder, EncodeBuffer, EncodeContext, EncodeItem};
+    pub use super::encode::{CBORBuilder, EncodeBuffer, EncodeContext, EncodeItem};
 }
