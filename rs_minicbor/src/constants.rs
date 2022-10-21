@@ -44,6 +44,8 @@ pub const MT_MAP: u8 = 0b101_00000;
 pub const MT_TAG: u8 = 0b110_00000;
 /// Major Type 7 (Floats, simple types etc.)
 pub const MT_SIMPLE: u8 = 0b111_00000;
+
+#[cfg(any(feature = "float", test))]
 pub const MT_FLOAT: u8 = 0b111_00000;
 
 /// Maximum value of a "simple" payload mapped on AI bits

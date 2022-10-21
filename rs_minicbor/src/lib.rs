@@ -89,7 +89,7 @@ pub mod decoder {
     #[cfg(any(feature = "combinators", test))]
     pub use super::constants::allow::*;
 
-    #[cfg(any(feature = "std_tags", test))]
+    #[cfg(any(all(feature = "std_tags", feature = "combinators"), test))]
     pub use super::decode_combinators::{is_date_time, is_epoch};
 }
 

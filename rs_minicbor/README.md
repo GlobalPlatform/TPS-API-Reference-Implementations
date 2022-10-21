@@ -35,6 +35,15 @@ systems where the Serde implementation is not necessarily well suited.
 - Does not support indefinite length encoding
 - Does not support Bignum, DecFrac or BigFloat
 
+## Testing
+
+You can run the test cases as follows:
+
+`cargo test --features=full`
+
+> Note that a current limitation is that tests cannot be executed by cargo test
+> alone as the featurization does not allow this.
+
 ## A flavour of the APIs
 
 ### CBOR Encoding

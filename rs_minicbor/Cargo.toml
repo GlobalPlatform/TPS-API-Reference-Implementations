@@ -19,7 +19,7 @@
 
 [package]
 name = "rs_minicbor"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Jeremy O'Donoghue<quic_jodonogh@quicinc.com"]
 edition = "2018"
 license-file = "LICENSE.txt"
@@ -30,30 +30,27 @@ repository = "https://github.com/GlobalPlatform/TPS-API-Reference-Implementation
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 # rs_minicbor can be built in the following variants:
-# - embedded: (no_std) No allocator or standard library required. Logging, indefinite length messaging
+# - default: (no_std) No allocator or standard library required. Logging, indefinite length messaging
 #   and high-level API are not allowed as a consequence since these require an allocator.
-# - default: (std) Requires standard library. Optionally supports logging, indefinite length messaging and a
+# - full: (std) Requires standard library. Optionally supports logging, indefinite length messaging and a
 #   higher-level API which can be easier to use.
 
 [features]
-default = ["combinators", "std_tags"]
-embedded = ["no_std", "combinators"]
-tiny = ["no_std"]
+full = ["combinators", "std_tags"]
+default = ["combinators"]
 
-std = []                    # Standard library available
-no_std = []                 # Do not use standard library
-trace = ["std"]             # Perform tracing on function entry/exit (for debug). Requires std
-float = []                  # Support floating point operations
-std_tags = ["float", "std"] # Support RFC7049 tagged values for date/time. Requires std and float
-combinators = []            # Support higher-level APIs for encoding and decoding
+trace = ["std"]                                     # Perform tracing on function entry/exit (for debug). Requires std
+std_tags = ["float", "std", "dep:chrono"]           # Support RFC7049 tagged values for date/time. Requires std and float
+std = []                                            # Standard library available
+combinators = []                                    # Support higher-level APIs for encoding and decoding
+float = []                                          # Support floating point operations
 
 # Where dependencies are dual-licensed, this project uses the MIT license
-
 [dependencies]
-thiserror = "1.0.37"        # Dual-licensed, MIT or Apache-2.0
-half = "2.1.0"              # Dual-licensed, MIT or Apache-2.0
-func_trace = "1.0.3"        # MIT licensed
-chrono = "0.4.22"           # Dual-licensed, MIT or Apache-2.0
+thiserror = "1.0.37"                                # Dual-licensed, MIT or Apache-2.0
+half = "2.1.0"                                      # Dual-licensed, MIT or Apache-2.0
+func_trace = "1.0.3"                                # MIT licensed
+chrono = { version = "0.4.22", optional = true }    # Dual-licensed, MIT or Apache-2.0
 
 [profile.release]
 opt-level = 'z'   # Optimize for size.

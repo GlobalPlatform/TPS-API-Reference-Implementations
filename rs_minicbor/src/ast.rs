@@ -106,8 +106,8 @@ pub enum CBOR<'buf> {
 }
 
 // This variant used when Floating point operations are not included
-#[cfg(all(not(feature = "float"), not(test)))]
 #[derive(PartialEq, Debug, Copy, Clone)]
+#[cfg(all(not(feature = "float"), not(test)))]
 pub enum CBOR<'buf> {
     UInt(u64),
     NInt(u64),

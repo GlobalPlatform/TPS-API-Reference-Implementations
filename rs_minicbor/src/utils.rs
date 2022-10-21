@@ -45,7 +45,7 @@ pub fn within(buf: &[u8], start: usize, len: usize) -> bool {
 #[derive(Debug, Copy, Clone)]
 pub struct Allowable(u32);
 
-#[cfg(feature = "combinators")]
+#[cfg(all(feature = "combinators", feature = "float"))]
 impl Allowable {
     pub fn new(v: u32) -> Self {
         Allowable(v)
@@ -92,6 +92,52 @@ impl Allowable {
     }
 }
 
+#[cfg(all(feature = "combinators", not(feature = "float")))]
+impl Allowable {
+    pub fn new(v: u32) -> Self {
+        Allowable(v)
+    }
+
+    pub fn allow_none(&self) -> bool {
+        self.0 & allow::NONE != 0
+    }
+
+    pub fn allow_uint(&self) -> bool {
+        self.0 & allow::UINT != 0
+    }
+
+    pub fn allow_nint(&self) -> bool {
+        self.0 & allow::NINT != 0
+    }
+
+    pub fn allow_bstr(&self) -> bool {
+        self.0 & allow::BSTR != 0
+    }
+
+    pub fn allow_tstr(&self) -> bool {
+        self.0 & allow::TSTR != 0
+    }
+
+    pub fn allow_array(&self) -> bool {
+        self.0 & allow::ARRAY != 0
+    }
+
+    pub fn allow_map(&self) -> bool {
+        self.0 & allow::MAP != 0
+    }
+
+    pub fn allow_tag(&self) -> bool {
+        self.0 & allow::TAG != 0
+    }
+
+    pub fn allow_simple(&self) -> bool {
+        self.0 & allow::SIMPLE != 0
+    }
+
+    pub fn allow_float(&self) -> bool {
+        self.0 & allow::FLOAT != 0
+    }
+}
 #[cfg(feature = "combinators")]
 pub trait Filter {
     type Error;
@@ -126,7 +172,7 @@ impl<'buf> Filter for Option<CBOR<'buf>> {
     }
 }
 
-#[cfg(feature = "combinators")]
+#[cfg(all(feature = "combinators", feature = "float"))]
 impl<'buf> Filter for CBOR<'buf> {
     type Error = CBORError;
 
@@ -190,6 +236,73 @@ impl<'buf> Filter for CBOR<'buf> {
             }
             CBOR::Float64(_) | CBOR::Float32(_) | CBOR::Float16(_) => {
                 if allow.allow_float() {
+                    Ok(self)
+                } else {
+                    Err(CBORError::NotAllowed)
+                }
+            }
+            _ => Err(CBORError::NotAllowed),
+        }
+    }
+}
+
+#[cfg(all(feature = "combinators", not(feature = "float")))]
+impl<'buf> Filter for CBOR<'buf> {
+    type Error = CBORError;
+
+    fn allow(self, allow: Allowable) -> Result<CBOR<'buf>, Self::Error> {
+        match self {
+            CBOR::UInt(_) => {
+                if allow.allow_uint() {
+                    Ok(self)
+                } else {
+                    Err(CBORError::NotAllowed)
+                }
+            }
+            CBOR::NInt(_) => {
+                if allow.allow_nint() {
+                    Ok(self)
+                } else {
+                    Err(CBORError::NotAllowed)
+                }
+            }
+            CBOR::Bstr(_) => {
+                if allow.allow_bstr() {
+                    Ok(self)
+                } else {
+                    Err(CBORError::NotAllowed)
+                }
+            }
+            CBOR::Tstr(_) => {
+                if allow.allow_tstr() {
+                    Ok(self)
+                } else {
+                    Err(CBORError::NotAllowed)
+                }
+            }
+            CBOR::Array(_) => {
+                if allow.allow_array() {
+                    Ok(self)
+                } else {
+                    Err(CBORError::NotAllowed)
+                }
+            }
+            CBOR::Map(_) => {
+                if allow.allow_map() {
+                    Ok(self)
+                } else {
+                    Err(CBORError::NotAllowed)
+                }
+            }
+            CBOR::Tag(_) => {
+                if allow.allow_tag() {
+                    Ok(self)
+                } else {
+                    Err(CBORError::NotAllowed)
+                }
+            }
+            CBOR::Simple(_) | CBOR::True | CBOR::False | CBOR::Null | CBOR::Undefined => {
+                if allow.allow_simple() {
                     Ok(self)
                 } else {
                     Err(CBORError::NotAllowed)
