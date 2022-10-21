@@ -27,7 +27,6 @@
  * disabled with the `embedded` profile option.
  **************************************************************************************************/
 use crate::ast::CBOR;
-use crate::ast::CBOR::{NInt, Tstr, UInt};
 use crate::constants::*;
 use crate::decoder::{is_any, CBORDecoder, SequenceBuffer};
 use crate::error::CBORError;
@@ -35,6 +34,9 @@ use crate::utils::within;
 
 #[cfg(feature = "std_tags")]
 use std::mem::size_of;
+
+#[cfg(feature = "std_tags")]
+use crate::ast::CBOR::{NInt, Tstr, UInt};
 
 #[cfg(feature = "float")]
 use half::f16;
