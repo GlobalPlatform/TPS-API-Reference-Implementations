@@ -53,11 +53,22 @@ extern crate half;
 #[cfg(any(feature = "full", test))]
 extern crate chrono;
 
+#[cfg(any(feature = "full", test))]
 use std::boxed::Box;
+
+#[cfg(any(feature = "full", test))]
 use std::error::Error;
+
+#[cfg(any(feature = "full", test))]
 use std::fmt::Debug;
+
+#[cfg(any(feature = "full", test))]
 use std::fmt::Display;
+
+#[cfg(any(feature = "full", test))]
 use std::io::{Read, Write};
+
+#[cfg(any(feature = "full", test))]
 use std::string::String;
 
 #[cfg(any(feature = "float", test))]
@@ -66,7 +77,10 @@ use half::f16;
 #[cfg(any(feature = "full", test))]
 use chrono::{DateTime, FixedOffset};
 
+#[cfg(any(feature = "full", test))]
 use crate::decoder::{ArrayBuf, CBORDecoder, DecodeBufIterator, MapBuf, SequenceBuffer, TagBuf};
+
+#[cfg(any(feature = "full", test))]
 use crate::types::CBOR;
 
 /// Trait defining helper functions for conveniently displaying information in CBOR

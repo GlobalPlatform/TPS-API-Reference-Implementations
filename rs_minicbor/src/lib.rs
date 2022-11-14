@@ -95,8 +95,10 @@ pub mod encoder {
     pub use super::encode::{CBORBuilder, EncodeBuffer, EncodeContext, EncodeItem};
 }
 
+#[cfg(any(feature = "full", test))]
 pub mod debug {
     #[cfg(any(feature = "full", test))]
     pub use super::cbor_diag::Diag;
+    #[cfg(any(feature = "full", test))]
     pub use super::cbor_diag::print_hex;
 }
