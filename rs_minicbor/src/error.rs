@@ -25,82 +25,50 @@
  **************************************************************************************************/
 use std::result;
 
-#[cfg(any(feature = "std", test))]
+//#[cfg(any(feature = "full", test))]
 use thiserror::Error;
 
 pub type Result<T> = result::Result<T, CBORError>;
 
 /// `CBORError` provides information about errors converting CBOR types to/from other types
-#[cfg_attr(any(feature = "std", test), derive(Copy, Clone, Error, Debug))]
-#[cfg_attr(all(not(feature = "std"), not(test)), derive(Copy, Clone, Debug))]
+//#[cfg_attr(all(not(feature = "full"), not(test)), derive(Copy, Clone, Debug))]
+//#[cfg_attr(any(feature = "full", test), derive(Copy, Clone, Error, Debug))]
+#[derive(Copy, Clone, Error, Debug)]
 pub enum CBORError {
-    #[cfg_attr(
-        any(feature = "std", test),
-        error("Overflow or underflow in number conversion")
-    )]
+    #[error("Overflow or underflow in number conversion")]
     OutOfRange,
-    #[cfg_attr(
-        any(feature = "std", test),
-        error("Attempt to convert an item of incompatible type")
-    )]
+    #[error("Attempt to convert an item of incompatible type")]
     IncompatibleType,
-    #[cfg_attr(
-        any(feature = "std", test),
-        error("Slice length is incompatible with the target type conversion")
-    )]
+    #[error("Slice length is incompatible with the target type conversion")]
     BadSliceLength,
-    #[cfg_attr(
-        any(feature = "std", test),
-        error("Buffer insufficient to process the next item")
-    )]
+    #[error("Buffer insufficient to process the next item")]
     EndOfBuffer,
-    #[cfg_attr(
-        any(feature = "std", test),
-        error("A tstr contains an invalid UTF8 sequence")
-    )]
+    #[error("A tstr contains an invalid UTF8 sequence")]
     UTF8Error,
-    #[cfg_attr(
-        any(feature = "std", test),
-        error("The item was not expecting this AI encoding. Probably malformed")
-    )]
+    #[error("The item was not expecting this AI encoding. Probably malformed")]
     AIError,
-    #[cfg_attr(
-        any(feature = "std", test),
-        error("Encoding is illegal or unsupported")
-    )]
+    #[error("Encoding is illegal or unsupported")]
     MalformedEncoding,
-    #[cfg_attr(
-        any(feature = "std", test),
-        error("The protocol feature is not supported")
-    )]
+    #[error("The protocol feature is not supported")]
     NotImplemented,
-    #[cfg_attr(
-        any(feature = "std", test),
-        error("No next item possible as end of buffer - this is usually recoverable")
-    )]
+    #[error("No next item possible as end of buffer - this is usually recoverable")]
     NoMoreItems(usize),
-    #[cfg_attr(any(feature = "std", test), error("Expected EOF"))]
+    #[error("Expected EOF")]
     EofExpected,
-    #[cfg_attr(any(feature = "std", test), error("Did not match expected CBOR type"))]
+    #[error("Did not match expected CBOR type")]
     ExpectedType(&'static str),
-    #[cfg_attr(any(feature = "std", test), error("Failed predicate"))]
+    #[error("Failed predicate")]
     FailedPredicate,
-    #[cfg_attr(any(feature = "std", test), error("Unexpected Tag"))]
+    #[error("Unexpected Tag")]
     ExpectedTag(u64),
-    #[cfg_attr(
-        any(feature = "std", test),
-        error("Map does not contain the requested key")
-    )]
+    #[error("Map does not contain the requested key")]
     KeyNotPresent,
-    #[cfg_attr(
-        any(feature = "std", test),
-        error("Map does not contain a value for the found key")
-    )]
+    #[error("Map does not contain a value for the found key")]
     ValueNotPresent,
-    #[cfg_attr(any(feature = "std", test), error("Range underflow"))]
+    #[error("Range underflow")]
     RangeUnderflow(usize),
-    #[cfg_attr(any(feature = "std", test), error("Bad Date/Time value"))]
+    #[error("Bad Date/Time value")]
     BadDateTime,
-    #[cfg_attr(any(feature = "std", test), error("Type not allowed here"))]
+    #[error("Type not allowed here")]
     NotAllowed,
 }

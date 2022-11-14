@@ -196,7 +196,7 @@ impl<'buf> Iterator for DecodeBufIterator<'buf> {
 /// index in `buf` of the next item in `buf` - this may be outside the bounds of `buf`, and must
 /// be checked before it is used. This function does bounds checking, so it is safe to use a
 /// previously returned next item index as an error will be returned if it is out of bounds.
-#[cfg(all(feature = "float", feature = "std_tags"))]
+#[cfg(all(feature = "float", feature = "full"))]
 fn parse_item(buf: &[u8], start_index: usize) -> Result<(usize, CBOR)> {
     if within(buf, start_index, 0) {
         let mt_ai_byte = buf[start_index];
@@ -252,7 +252,7 @@ fn parse_item(buf: &[u8], start_index: usize) -> Result<(usize, CBOR)> {
     }
 }
 
-// Version for no float and no std_tags
+// Version for no float and no full
 #[cfg(not(feature = "float"))]
 fn parse_item(buf: &[u8], start_index: usize) -> Result<(usize, CBOR)> {
     if within(buf, start_index, 0) {

@@ -29,6 +29,14 @@ repository = "https://github.com/GlobalPlatform/TPS-API-Reference-Implementation
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[example]]
+name = "decode"
+required_features = ["full"]
+
+[[example]]
+name = "trivial_cose"
+required_features = ["full"]
+
 # rs_minicbor can be built in the following variants:
 # - default: (no_std) No allocator or standard library required. Logging, indefinite length messaging
 #   and high-level API are not allowed as a consequence since these require an allocator.
@@ -36,11 +44,10 @@ repository = "https://github.com/GlobalPlatform/TPS-API-Reference-Implementation
 #   higher-level API which can be easier to use.
 
 [features]
-full = ["combinators", "std_tags"]
+full = ["combinators", "std", "float", "dep:chrono"]
 default = ["combinators"]
 
 trace = ["std"]                                     # Perform tracing on function entry/exit (for debug). Requires std
-std_tags = ["float", "std", "dep:chrono"]           # Support RFC7049 tagged values for date/time. Requires std and float
 std = []                                            # Standard library available
 combinators = []                                    # Support higher-level APIs for encoding and decoding
 float = []                                          # Support floating point operations
@@ -51,6 +58,13 @@ thiserror = "1.0.37"                                # Dual-licensed, MIT or Apac
 half = "2.1.0"                                      # Dual-licensed, MIT or Apache-2.0
 func_trace = "1.0.3"                                # MIT licensed
 chrono = { version = "0.4.22", optional = true }    # Dual-licensed, MIT or Apache-2.0
+
+# The below dependencies are needed to buidl/run the trivial_cose examples
+ring = "0.16.20"                                    # Basically BoringSSL. ISC + 3 Clause BSD + MIT
+crypto-bigint = "0.4.9"
+rfc6979 = "0.3.0"
+sha2 = "0.10.6"
+p256 = { version = "0.11.1", features = ["ecdsa"] }
 
 [profile.release]
 opt-level = 'z'   # Optimize for size.

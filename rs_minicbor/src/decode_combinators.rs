@@ -104,6 +104,12 @@ impl<'buf> CBORDecoder<'buf> {
         }
     }
 
+    /// Obtain the internal iterator of a `CBORDecoder`
+    #[inline]
+    pub fn into_inner(&self) -> DecodeBufIterator {
+        self.decode_buf_iter
+    }
+
     /// When decoding maps, arrays and tags, the closures require finalizing to obtain
     /// the correct return type.
     #[inline]
@@ -660,7 +666,7 @@ pub fn is_tag_with_value<'buf>(v: u64) -> impl Fn(DecodeBufIterator<'buf>) -> DC
 }
 
 #[cfg_attr(feature = "trace", trace)]
-#[cfg(any(test, all(feature = "combinators", feature = "std_tags")))]
+#[cfg(any(test, all(feature = "combinators", feature = "full")))]
 pub fn is_date_time<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     is_tag_helper(0, |iter: DecodeBufIterator| {
         if let (_, CBOR::Tstr(date_time)) = is_tstr()(iter)? {
@@ -675,7 +681,7 @@ pub fn is_date_time<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf
 }
 
 #[cfg_attr(feature = "trace", trace)]
-#[cfg(any(test, all(feature = "combinators", feature = "std_tags")))]
+#[cfg(any(test, all(feature = "combinators", feature = "full")))]
 pub fn is_epoch<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     is_tag_helper(1, |iter| {
         let (_, cbor) = is_any()(iter)?;
@@ -687,7 +693,7 @@ pub fn is_epoch<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
 }
 
 #[cfg_attr(feature = "trace", trace)]
-#[cfg(any(test, all(feature = "combinators", feature = "std_tags")))]
+#[cfg(any(test, all(feature = "combinators", feature = "full")))]
 fn is_tag_helper<'buf, F>(tag: u64, f: F) -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf>
 where
     F: Fn(DecodeBufIterator<'buf>) -> Result<CBOR<'buf>, CBORError>,

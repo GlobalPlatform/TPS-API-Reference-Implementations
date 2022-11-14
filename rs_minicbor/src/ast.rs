@@ -34,7 +34,7 @@ use std::mem::transmute;
 #[cfg(feature = "float")]
 use half::f16;
 
-#[cfg(any(feature = "std_tags", test))]
+#[cfg(any(feature = "full", test))]
 use chrono::{DateTime, FixedOffset};
 
 #[cfg(feature = "trace")]
@@ -57,7 +57,7 @@ func_trace::init_depth_var!();
 /// - Maps are stored as a number of pairs and an immutable borrowed slice over the contents of the
 ///   map
 #[derive(PartialEq, Debug, Clone)]
-#[cfg(any(feature = "std_tags", test))]
+#[cfg(any(feature = "full", test))]
 pub enum CBOR<'buf> {
     UInt(u64),
     NInt(u64),
@@ -75,17 +75,17 @@ pub enum CBOR<'buf> {
     Null,
     Undefined,
     Eof,
-    // The following are the std_tags extensions
+    // The following are the full extensions
     DateTime(DateTime<FixedOffset>),
     Epoch(i64),
 }
 
 // Manual implementation needed as there is no Copy instance for BigInt
-#[cfg(any(feature = "std_tags", test))]
+#[cfg(any(feature = "full", test))]
 impl<'buf> Copy for CBOR<'buf> {}
 
 #[derive(PartialEq, Debug, Copy, Clone)]
-#[cfg(all(feature = "float", not(feature = "std_tags"), not(test)))]
+#[cfg(all(feature = "float", not(feature = "full"), not(test)))]
 pub enum CBOR<'buf> {
     UInt(u64),
     NInt(u64),

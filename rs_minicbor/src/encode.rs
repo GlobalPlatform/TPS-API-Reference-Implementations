@@ -32,19 +32,19 @@ use crate::decoder::{is_any, CBORDecoder, SequenceBuffer};
 use crate::error::CBORError;
 use crate::utils::within;
 
-#[cfg(feature = "std_tags")]
+#[cfg(feature = "full")]
 use std::mem::size_of;
 
-#[cfg(feature = "std_tags")]
+#[cfg(feature = "full")]
 use crate::ast::CBOR::{NInt, Tstr, UInt};
 
 #[cfg(feature = "float")]
 use half::f16;
 
-#[cfg(any(feature = "std_tags", feature = "trace"))]
+#[cfg(any(feature = "full", feature = "trace"))]
 use std::string::String;
 
-#[cfg(feature = "std_tags")]
+#[cfg(feature = "full")]
 use chrono::{DateTime, FixedOffset};
 
 #[cfg(feature = "trace")]
@@ -99,6 +99,17 @@ impl<'buf> CBORBuilder<'buf> {
     #[inline]
     pub fn insert(&mut self, item: &dyn EncodeItem) -> Result<&mut Self, CBORError> {
         self.buf.insert(item)?;
+        Ok(self)
+    }
+
+    /// Insert a CBOR encoded bstr into an `EncodeBuffer`.
+    ///
+    /// This is generally used for the `bstr .cbor ...` CDDL use-case. It is the responsibility
+    /// of the caller to ensure that the inserted value is valid CBOR - if it is not, decoding
+    /// will surely fail or function incorrectly.
+    #[inline]
+    pub fn insert_cbor(&mut self, cbor: &[u8]) -> Result<&mut Self, CBORError> {
+        self.buf.insert_bstr_cbor(cbor)?;
         Ok(self)
     }
 
@@ -188,6 +199,25 @@ where
     ) -> Result<&mut Self, CBORError> {
         let _ = self.insert(key)?;
         let _ = self.insert(value)?;
+        Ok(self)
+    }
+
+    /// Insert an item that has already been encoded in CBOR.
+    ///
+    /// This function is typically called when the &[u8] you wish to insert contains CBIR which has
+    /// been encoded as a `bstr`. If you call the normal [[`insert`]] function, you will get a
+    /// `bstr` wrapped in a second `bstr`.
+    ///
+    /// In CDDL terms, this is used for `bstr .cbor ...`.
+    ///
+    /// > Note: it is the responsibility of the caller to ensure that the inserted value is CBOR
+    /// > encoded. Failure to do so is almost certain to lead to errors.
+    pub fn insert_bstr_cbor(
+        &mut self,
+        cbor: &[u8]
+    ) -> Result<&mut Self, CBORError> {
+        self.write_slice_at_offset(0, cbor)?;
+        let _ = self.update_index(cbor.len())?;
         Ok(self)
     }
 
@@ -500,7 +530,7 @@ pub trait EncodeItem {
     ) -> Result<&'f mut EncodeBuffer<'buf>, CBORError>;
 }
 
-#[cfg(feature = "std_tags")]
+#[cfg(feature = "full")]
 impl<'buf> EncodeItem for CBOR<'buf> {
     #[cfg_attr(feature = "trace", trace)]
     fn encode<'f, 'b>(
@@ -518,9 +548,9 @@ impl<'buf> EncodeItem for CBOR<'buf> {
             CBOR::Float16(val) => (&val).encode(buf),
             CBOR::Bstr(bs) => bs.encode(buf),
             CBOR::Tstr(ts) => ts.encode(buf),
-            CBOR::Array(_) => Err(CBORError::NotImplemented),
-            CBOR::Map(_) => Err(CBORError::NotImplemented),
-            CBOR::Tag(_) => Err(CBORError::NotImplemented),
+            CBOR::Array(ar) => CBOR::Array(ar).encode(buf),
+            CBOR::Map(mp) => CBOR::Map(mp).encode(buf),
+            CBOR::Tag(tb) => CBOR::Tag(tb).encode(buf),
             CBOR::Simple(v) => {
                 match v {
                     // Values below are reserved for specific usage or are illegal
@@ -532,14 +562,14 @@ impl<'buf> EncodeItem for CBOR<'buf> {
             CBOR::True => encode_item_simple(buf, 21),
             CBOR::Null => encode_item_simple(buf, 22),
             CBOR::Undefined => encode_item_simple(buf, 23),
-            CBOR::Eof => Err(CBORError::MalformedEncoding),
+            CBOR::Eof => Err(CBORError::EndOfBuffer),
             CBOR::DateTime(date_time) => encode_date_time(buf, &date_time),
             CBOR::Epoch(secs_since_1970) => encode_epoch(buf, secs_since_1970),
         }
     }
 }
 
-#[cfg(all(feature = "float", not(feature = "std_tags")))]
+#[cfg(all(feature = "float", not(feature = "full")))]
 impl<'buf> EncodeItem for CBOR<'buf> {
     #[cfg_attr(feature = "trace", trace)]
     fn encode<'f, 'b>(
@@ -557,9 +587,9 @@ impl<'buf> EncodeItem for CBOR<'buf> {
             CBOR::Float16(val) => (&val).encode(buf),
             CBOR::Bstr(bs) => bs.encode(buf),
             CBOR::Tstr(ts) => ts.encode(buf),
-            CBOR::Array(_) => Err(CBORError::NotImplemented),
-            CBOR::Map(_) => Err(CBORError::NotImplemented),
-            CBOR::Tag(_) => Err(CBORError::NotImplemented),
+            CBOR::Array(ar) => CBOR::Array(ar).encode(buf),
+            CBOR::Map(mp) => CBOR::Map(mp).encode(buf),
+            CBOR::Tag(tb) => CBOR::Tag(tb).encode(buf),
             CBOR::Simple(v) => {
                 match v {
                     // Values below are reserved for specific usage or are illegal
@@ -571,7 +601,7 @@ impl<'buf> EncodeItem for CBOR<'buf> {
             CBOR::True => encode_item_simple(buf, 21),
             CBOR::Null => encode_item_simple(buf, 22),
             CBOR::Undefined => encode_item_simple(buf, 23),
-            CBOR::Eof => Err(CBORError::MalformedEncoding),
+            CBOR::Eof => Err(CBORError::EndOfBuffer),
         }
     }
 }
@@ -591,9 +621,9 @@ impl<'buf> EncodeItem for CBOR<'buf> {
             }
             CBOR::Bstr(bs) => bs.encode(buf),
             CBOR::Tstr(ts) => ts.encode(buf),
-            CBOR::Array(_) => Err(CBORError::NotImplemented),
-            CBOR::Map(_) => Err(CBORError::NotImplemented),
-            CBOR::Tag(_) => Err(CBORError::NotImplemented),
+            CBOR::Array(ar) => CBOR::Array(ar).encode(buf),
+            CBOR::Map(mp) => CBOR::Map(mp).encode(buf),
+            CBOR::Tag(tb) => CBOR::Tag(tb).encode(buf),
             CBOR::Simple(v) => {
                 match v {
                     // Values below are reserved for specific usage or are illegal
@@ -605,7 +635,7 @@ impl<'buf> EncodeItem for CBOR<'buf> {
             CBOR::True => encode_item_simple(buf, 21),
             CBOR::Null => encode_item_simple(buf, 22),
             CBOR::Undefined => encode_item_simple(buf, 23),
-            CBOR::Eof => Err(CBORError::MalformedEncoding),
+            CBOR::Eof => Err(CBORError::EndOfBuffer),
         }
     }
 }
@@ -1037,7 +1067,7 @@ fn encode_unsigned(buf: &mut EncodeBuffer, v: u64) -> Result<MtUnset, CBORError>
 /// Encode a `DateTime<FixedOffset>` on `buf`, starting at the (internal) `start_index`.
 /// The index just after the serialized value is returned if serialization was successful.
 /// `Err(CBORError::EndOfBuffer` is returned if there is no space for serialization.
-#[cfg(feature = "std_tags")]
+#[cfg(feature = "full")]
 fn encode_date_time<'f, 'b>(
     buf: &'f mut EncodeBuffer<'b>,
     date: &DateTime<FixedOffset>,
@@ -1051,7 +1081,7 @@ fn encode_date_time<'f, 'b>(
 /// Encode a `DateTime<FixedOffset>` on `buf`, starting at the (internal) `start_index`.
 /// The index just after the serialized value is returned if serialization was successful.
 /// `Err(CBORError::EndOfBuffer` is returned if there is no space for serialization.
-#[cfg(feature = "std_tags")]
+#[cfg(feature = "full")]
 fn encode_epoch<'f, 'b>(
     buf: &'f mut EncodeBuffer<'b>,
     secs: i64,
