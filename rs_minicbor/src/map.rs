@@ -49,7 +49,7 @@ pub struct MapBuf<'buf> {
 }
 
 impl<'buf> MapBuf<'buf> {
-    /// Construct a new instance of `ArrayBuf` with all context initialized.
+    /// Construct a new instance of `MapBuf` with all context initialized.
     #[cfg_attr(feature = "trace", trace)]
     pub fn new(init: &'buf [u8], n_pairs: usize) -> MapBuf<'buf> {
         MapBuf {

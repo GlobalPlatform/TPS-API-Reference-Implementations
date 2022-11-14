@@ -32,7 +32,7 @@ embedded systems.
 
 // Pull in std if we are testing or if it is defined as feature (because we run tests on a
 // platform supporting I/O and full feature set.
-#[cfg(any(feature = "std", test))]
+#[cfg(any(feature = "full", test))]
 extern crate std;
 
 // If we are really building no_std, pull in core as well. It is aliased as std so that "use"
@@ -43,12 +43,10 @@ extern crate core as std;
 #[cfg(any(feature = "float", test))]
 extern crate half;
 
-#[cfg(any(feature = "std_tags", test))]
+#[cfg(any(feature = "full", test))]
 extern crate chrono;
 
-#[cfg(any(feature = "std_tags", test))]
-extern crate alloc;
-
+mod cbor_diag;
 pub(crate) mod array;
 pub(crate) mod ast;
 pub(crate) mod constants;
@@ -89,10 +87,18 @@ pub mod decoder {
     #[cfg(any(feature = "combinators", test))]
     pub use super::constants::allow::*;
 
-    #[cfg(any(all(feature = "std_tags", feature = "combinators"), test))]
+    #[cfg(any(all(feature = "full", feature = "combinators"), test))]
     pub use super::decode_combinators::{is_date_time, is_epoch};
 }
 
 pub mod encoder {
     pub use super::encode::{CBORBuilder, EncodeBuffer, EncodeContext, EncodeItem};
+}
+
+#[cfg(any(feature = "full", test))]
+pub mod debug {
+    #[cfg(any(feature = "full", test))]
+    pub use super::cbor_diag::Diag;
+    #[cfg(any(feature = "full", test))]
+    pub use super::cbor_diag::print_hex;
 }
