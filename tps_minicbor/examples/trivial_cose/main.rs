@@ -29,7 +29,7 @@
  **************************************************************************************************/
 extern crate crypto_bigint;
 extern crate p256;
-extern crate rs_minicbor;
+extern crate tps_minicbor;
 extern crate core;
 
 use crypto_bigint::{ArrayEncoding, U256};
@@ -41,14 +41,13 @@ use std::error::Error;
 use std::io;
 use std::io::{Write};
 
-use rs_minicbor::debug::print_hex;
-use rs_minicbor::decoder::{
+use tps_minicbor::debug::{Diag, print_hex};
+use tps_minicbor::decoder::{
     is_array, is_bstr, is_map, is_tag_with_value, CBORDecoder, SequenceBuffer,
 };
-use rs_minicbor::debug::Diag;
-use rs_minicbor::encoder::*;
-use rs_minicbor::error::CBORError;
-use rs_minicbor::types::*;
+use tps_minicbor::encoder::*;
+use tps_minicbor::error::CBORError;
+use tps_minicbor::types::*;
 
 // Keys constants for kid '11' from https://github.com/cose-wg/Examples/blob/master/KeySet.txt,
 // kid '11' public key in uncompressed form per SEC1, v2.0
@@ -68,8 +67,6 @@ const KID_11_PUB: [u8; 65] = [
 const KID_11_PRIV: U256 =
     U256::from_be_hex("57c92077664146e876760c9520d054aa93c3afb04e306705db6090308507b4d3");
 // NIST P256 curve modulus
-const NIST_P256_MODULUS: U256 =
-    U256::from_be_hex("FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551");
 
 fn print_bytes(s: &str, buf: &SequenceBuffer) {
     print!("{} ", s);

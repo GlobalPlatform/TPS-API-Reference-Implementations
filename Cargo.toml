@@ -17,8 +17,8 @@
 [workspace]
 
 members = [
-    "rs_minicbor",
-    "rs_cddl",
+    "tps_minicbor",
+    "tps_cddl",
     "tps_client_common",
     "tps_error",
     "tps_client_api",

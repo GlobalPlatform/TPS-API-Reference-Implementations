@@ -17,10 +17,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  **************************************************************************************************/
 
-extern crate rs_minicbor;
+extern crate tps_minicbor;
 
-use rs_minicbor::decoder::*;
-use rs_minicbor::types::*;
+use tps_minicbor::decoder::*;
+use tps_minicbor::types::*;
 
 use std::convert::TryFrom;
 use std::error::Error;

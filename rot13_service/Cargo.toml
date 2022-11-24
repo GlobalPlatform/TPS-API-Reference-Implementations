@@ -25,7 +25,7 @@ repository = "https://github.com/GlobalPlatform/TPS-API-Reference-Implementation
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rs_minicbor = { path = "../rs_minicbor" }
+tps_minicbor = { path = "../tps_minicbor" }
 tps_client_common = { path = "../tps_client_common" }
 
 #[features]                  # Features not yet used

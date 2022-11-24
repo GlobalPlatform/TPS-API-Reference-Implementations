@@ -18,8 +18,8 @@
 # rs_minicbor package definition
 
 [package]
-name = "rs_minicbor"
-version = "0.2.1"
+name = "tps_minicbor"
+version = "0.3.1"
 authors = ["Jeremy O'Donoghue<quic_jodonogh@quicinc.com"]
 edition = "2018"
 license-file = "LICENSE.txt"

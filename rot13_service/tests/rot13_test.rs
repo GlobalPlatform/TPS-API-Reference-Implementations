@@ -24,10 +24,10 @@ use rot13_service::{
     GPP_ROT13_ENCRYPT_REQ, GPP_ROT13_ENCRYPT_RSP, GPP_ROT13_ERROR_NUMERIC, GPP_ROT13_ERROR_OTHER,
     GPP_ROT13_ERROR_SPACE, GPP_ROT13_PLAINTEXT_KEY,
 };
-use rs_minicbor::decoder::{is_map, is_tag_with_value, SequenceBuffer};
-use rs_minicbor::encoder::CBORBuilder;
-use rs_minicbor::error::CBORError;
-use rs_minicbor::types::{map, tag, CBOR};
+use tps_minicbor::decoder::{is_map, is_tag_with_value, SequenceBuffer};
+use tps_minicbor::encoder::CBORBuilder;
+use tps_minicbor::error::CBORError;
+use tps_minicbor::types::{map, tag, CBOR};
 
 #[test]
 fn test_encode_lowercase_success() -> Result<(), CBORError> {
