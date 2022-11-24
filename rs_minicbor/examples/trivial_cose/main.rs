@@ -28,16 +28,14 @@
  * The signature does verify correctly, and intermediate values are as expected.
  **************************************************************************************************/
 extern crate crypto_bigint;
-extern crate rfc6979;
-extern crate ring;
+extern crate p256;
 extern crate rs_minicbor;
-extern crate sha2;
+extern crate core;
 
 use crypto_bigint::{ArrayEncoding, U256};
-use ring::signature;
-use ring::signature::{EcdsaKeyPair, ECDSA_P256_SHA256_FIXED_SIGNING};
-use ring::test::rand::FixedSliceRandom;
-use sha2::{Digest, Sha256};
+use p256::ecdsa::signature::{Signature, Signer, Verifier};
+use p256::ecdsa::{SigningKey, VerifyingKey};
+
 // Needed for deterministic nonces in test cases
 use std::error::Error;
 use std::io;
@@ -87,18 +85,6 @@ fn dup_from_slice(src: &[u8], dest: &mut Vec<u8>) {
     }
 }
 
-// Generate a value of 'k' to be used in ECDSA, following the specification in RFC6979.
-fn rfc6979drbg(priv_key: &[u8], msg: &[u8], aad: &[u8], rnd_bytes: &mut [u8; 32]) {
-    let key = U256::from_be_slice(priv_key);
-    let h = Sha256::digest(msg);
-    let k = rfc6979::generate_k::<Sha256, U256>(&key, &NIST_P256_MODULUS, &h, &aad);
-    let k = k.to_be_byte_array();
-    let k = k.as_slice();
-    for i in 0..k.len() {
-        rnd_bytes[i] = k[i];
-    }
-}
-
 // Generate the COSE_Sign1 "to be signed" structure defined in RFC9052 Section 4.4. This is
 // required for both signing and verifying
 fn construct_to_be_signed<'a>(
@@ -143,33 +129,13 @@ fn cose_sign1<'a>(
     print_bytes("To be signed", &to_be_signed);
 
     // Generate the signature
-    if let Ok(sign_key) = EcdsaKeyPair::from_private_key_and_public_key(
-        &ECDSA_P256_SHA256_FIXED_SIGNING,
-        &KID_11_PRIV.to_be_byte_array(),
-        &KID_11_PUB,
-    ) {
-        // Generate deterministic random bytes for ECDSA
-        let mut deterministic_bytes: [u8; 32] = [0; 32];
-        rfc6979drbg(
-            &KID_11_PRIV.to_be_byte_array(),
-            &to_be_signed.bytes,
-            &[],
-            &mut deterministic_bytes,
-        );
-        let rng = FixedSliceRandom {
-            bytes: deterministic_bytes.as_slice(),
-        };
+    let sign_key = SigningKey::from_bytes(&KID_11_PRIV.to_be_byte_array())?;
+    let signature = sign_key.sign(&to_be_signed.bytes);
 
-        if let Ok(signature) = sign_key.sign(&rng, &to_be_signed.bytes) {
-            enc_buf.insert(&signature.as_ref())?;
-
-            Ok(())
-        } else {
-            Err(CBORError::NotAllowed)?
-        }
-    } else {
-        Err(CBORError::MalformedEncoding)?
-    }
+    // Print signature so we can check against expected result
+    println!("Signature {:02x}", signature);
+    enc_buf.insert(&signature.as_ref())?;
+    Ok(())
 }
 
 // Perform a verify operation on a COSE_Sign1 structure
@@ -191,12 +157,12 @@ fn cose_verify1(
     )?;
     print_bytes("To be verified", &to_be_verified);
 
-    let pub_key =
-        signature::UnparsedPublicKey::new(&signature::ECDSA_P256_SHA256_FIXED, &KID_11_PUB);
-    let result = pub_key.verify(to_be_verified.bytes, signature);
-    match result {
-        Ok(()) => Ok(()),
-        Err(_) => Err(CBORError::MalformedEncoding)?,
+    let pub_key = VerifyingKey::from_sec1_bytes(&KID_11_PUB)?;
+    let sig = Signature::from_bytes(signature)?;
+    if pub_key.verify(&to_be_verified.bytes, &sig).is_ok() {
+        Ok(())
+    } else {
+        Err(CBORError::MalformedEncoding)?
     }
 }
 

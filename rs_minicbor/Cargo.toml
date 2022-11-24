@@ -60,11 +60,8 @@ func_trace = "1.0.3"                                # MIT licensed
 chrono = { version = "0.4.22", optional = true }    # Dual-licensed, MIT or Apache-2.0
 
 # The below dependencies are needed to buidl/run the trivial_cose examples
-ring = "0.16.20"                                    # Basically BoringSSL. ISC + 3 Clause BSD + MIT
-crypto-bigint = "0.4.9"
-rfc6979 = "0.3.0"
-sha2 = "0.10.6"
-p256 = { version = "0.11.1", features = ["ecdsa"] }
+p256 = { version = "0.11.1", features = ["arithmetic", "ecdsa", "ecdsa-core"] } # Dual-licensed: MIT or Apache-2.0
+crypto-bigint = "0.4.9"                             # Dual-licensed, MIT or Apache-20.
 
 [profile.release]
 opt-level = 'z'   # Optimize for size.
