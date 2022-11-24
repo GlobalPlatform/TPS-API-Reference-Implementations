@@ -120,17 +120,17 @@ extern crate std;
 #[cfg(all(not(feature = "std"), not(test)))]
 extern crate core as std;
 
-extern crate rs_minicbor;
+extern crate tps_minicbor;
 extern crate tps_client_common;
 
 use std::mem::size_of;
 
-use rs_minicbor::decoder::{is_map, is_tag, CBORDecoder, SequenceBuffer};
-use rs_minicbor::encoder::CBORBuilder;
-use rs_minicbor::error::CBORError;
-use rs_minicbor::types::{array, map, tag, CBOR};
 use tps_client_common::c_login::LOGIN_PUBLIC;
 use tps_client_common::c_structs::ServiceVersion;
+use tps_minicbor::decoder::{is_map, is_tag, CBORDecoder, SequenceBuffer};
+use tps_minicbor::encoder::CBORBuilder;
+use tps_minicbor::error::CBORError;
+use tps_minicbor::types::{array, map, tag, CBOR};
 
 /***************************************************************************************************
  * Constants

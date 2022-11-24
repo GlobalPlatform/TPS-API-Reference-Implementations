@@ -1,11 +1,11 @@
-# RS-MINICBOR
+# TPS-MINICBOR
 
 An implementation of CBOR in Rust which is aimed at relatively constrained embedded
 systems where the Serde implementation is not necessarily well suited.
 
 ## License
 
-`rs_minicbor` is MIT licensed. See LICENSE.
+`tps_minicbor` is MIT licensed. See LICENSE.
 
 ## Features
 
@@ -33,7 +33,7 @@ systems where the Serde implementation is not necessarily well suited.
 - Does not support Canonical CBOR
 - Does not support preferred serialization for arrays and maps
 - Does not support indefinite length encoding
-- Does not support Bignum, DecFrac or BigFloat
+- Does not directly support Bignum, DecFrac or BigFloat
 
 ## Testing
 
@@ -68,7 +68,7 @@ In CBOR diagnostic format, this is displayed as:
 }
 ```
 
-This is encoded in rs_minicbor as:
+This is encoded in tps_minicbor as:
 
 ```rust
 fn encode_tee_eat() -> Result<(), CBORError> {
@@ -140,4 +140,67 @@ fn decode_tee_eat() -> Result<(), CBORError> {
     })?;
  Ok(())
 }
+```
+
+### Examples
+
+#### decode
+
+The `decode` example is a very short sample of the use of the low-level decode API.
+
+To run the example, from the top directory of the `tps_minicbor` crate:
+
+```shell
+cargo run --example decode --features=full
+```
+
+The expected output is:
+
+```shell
+v1 = Ok(1000), v2 = Ok(1000), v3 = Ok(1000), v4 = Err(OutOfRange)
+r1 = UInt(1000), e = Some(Eof)
+Value: UInt(1000)
+```
+
+#### trivial_cose
+
+The `trivial_cose` example is an implementation of the `COSE_Sign1` single signer example in RFC9052
+Appendix C.2.1. Keys, the message to be signed and other aspects of the cryptographic configuration
+are hard-coded to the values in the Appendix.
+
+While the example is called `trivial_cose` as it implements only the very simplest COSE example, it does
+stand as a good example of how to encode and decode moderately complex CBOR structures. All of the inputs
+and outputs are bit-exact against the example, thanks to the use of deterministic ECDSA in the signature.
+
+The code also serves as a simplistic example of how to do ECDSA using the Rust crypto traits - something
+for which there is a dearth of realistic examples.
+
+> Note: The p256 crate used for ECDSA has not been audited. Please see the warning on the 
+> [p256 crate](https://github.com/RustCrypto/elliptic-curves/tree/master/p256), and perform your own
+> due diligence before use in production.
+
+To run the example, from the top directory of the `tps_minicbor` crate:
+
+```shell
+cargo run --example trivial_cose --features=full
+```
+
+The expected output is:
+
+```shell
+To be signed 846a5369676e61747572653143a101264054546869732069732074686520636f6e74656e742e
+Signature 8eb33e4ca31d1c465ab05aac34cc6b23d58fef5c083106c4d25a91aef0b0117e2af9a291aa32e14ab834dc56ed2a223444547e01f11d3b0916e5a4c345cacb36
+Output d28443a10126a10242313154546869732069732074686520636f6e74656e742e58408eb33e4ca31d1c465ab05aac34cc6b23d58fef5c083106c4d25a91aef0b0117e2af9a291aa32e14ab834dc56ed2a223444547e01f11d3b0916e5a4c345cacb36
+ 18(     [
+   h'a10126' ,
+   {
+      2 :  h'3131' ,
+   }
+,
+   h'546869732069732074686520636f6e74656e742e' ,
+   h'8eb33e4ca31d1c465ab05aac34cc6b23d58fef5c083106c4d25a91aef0b0117e2af9a291aa32e14ab834dc56ed2a223444547e01f11d3b0916e5a4c345cacb36' ,
+ ],
+ )
+To be verified 846a5369676e61747572653143a101264054546869732069732074686520636f6e74656e742e
+Verification succeeded: message content [84, 104, 105, 115, 32, 105, 115, 32, 116, 104, 101, 32, 99, 111, 110, 116, 101, 110, 116, 46]
 ```

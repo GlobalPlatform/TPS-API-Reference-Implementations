@@ -36,7 +36,7 @@ This project is composed of multiple sub-crates:
 - `rot13_connector` provides a minimal implementation of the TPS Connector API
 - `rot13_service` provides a minimal implementation of a TPS Service (in this case, ROT13
   "encryption).
-- `rs_minicbor` is an implementation of [IETF CBOR (RFC8949)](https://www.rfc-editor.org/rfc/rfc8949.html)
+- `tps_minicbor` is an implementation of [IETF CBOR (RFC8949)](https://www.rfc-editor.org/rfc/rfc8949.html)
   encoding and decoding, with no requirement for an allocator or the standard
   library.
 
@@ -111,5 +111,62 @@ cd ..
 cmake --build cmake-build-debug
 ```
 
-### Running the Example
+### Running the TPS Client API End-to-end Example 
 
+This example can be found in `tps_client_c/c_example/c_example.c`. It is about the simples possible example of
+performing a service discovery and then performing an "encryption" using the ROT13 service.
+
+The object file produced compiling `c_example.c` is linked with the libraries generated for the TPS Client API
+(`libtps_client_api_c.a`) and for the ROT13 connector (`librot13_connector.a`).
+
+You can run the example as follows (from the top directory of the repository, and assuming you are using a Unix-like
+shell)
+
+```shell
+cd cmake-build-debug/tps_client_c/c_example
+./c_example
+```
+
+The expected output is:
+
+```shell
+Input Message
+ca,
+a1, 1, 70, 54, 68, 69, 73, 67,
+6f, 65, 73, 74, 6f, 65, 6c, 65,
+76, 65, 6e,
+Received Message
+ca,
+a1, 1, 70, 47, 75, 76, 66, 74,
+62, 72, 66, 67, 62, 72, 79, 72,
+69, 72, 61, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0,
+```
