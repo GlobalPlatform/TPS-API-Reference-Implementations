@@ -247,9 +247,9 @@ impl<F> EncodeItem for Map<F>
 /// [`insert_key_value`] helps to avoid errors.
 ///
 /// ```
-///# use rs_minicbor::encoder::CBORBuilder;
-///# use rs_minicbor::error::CBORError;
-///# use rs_minicbor::types::map;
+///# use tps_minicbor::encoder::CBORBuilder;
+///# use tps_minicbor::error::CBORError;
+///# use tps_minicbor::types::map;
 ///# fn main() -> Result<(), CBORError> {
 ///    let mut buffer = [0u8; 16];
 ///    let expected : &[u8] = &[162, 1, 101, 72, 101, 108, 108, 111, 2, 101, 87, 111, 114, 108, 100];

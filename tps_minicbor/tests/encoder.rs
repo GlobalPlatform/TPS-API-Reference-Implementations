@@ -22,13 +22,13 @@
  * Test cases from RFC7049, Table 4.
  **************************************************************************************************/
 
-extern crate rs_minicbor;
+extern crate tps_minicbor;
 
 use half::f16;
-use rs_minicbor::decoder::*;
-use rs_minicbor::encoder::*;
-use rs_minicbor::error::CBORError;
-use rs_minicbor::types::{array, map, tag, CBOR};
+use tps_minicbor::decoder::*;
+use tps_minicbor::encoder::*;
+use tps_minicbor::error::CBORError;
+use tps_minicbor::types::{array, map, tag, CBOR};
 
 #[test]
 fn rfc8949_encode_int() -> Result<(), CBORError> {
