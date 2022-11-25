@@ -144,9 +144,9 @@ where F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBu
 /// closure which constructs the array contents.
 ///
 /// ```
-///# use rs_minicbor::encoder::CBORBuilder;
-///# use rs_minicbor::error::CBORError;
-///# use rs_minicbor::types::array;
+///# use tps_minicbor::encoder::CBORBuilder;
+///# use tps_minicbor::error::CBORError;
+///# use tps_minicbor::types::array;
 ///# fn main() -> Result<(), CBORError> {
 ///    let mut buffer = [0u8; 16];
 ///    let expected : &[u8] = &[132, 1, 2, 3, 4];

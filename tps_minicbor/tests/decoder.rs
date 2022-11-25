@@ -22,14 +22,14 @@
  * Test cases from RFC7049, Table 4.
  **************************************************************************************************/
 
-extern crate rs_minicbor;
+extern crate tps_minicbor;
 
 use core::convert::TryFrom;
 use half::f16;
 
-use rs_minicbor::decoder::*;
-use rs_minicbor::error::CBORError;
-use rs_minicbor::types::CBOR;
+use tps_minicbor::decoder::*;
+use tps_minicbor::error::CBORError;
+use tps_minicbor::types::CBOR;
 
 macro_rules! check_int_result {
     ($result:expr, $expected:expr) => {

@@ -63,9 +63,9 @@ struct MtUnset(usize);
 /// Usage is something similar to the following:
 ///
 /// ```
-///# use rs_minicbor::encoder::CBORBuilder;
-///# use rs_minicbor::error::CBORError;
-///# use rs_minicbor::types::array;
+///# use tps_minicbor::encoder::CBORBuilder;
+///# use tps_minicbor::error::CBORError;
+///# use tps_minicbor::types::array;
 ///# fn main() -> Result<(), CBORError> {
 ///    let mut buffer = [0u8; 64];
 ///    let expected : &[u8] = &[0x83, 0x01, 0x82, 0x02, 0x03, 0x82, 0x04, 0x05];
@@ -133,11 +133,10 @@ impl<'buf> CBORBuilder<'buf> {
 /// cases it is wrapped with a `CBORBuilder`, but it can be used stand-alone in which case the
 /// simplest code looks something like:
 /// ```
-///# use rs_minicbor::encoder::EncodeBuffer;
-///# use rs_minicbor::error::CBORError;
-///# use rs_minicbor::types::array;
+///# use tps_minicbor::encoder::EncodeBuffer;
+///# use tps_minicbor::error::CBORError;
+///# use tps_minicbor::types::array;
 ///# fn main() -> Result<(), CBORError> {
-///    use rs_minicbor::encoder::EncodeBuffer;
 /// let mut buffer = [0u8; 64];
 ///    let expected : &[u8] = &[24, 32];
 ///
@@ -167,7 +166,7 @@ where
     /// underlying mutable buffer to be re-used.
     ///
     /// ```
-    ///# use rs_minicbor::encoder::EncodeBuffer;
+    ///# use tps_minicbor::encoder::EncodeBuffer;
     /// let mut buf = [0u8; 16];
     /// let mut encode_buffer = EncodeBuffer::new(&mut buf);
     /// ```
