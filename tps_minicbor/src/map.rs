@@ -27,9 +27,12 @@ use crate::ast::CBOR;
 use crate::decode::{DecodeBufIterator, DecodeBufIteratorSource};
 use crate::error::CBORError;
 
+use crate::encode::{EncodeBuffer, EncodeContext, EncodeItem};
+
+use std::convert::{From, Into, TryFrom};
+
 #[cfg(feature = "trace")]
 use func_trace::trace;
-use crate::encode::{EncodeBuffer, EncodeContext, EncodeItem};
 
 #[cfg(feature = "trace")]
 func_trace::init_depth_var!();
@@ -72,6 +75,22 @@ impl<'buf> MapBuf<'buf> {
         self.n_pairs == 0 && self.bytes.len() == 0
     }
 
+    pub fn lookup<K, V>(self, key: K) -> Result<V, CBORError>
+    where
+        K: Into<CBOR<'buf>>,
+        V: TryFrom<CBOR<'buf>> + Clone,
+    {
+        match self.get(&key.into()) {
+            Some(cbor) => match V::try_from(cbor) {
+                Ok(v) => {
+                    Ok(v)
+                }
+                Err(_) => Err(CBORError::IncompatibleType),
+            },
+            None => Err(CBORError::KeyNotPresent),
+        }
+    }
+
     /// Return `true` if `MapBuf` contains the provided key
     #[cfg_attr(feature = "trace", trace)]
     #[inline]
@@ -99,7 +118,7 @@ impl<'buf> MapBuf<'buf> {
     #[cfg_attr(feature = "trace", trace)]
     #[inline]
     pub fn get_int(self, v: i64) -> Option<CBOR<'buf>> {
-        self.get(&CBOR::from_i64(v))
+        self.get(&CBOR::from(v))
     }
 
     /// Return the value corresponding to an integer key.
@@ -109,7 +128,7 @@ impl<'buf> MapBuf<'buf> {
     #[cfg_attr(feature = "trace", trace)]
     #[inline]
     pub fn get_tstr(self, v: &str) -> Option<CBOR<'buf>> {
-        self.get(&CBOR::from_str(v))
+        self.get(&CBOR::from(v))
     }
 
     /// Return value corresponding to a map item that can have either an integer or a string
@@ -142,14 +161,14 @@ impl<'buf> MapBuf<'buf> {
     #[cfg_attr(feature = "trace", trace)]
     #[inline]
     pub fn get_int_key_value(self, key: i64) -> Option<(CBOR<'buf>, CBOR<'buf>)> {
-        self.get_key_value(&CBOR::from_i64(key))
+        self.get_key_value(&CBOR::from(key))
     }
 
     /// Return the (key, value) pair corresponding to an tstr used as a key
     #[cfg_attr(feature = "trace", trace)]
     #[inline]
     pub fn get_tstr_key_value(self, key: &str) -> Option<(CBOR<'buf>, CBOR<'buf>)> {
-        self.get_key_value(&CBOR::from_str(key))
+        self.get_key_value(&CBOR::from(key))
     }
 
     /// Return (key, value) pair  corresponding to a map item that can have either an integer or a
@@ -202,7 +221,6 @@ impl<'buf> IntoIterator for MapBuf<'buf> {
     }
 }
 
-
 /***************************************************************************************************
  * Encoding Maps
  **************************************************************************************************/
@@ -215,22 +233,38 @@ impl<'buf> IntoIterator for MapBuf<'buf> {
 ///
 /// Users should never need to directly instantiate `Map`. Instead, see [`map`].
 pub struct Map<F>
-    where F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError> {
-    f: F
+where
+    F: for<'f, 'buf> Fn(
+        &'f mut EncodeBuffer<'buf>,
+    ) -> Result<&'f mut EncodeBuffer<'buf>, CBORError>,
+{
+    f: F,
 }
 
 /// `Map` provides a constructor to contain the closure that constructs it
-impl<F> Map<F> where
-    F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError> {
-    pub fn new(f: F) -> Map<F> { Map { f } }
+impl<F> Map<F>
+where
+    F: for<'f, 'buf> Fn(
+        &'f mut EncodeBuffer<'buf>,
+    ) -> Result<&'f mut EncodeBuffer<'buf>, CBORError>,
+{
+    pub fn new(f: F) -> Map<F> {
+        Map { f }
+    }
 }
 
 /// The [`EncodeItem`] instance for `Map` performs the required manipulations to correctly
 /// calculate the size of the map and ensure that the number of items inserted is a multiple of two.
 impl<F> EncodeItem for Map<F>
-    where F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError>
+where
+    F: for<'f, 'buf> Fn(
+        &'f mut EncodeBuffer<'buf>,
+    ) -> Result<&'f mut EncodeBuffer<'buf>, CBORError>,
 {
-    fn encode<'f, 'buf>(&self, buf: &'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError> {
+    fn encode<'f, 'buf>(
+        &self,
+        buf: &'f mut EncodeBuffer<'buf>,
+    ) -> Result<&'f mut EncodeBuffer<'buf>, CBORError> {
         let mut map_ctx = EncodeContext::new();
         buf.map_start(&mut map_ctx)?;
         let _ = (self.f)(buf)?;
@@ -238,7 +272,6 @@ impl<F> EncodeItem for Map<F>
         Ok(buf)
     }
 }
-
 
 /// A convenience function for the user to create an instance of a CBOR map. The user provides a
 /// closure which constructs the map contents.
@@ -264,7 +297,10 @@ impl<F> EncodeItem for Map<F>
 ///# }
 /// ```
 pub fn map<F>(f: F) -> Map<F>
-    where F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError>
+where
+    F: for<'f, 'buf> Fn(
+        &'f mut EncodeBuffer<'buf>,
+    ) -> Result<&'f mut EncodeBuffer<'buf>, CBORError>,
 {
     Map::new(f)
 }

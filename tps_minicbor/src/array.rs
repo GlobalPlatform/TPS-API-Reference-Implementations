@@ -23,6 +23,7 @@
  * This implementation is designed for use in constrained systems and requires neither the Rust
  * standard library nor an allocator.
  **************************************************************************************************/
+use std::convert::TryFrom;
 use crate::ast::CBOR;
 use crate::decode::{DecodeBufIterator, DecodeBufIteratorSource};
 
@@ -72,7 +73,7 @@ impl<'buf> ArrayBuf<'buf> {
         self.n_items == 0 && self.bytes.len() == 0
     }
 
-    /// Return the `n`th value (zero indexed) in the `ArrayBuf`.
+    /// Return the `n`th value (zero indexed) in the `ArrayBuf` as a CBOR item.
     ///
     /// Worst case performance of this function is O(n) in standalone form, but performance is
     /// likely to be O(n^2) if used for random access in general.
@@ -86,6 +87,22 @@ impl<'buf> ArrayBuf<'buf> {
             count += 1;
         }
         item
+    }
+
+    /// Return the `n`th value (zero indexed) in the `ArrayBuf`, converted (fallibly) from CBOR.
+    ///
+    /// Worst case performance of this function is O(n) in standalone form, but performance is
+    /// likely to be O(n^2) if used for random access in general.
+    pub fn item<V>(&'buf self, idx: usize) -> Result<V, CBORError>
+    where V: TryFrom<CBOR<'buf>> + Clone
+    {
+        match self.index(idx) {
+            Some(cbor) => match V::try_from(cbor) {
+                Ok(v) => Ok(v.clone()),
+                Err(_) => Err(CBORError::IncompatibleType)
+            },
+            None => Err(CBORError::IndexOutOfBounds)
+        }
     }
 }
 
@@ -147,12 +164,13 @@ where F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBu
 ///# use tps_minicbor::encoder::CBORBuilder;
 ///# use tps_minicbor::error::CBORError;
 ///# use tps_minicbor::types::array;
+///
 ///# fn main() -> Result<(), CBORError> {
 ///    let mut buffer = [0u8; 16];
 ///    let expected : &[u8] = &[132, 1, 2, 3, 4];
 ///
 ///    let mut encoder = CBORBuilder::new(&mut buffer);
-///    encoder.insert(&array(|buff| {
+///    let _ = encoder.insert(&array(|buff| {
 ///        buff.insert(&1)?.insert(&2)?.insert(&3)?.insert(&4)
 ///    }));
 ///    assert_eq!(encoder.encoded()?, expected);

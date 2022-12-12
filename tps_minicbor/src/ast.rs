@@ -24,7 +24,7 @@
  * standard library nor an allocator.
  **************************************************************************************************/
 use crate::array::ArrayBuf;
-use crate::error::{CBORError, Result};
+use crate::error::CBORError;
 use crate::map::MapBuf;
 use crate::tag::TagBuf;
 
@@ -124,12 +124,156 @@ pub enum CBOR<'buf> {
     Eof,
 }
 
-impl<'buf> CBOR<'buf> {
-    /// Attempt to convert CBOR into u8
-    #[cfg_attr(feature = "trace", trace)]
+/***************************************************************************************************
+ * Standard Trait Implementations: From value to CBOR. Always succeeds
+ **************************************************************************************************/
+
+/// Convert a bool into CBOR
+impl<'buf> From<bool> for CBOR<'buf> {
+    #[inline(always)]
+    fn from(v: bool) -> Self {
+        if v {
+            Self::True
+        } else {
+            Self::False
+        }
+    }
+}
+
+/// Convert a u8 into CBOR
+impl<'buf> From<u8> for CBOR<'buf> {
+    #[inline(always)]
+    fn from(v: u8) -> Self {
+        Self::UInt(v as u64)
+    }
+}
+
+/// Convert a u16 into CBOR
+impl<'buf> From<u16> for CBOR<'buf> {
+    #[inline(always)]
+    fn from(v: u16) -> Self {
+        Self::UInt(v as u64)
+    }
+}
+
+/// Convert a u32 into CBOR
+impl<'buf> From<u32> for CBOR<'buf> {
+    #[inline(always)]
+    fn from(v: u32) -> Self {
+        Self::UInt(v as u64)
+    }
+}
+
+/// Convert a u64 into CBOR
+impl<'buf> From<u64> for CBOR<'buf> {
+    #[inline(always)]
+    fn from(v: u64) -> Self {
+        Self::UInt(v)
+    }
+}
+
+/// Convert an i8 into CBOR
+impl<'buf> From<i8> for CBOR<'buf> {
     #[inline]
-    pub fn try_into_u8(self) -> Result<u8> {
-        if let Self::UInt(v) = self {
+    fn from(v: i8) -> Self {
+        if v < 0 {
+            Self::NInt((-1 - (v as i64)) as u64)
+        } else {
+            Self::UInt(v as u64)
+        }
+    }
+}
+
+/// Convert an i16 into CBOR
+impl<'buf> From<i16> for CBOR<'buf> {
+    #[inline]
+    fn from(v: i16) -> Self {
+        if v < 0 {
+            Self::NInt((-1 - (v as i64)) as u64)
+        } else {
+            Self::UInt(v as u64)
+        }
+    }
+}
+
+/// Convert an i32 into CBOR
+impl<'buf> From<i32> for CBOR<'buf> {
+    #[inline]
+    fn from(v: i32) -> Self {
+        if v < 0 {
+            Self::NInt((-1 - (v as i64)) as u64)
+        } else {
+            Self::UInt(v as u64)
+        }
+    }
+}
+
+/// Convert an i64 into CBOR
+impl<'buf> From<i64> for CBOR<'buf> {
+    #[inline]
+    fn from(v: i64) -> Self {
+        if v < 0 {
+            Self::NInt((-1 - (v as i64)) as u64)
+        } else {
+            Self::UInt(v as u64)
+        }
+    }
+}
+
+/// Convert an &str into CBOR.
+///
+/// # Lifetime
+///
+/// The str reference *must* last at least as long as the CBOR item. If the
+/// item is later encoded, it will be copied, but only at encode time.
+impl<'buf> From<&'buf str> for CBOR<'buf> {
+    #[inline]
+    fn from(v: &'buf str) -> Self {
+        Self::Tstr(v)
+    }
+}
+
+/// Convert an &[u8] into CBOR.
+///
+/// # Lifetime
+///
+/// The str reference *must* last at least as long as the CBOR item. If the
+/// item is later encoded, it will be copied, but only at encode time.
+impl<'buf> From<&'buf [u8]> for CBOR<'buf> {
+    #[inline]
+    fn from(v: &'buf [u8]) -> Self {
+        Self::Bstr(v)
+    }
+}
+
+/***************************************************************************************************
+ * Standard Trait Implementations: Try to convert CBOR into a value. Always fallible
+ **************************************************************************************************/
+
+/// Attempt to convert CBOR into bool
+impl<'buf> TryFrom<CBOR<'buf>> for bool {
+    type Error = CBORError;
+
+    #[cfg_attr(feature = "trace", trace)]
+    fn try_from(value: CBOR) -> core::result::Result<Self, Self::Error> {
+        if let CBOR::True = value {
+            Ok(true)
+        } else if let CBOR::False = value {
+            Ok(false)
+        } else {
+            Err(CBORError::IncompatibleType)
+        }
+    }
+}
+
+
+/// Attempt to convert CBOR into u8
+impl<'buf> TryFrom<CBOR<'buf>> for u8 {
+    type Error = CBORError;
+
+    #[cfg_attr(feature = "trace", trace)]
+    fn try_from(value: CBOR) -> core::result::Result<Self, Self::Error> {
+        if let CBOR::UInt(v) = value {
             if v <= u8::MAX as u64 {
                 Ok(v as u8)
             } else {
@@ -139,12 +283,15 @@ impl<'buf> CBOR<'buf> {
             Err(CBORError::IncompatibleType)
         }
     }
+}
 
-    /// Attempt to convert CBOR into u16
+/// Attempt to convert CBOR into u16
+impl<'buf> TryFrom<CBOR<'buf>> for u16 {
+    type Error = CBORError;
+
     #[cfg_attr(feature = "trace", trace)]
-    #[inline]
-    pub fn try_into_u16(self) -> Result<u16> {
-        if let Self::UInt(v) = self {
+    fn try_from(value: CBOR) -> core::result::Result<Self, Self::Error> {
+        if let CBOR::UInt(v) = value {
             if v <= u16::MAX as u64 {
                 Ok(v as u16)
             } else {
@@ -154,12 +301,15 @@ impl<'buf> CBOR<'buf> {
             Err(CBORError::IncompatibleType)
         }
     }
+}
 
-    /// Attempt to convert CBOR into u32
+/// Attempt to convert CBOR into u32
+impl<'buf> TryFrom<CBOR<'buf>> for u32 {
+    type Error = CBORError;
+
     #[cfg_attr(feature = "trace", trace)]
-    #[inline]
-    pub fn try_into_u32(self) -> Result<u32> {
-        if let Self::UInt(v) = self {
+    fn try_from(value: CBOR) -> core::result::Result<Self, Self::Error> {
+        if let CBOR::UInt(v) = value {
             if v <= u32::MAX as u64 {
                 Ok(v as u32)
             } else {
@@ -169,51 +319,152 @@ impl<'buf> CBOR<'buf> {
             Err(CBORError::IncompatibleType)
         }
     }
+}
 
-    /// Attempt to convert CBOR into u64
+/// Attempt to convert CBOR into u64
+impl<'buf> TryFrom<CBOR<'buf>> for u64 {
+    type Error = CBORError;
+
     #[cfg_attr(feature = "trace", trace)]
-    #[inline]
-    pub fn try_into_u64(self) -> Result<u64> {
-        if let Self::UInt(v) = self {
+    fn try_from(value: CBOR) -> core::result::Result<Self, Self::Error> {
+        if let CBOR::UInt(v) = value {
             Ok(v)
         } else {
             Err(CBORError::IncompatibleType)
         }
     }
+}
 
-    /// Attempt to convert CBOR into u64
-    ///
-    /// This will always succeed for integer values as CBOR only supports values over 64 bits
-    /// which all fit on 128 bits.
+/// Attempt to convert CBOR into i8
+///
+/// This will fail, for unsigned values, if n > i8::MAX
+/// This will fail, for signed values, if n < i8::MIN
+///
+/// For positive values it is sufficient to check the MSB is not set (MSB used for 2's
+/// complement sign)
+///
+/// For negative values it is also sufficient to check that the MSB is not set. This is because
+/// it gives us a minimum value of -1 - (2^(n-1) - 1), for example, if we have the value -128
+/// (i8::MIN), it is represented as 1 - 127. Similar rules apply for all signed types.
+impl<'buf> TryFrom<CBOR<'buf>> for i8 {
+    type Error = CBORError;
+
     #[cfg_attr(feature = "trace", trace)]
-    #[inline]
-    pub fn try_into_i128(self) -> Result<i128> {
-        match self {
+    fn try_from(value: CBOR) -> core::result::Result<Self, Self::Error> {
+        match value {
             // Positive integer.
-            Self::UInt(v) => Ok(v as i128),
-            // Negative integer. Add one to the stored uint
-            Self::NInt(v) => Ok(-1 - (v as i128)),
+            CBOR::UInt(val) => {
+                if val <= i8::MAX as u64 {
+                    Ok(val as i8)
+                } else {
+                    // Overflow case
+                    Err(CBORError::OutOfRange)
+                }
+            }
+            // Negative integer.
+            CBOR::NInt(val) => {
+                // Unsigned value is checked against i32::MAX as encoding 1 - val
+                if val <= i8::MAX as u64 {
+                    Ok(-1 - (val as i8))
+                } else {
+                    Err(CBORError::OutOfRange)
+                }
+            }
             _ => Err(CBORError::IncompatibleType),
         }
     }
+}
 
-    /// Attempt to convert CBOR into i64
-    ///
-    /// This will fail, for unsigned values, if n > i64::MAX
-    /// This will fail, for signed values, if n < i64::MIN
-    ///
-    /// For positive values it is sufficient to check the MSB is not set (MSB used for 2's
-    /// complement sign)
-    ///
-    /// For negative values it is also sufficient to check that the MSB is not set. This is because
-    /// it gives us a minimum value of -1 - (2^(n-1) - 1), for example, if we have the value -128
-    /// (i8::MIN), it is represented as 1 - 127. Similar rules apply for all signed types.
+/// Attempt to convert CBOR into i16
+/// This will fail, for unsigned values, if n > i16::MAX
+/// This will fail, for signed values, if n < i16::MIN
+///
+/// For positive values it is sufficient to check the MSB is not set (MSB used for 2's
+/// complement sign)
+///
+/// For negative values it is also sufficient to check that the MSB is not set. This is because
+/// it gives us a minimum value of -1 - (2^(n-1) - 1), for example, if we have the value -128
+/// (i8::MIN), it is represented as 1 - 127. Similar rules apply for all signed types.
+impl<'buf> TryFrom<CBOR<'buf>> for i16 {
+    type Error = CBORError;
+
     #[cfg_attr(feature = "trace", trace)]
-    #[inline]
-    pub fn try_into_i64(self) -> Result<i64> {
-        match self {
+    fn try_from(value: CBOR) -> core::result::Result<Self, Self::Error> {
+        match value {
             // Positive integer.
-            Self::UInt(val) => {
+            CBOR::UInt(val) => {
+                if val <= i16::MAX as u64 {
+                    Ok(val as i16)
+                } else {
+                    // Overflow case
+                    Err(CBORError::OutOfRange)
+                }
+            }
+            // Negative integer.
+            CBOR::NInt(val) => {
+                // Unsigned value is checked against i32::MAX as encoding 1 - val
+                if val <= i16::MAX as u64 {
+                    Ok(-1 - (val as i16))
+                } else {
+                    Err(CBORError::OutOfRange)
+                }
+            }
+            _ => Err(CBORError::IncompatibleType),
+        }
+    }
+}
+
+/// Attempt to convert CBOR into i32
+///
+/// This will fail, for unsigned values, if n > i32::MAX
+/// This will fail, for signed values, if n < i32::MIN
+impl<'buf> TryFrom<CBOR<'buf>> for i32 {
+    type Error = CBORError;
+
+    fn try_from(value: CBOR) -> core::result::Result<Self, Self::Error> {
+        match value {
+            // Positive integer.
+            CBOR::UInt(val) => {
+                if val <= i32::MAX as u64 {
+                    Ok(val as i32)
+                } else {
+                    // Overflow case
+                    Err(CBORError::OutOfRange)
+                }
+            }
+            // Negative integer.
+            CBOR::NInt(val) => {
+                // Unsigned value is checked against i32::MAX as encoding 1 - val
+                if val <= i32::MAX as u64 {
+                    Ok(-1 - (val as i32))
+                } else {
+                    Err(CBORError::OutOfRange)
+                }
+            }
+            _ => Err(CBORError::IncompatibleType),
+        }
+    }
+}
+
+/// Attempt to convert CBOR into i64
+///
+/// This will fail, for unsigned values, if n > i64::MAX
+/// This will fail, for signed values, if n < i64::MIN
+///
+/// For positive values it is sufficient to check the MSB is not set (MSB used for 2's
+/// complement sign)
+///
+/// For negative values it is also sufficient to check that the MSB is not set. This is because
+/// it gives us a minimum value of -1 - (2^(n-1) - 1), for example, if we have the value -128
+/// (i8::MIN), it is represented as 1 - 127. Similar rules apply for all signed types.impl<'buf> TryFrom<CBOR<'buf>> for i64 {
+impl<'buf> TryFrom<CBOR<'buf>> for i64 {
+    type Error = CBORError;
+
+    #[cfg_attr(feature = "trace", trace)]
+    fn try_from(value: CBOR) -> core::result::Result<Self, Self::Error> {
+        match value {
+            // Positive integer.
+            CBOR::UInt(val) => {
                 if val & 1 << 63 == 0 {
                     // Good case. Transmute relies on internal representation of integers
                     Ok(unsafe { transmute::<u64, i64>(val) })
@@ -223,7 +474,7 @@ impl<'buf> CBOR<'buf> {
                 }
             }
             // Negative integer. Add one to the stored uint
-            Self::NInt(val) => {
+            CBOR::NInt(val) => {
                 if val & 1 << 63 == 0 {
                     // 2's complement (only the complement required as store -1 -n
                     let v = !val;
@@ -236,310 +487,85 @@ impl<'buf> CBOR<'buf> {
             _ => Err(CBORError::IncompatibleType),
         }
     }
+}
 
-    /// Attempt to convert CBOR into i32
-    ///
-    /// This will fail, for unsigned values, if n > i32::MAX
-    /// This will fail, for signed values, if n < i32::MIN
+/// Attempt to convert CBOR into i128
+///
+/// This will always succeed for integer values as CBOR only supports values over 64 bits
+/// which all fit on 128 bits.
+impl<'buf> TryFrom<CBOR<'buf>> for i128 {
+    type Error = CBORError;
+
     #[cfg_attr(feature = "trace", trace)]
-    #[inline]
-    pub fn try_into_i32(self) -> Result<i32> {
-        match self {
+    fn try_from(value: CBOR) -> core::result::Result<Self, Self::Error> {
+        match value {
             // Positive integer.
-            Self::UInt(val) => {
-                if val <= i32::MAX as u64 {
-                    Ok(val as i32)
-                } else {
-                    // Overflow case
-                    Err(CBORError::OutOfRange)
-                }
-            }
-            // Negative integer.
-            Self::NInt(val) => {
-                // Unsigned value is checked against i32::MAX as encoding 1 - val
-                if val <= i32::MAX as u64 {
-                    Ok(-1 - (val as i32))
-                } else {
-                    Err(CBORError::OutOfRange)
-                }
-            }
+            CBOR::UInt(v) => Ok(v as i128),
+            // Negative integer. Add one to the stored uint
+            CBOR::NInt(v) => Ok(-1 - (v as i128)),
             _ => Err(CBORError::IncompatibleType),
         }
     }
+}
 
-    /// Attempt to convert CBOR into i16
-    /// This will fail, for unsigned values, if n > i16::MAX
-    /// This will fail, for signed values, if n < i16::MIN
-    ///
-    /// For positive values it is sufficient to check the MSB is not set (MSB used for 2's
-    /// complement sign)
-    ///
-    /// For negative values it is also sufficient to check that the MSB is not set. This is because
-    /// it gives us a minimum value of -1 - (2^(n-1) - 1), for example, if we have the value -128
-    /// (i8::MIN), it is represented as 1 - 127. Similar rules apply for all signed types.
+/// Attempt to convert a CBOR value into a &str
+///
+/// # Lifetime
+///
+/// The lifetime of the str will be the lifetime of the underlying buffer
+/// on which the CBOR item is bounded.
+impl<'buf> TryFrom<CBOR<'buf>> for &'buf str {
+    type Error = CBORError;
+
     #[cfg_attr(feature = "trace", trace)]
-    #[inline]
-    pub fn try_into_i16(self) -> Result<i16> {
-        match self {
-            // Positive integer.
-            Self::UInt(val) => {
-                if val <= i16::MAX as u64 {
-                    Ok(val as i16)
-                } else {
-                    // Overflow case
-                    Err(CBORError::OutOfRange)
-                }
-            }
-            // Negative integer.
-            Self::NInt(val) => {
-                // Unsigned value is checked against i32::MAX as encoding 1 - val
-                if val <= i16::MAX as u64 {
-                    Ok(-1 - (val as i16))
-                } else {
-                    Err(CBORError::OutOfRange)
-                }
-            }
+    fn try_from(value: CBOR<'buf>) -> core::result::Result<Self, Self::Error> {
+        match value {
+            CBOR::Tstr(s) => Ok(s),
             _ => Err(CBORError::IncompatibleType),
         }
     }
+}
 
-    /// Attempt to convert CBOR into i8
-    ///
-    /// This will fail, for unsigned values, if n > i8::MAX
-    /// This will fail, for signed values, if n < i8::MIN
-    ///
-    /// For positive values it is sufficient to check the MSB is not set (MSB used for 2's
-    /// complement sign)
-    ///
-    /// For negative values it is also sufficient to check that the MSB is not set. This is because
-    /// it gives us a minimum value of -1 - (2^(n-1) - 1), for example, if we have the value -128
-    /// (i8::MIN), it is represented as 1 - 127. Similar rules apply for all signed types.
+/// Attempt to convert a CBOR item into a &[u8]
+///
+/// # Lifetime
+///
+/// The lifetime of the &[u8] will be the lifetime of the underlying buffer
+/// on which the CBOR item is bounded.
+impl<'buf> TryFrom<CBOR<'buf>> for &'buf [u8] {
+    type Error = CBORError;
+
     #[cfg_attr(feature = "trace", trace)]
-    #[inline]
-    pub fn try_into_i8(self) -> Result<i8> {
-        match self {
-            // Positive integer.
-            Self::UInt(val) => {
-                if val <= i8::MAX as u64 {
-                    Ok(val as i8)
-                } else {
-                    // Overflow case
-                    Err(CBORError::OutOfRange)
-                }
-            }
-            // Negative integer.
-            Self::NInt(val) => {
-                // Unsigned value is checked against i32::MAX as encoding 1 - val
-                if val <= i8::MAX as u64 {
-                    Ok(-1 - (val as i8))
-                } else {
-                    Err(CBORError::OutOfRange)
-                }
-            }
+    fn try_from(value: CBOR<'buf>) -> core::result::Result<Self, Self::Error> {
+        match value {
+            CBOR::Bstr(bytes) => Ok(bytes),
             _ => Err(CBORError::IncompatibleType),
         }
     }
+}
 
-    /// Read a str slice.
-    #[inline]
-    pub fn try_into_str(&self) -> Result<&'buf str> {
-        match self {
-            Self::Tstr(s) => Ok(s),
-            _ => Err(CBORError::IncompatibleType),
+/// Attempt to convert a CBOR item into an ArrayBuf
+impl<'buf> TryFrom<CBOR<'buf>> for ArrayBuf<'buf> {
+    type Error = CBORError;
+
+    #[cfg_attr(feature = "trace", trace)]
+    fn try_from(value: CBOR<'buf>) -> Result<Self, Self::Error> {
+        match value {
+            CBOR::Array(ab) => Ok(ab),
+            _ => Err(CBORError::IncompatibleType)
         }
     }
+}
 
-    /// Read a [u8] slice.
+/// Attempt to turn a CBOR item into a MapBuf
+impl<'buf> TryFrom<CBOR<'buf>> for MapBuf<'buf> {
+    type Error = CBORError;
+
     #[cfg_attr(feature = "trace", trace)]
-    #[inline]
-    pub fn try_into_u8slice(&self) -> Result<&'buf [u8]> {
-        match self {
-            Self::Bstr(bytes) => Ok(*bytes),
-            _ => Err(CBORError::IncompatibleType),
+    fn try_from(value: CBOR<'buf>) -> Result<Self, Self::Error> {
+        match value {
+            CBOR::Map(mb) => Ok(mb),
+            _ => Err(CBORError::IncompatibleType)
         }
-    }
-
-    /// Turn `u8` into `CBOR`
-    #[cfg_attr(feature = "trace", trace)]
-    #[inline]
-    pub fn from_u8(v: u8) -> Self {
-        Self::UInt(v as u64)
-    }
-
-    /// Turn `u16` into `CBOR`
-    #[cfg_attr(feature = "trace", trace)]
-    #[inline]
-    pub fn from_u16(v: u16) -> Self {
-        Self::UInt(v as u64)
-    }
-
-    /// Turn `u32` into `CBOR`
-    #[cfg_attr(feature = "trace", trace)]
-    #[inline]
-    pub fn from_u32(v: u32) -> Self {
-        Self::UInt(v as u64)
-    }
-
-    /// Turn `u64` into `CBOR`
-    #[cfg_attr(feature = "trace", trace)]
-    #[inline]
-    pub fn from_u64(v: u64) -> Self {
-        Self::UInt(v)
-    }
-
-    /// Turn `i8` into `CBOR`
-    #[cfg_attr(feature = "trace", trace)]
-    #[inline]
-    pub fn from_i8(v: i8) -> Self {
-        if v < 0 {
-            Self::NInt((-1 - (v as i64)) as u64)
-        } else {
-            Self::UInt(v as u64)
-        }
-    }
-
-    /// Turn `i16` into `CBOR`
-    #[cfg_attr(feature = "trace", trace)]
-    #[inline]
-    pub fn from_i16(v: i16) -> Self {
-        if v < 0 {
-            Self::NInt((-1 - (v as i64)) as u64)
-        } else {
-            Self::UInt(v as u64)
-        }
-    }
-
-    /// Turn `i32` into `CBOR`
-    #[cfg_attr(feature = "trace", trace)]
-    #[inline]
-    pub fn from_i32(v: i32) -> Self {
-        if v < 0 {
-            Self::NInt((-1 - (v as i64)) as u64)
-        } else {
-            Self::UInt(v as u64)
-        }
-    }
-
-    /// Turn `i64` into `CBOR`
-    #[cfg_attr(feature = "trace", trace)]
-    #[inline]
-    pub fn from_i64(v: i64) -> Self {
-        if v < 0 {
-            Self::NInt((-1 - (v as i64)) as u64)
-        } else {
-            Self::UInt(v as u64)
-        }
-    }
-
-    /// Turn `&str` into `CBOR`
-    #[cfg_attr(feature = "trace", trace)]
-    #[inline]
-    pub fn from_str(v: &'buf str) -> Self {
-        Self::Tstr(v)
-    }
-
-    /// Turn `&[u8]` into `CBOR`
-    #[cfg_attr(feature = "trace", trace)]
-    #[inline]
-    pub fn from_u8slice(v: &'buf [u8]) -> Self {
-        Self::Bstr(v)
-    }
-}
-
-impl<'buf> TryFrom<&'buf CBOR<'buf>> for u8 {
-    type Error = CBORError;
-
-    #[cfg_attr(feature = "trace", trace)]
-    fn try_from(value: &'buf CBOR) -> core::result::Result<Self, Self::Error> {
-        (*value).try_into_u8()
-    }
-}
-
-impl<'buf> TryFrom<&'buf CBOR<'buf>> for u16 {
-    type Error = CBORError;
-
-    #[cfg_attr(feature = "trace", trace)]
-    fn try_from(value: &'buf CBOR) -> core::result::Result<Self, Self::Error> {
-        (*value).try_into_u16()
-    }
-}
-
-impl<'buf> TryFrom<&'buf CBOR<'buf>> for u32 {
-    type Error = CBORError;
-
-    #[cfg_attr(feature = "trace", trace)]
-    fn try_from(value: &'buf CBOR) -> core::result::Result<Self, Self::Error> {
-        (*value).try_into_u32()
-    }
-}
-
-impl<'buf> TryFrom<&'buf CBOR<'buf>> for u64 {
-    type Error = CBORError;
-
-    #[cfg_attr(feature = "trace", trace)]
-    fn try_from(value: &'buf CBOR) -> core::result::Result<Self, Self::Error> {
-        (*value).try_into_u64()
-    }
-}
-
-impl<'buf> TryFrom<&'buf CBOR<'buf>> for i8 {
-    type Error = CBORError;
-
-    #[cfg_attr(feature = "trace", trace)]
-    fn try_from(value: &'buf CBOR) -> core::result::Result<Self, Self::Error> {
-        (*value).try_into_i8()
-    }
-}
-
-impl<'buf> TryFrom<&'buf CBOR<'buf>> for i16 {
-    type Error = CBORError;
-
-    #[cfg_attr(feature = "trace", trace)]
-    fn try_from(value: &'buf CBOR) -> core::result::Result<Self, Self::Error> {
-        (*value).try_into_i16()
-    }
-}
-
-impl<'buf> TryFrom<&'buf CBOR<'buf>> for i32 {
-    type Error = CBORError;
-
-    fn try_from(value: &'buf CBOR) -> core::result::Result<Self, Self::Error> {
-        (*value).try_into_i32()
-    }
-}
-
-impl<'buf> TryFrom<&'buf CBOR<'buf>> for i64 {
-    type Error = CBORError;
-
-    #[cfg_attr(feature = "trace", trace)]
-    fn try_from(value: &'buf CBOR) -> core::result::Result<Self, Self::Error> {
-        (*value).try_into_i64()
-    }
-}
-
-impl<'buf> TryFrom<&'buf CBOR<'buf>> for i128 {
-    type Error = CBORError;
-
-    #[cfg_attr(feature = "trace", trace)]
-    fn try_from(value: &'buf CBOR) -> core::result::Result<Self, Self::Error> {
-        (*value).try_into_i128()
-    }
-}
-
-impl<'buf> TryFrom<&'buf CBOR<'buf>> for &'buf str {
-    type Error = CBORError;
-
-    #[cfg_attr(feature = "trace", trace)]
-    fn try_from(value: &'buf CBOR) -> core::result::Result<Self, Self::Error> {
-        (*value).try_into_str()
-    }
-}
-
-impl<'buf> TryFrom<&'buf CBOR<'buf>> for &'buf [u8] {
-    type Error = CBORError;
-
-    #[cfg_attr(feature = "trace", trace)]
-    fn try_from(value: &'buf CBOR) -> core::result::Result<Self, Self::Error> {
-        (*value).try_into_u8slice()
     }
 }

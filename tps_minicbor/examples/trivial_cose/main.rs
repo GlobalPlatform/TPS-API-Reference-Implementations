@@ -27,24 +27,22 @@
  * of generating a random seed itself.
  * The signature does verify correctly, and intermediate values are as expected.
  **************************************************************************************************/
+extern crate core;
 extern crate crypto_bigint;
 extern crate p256;
 extern crate tps_minicbor;
-extern crate core;
 
 use crypto_bigint::{ArrayEncoding, U256};
 use p256::ecdsa::signature::{Signature, Signer, Verifier};
 use p256::ecdsa::{SigningKey, VerifyingKey};
 
-// Needed for deterministic nonces in test cases
+use std::convert::TryInto;
 use std::error::Error;
 use std::io;
-use std::io::{Write};
+use std::io::Write;
 
-use tps_minicbor::debug::{Diag, print_hex};
-use tps_minicbor::decoder::{
-    is_array, is_bstr, is_map, is_tag_with_value, CBORDecoder, SequenceBuffer,
-};
+use tps_minicbor::debug::{print_hex, Diag};
+use tps_minicbor::decoder::{is_array, is_bstr, is_map, is_tag_with_value, CBORDecoder, SequenceBuffer, ArrayBuf, MapBuf};
 use tps_minicbor::encoder::*;
 use tps_minicbor::error::CBORError;
 use tps_minicbor::types::*;
@@ -136,22 +134,15 @@ fn cose_sign1<'a>(
 }
 
 // Perform a verify operation on a COSE_Sign1 structure
-fn cose_verify1(
-    protected: &[u8],
-    payload: &[u8],
-    signature: &[u8],
-) -> Result<(), Box<dyn Error>> {
+fn cose_verify1(protected: &[u8], payload: &[u8], signature: &[u8]) -> Result<(), Box<dyn Error>> {
     let mut to_be_verified_buf: [u8; 256] = [0; 256];
-    let mut buf: [u8;64] = [0;64];
+    let mut buf: [u8; 64] = [0; 64];
     let mut protected_bldr = CBORBuilder::new(&mut buf);
     // Problem
     let protected_bldr = protected_bldr.insert_cbor(protected)?;
 
     let mut to_be_verified = CBORBuilder::new(&mut to_be_verified_buf);
-    let to_be_verified = construct_to_be_signed(protected_bldr,
-        payload,
-        &mut to_be_verified,
-    )?;
+    let to_be_verified = construct_to_be_signed(protected_bldr, payload, &mut to_be_verified)?;
     print_bytes("To be verified", &to_be_verified);
 
     let pub_key = VerifyingKey::from_sec1_bytes(&KID_11_PUB)?;
@@ -186,7 +177,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .insert(&protected_headers.build()?.bytes)?
                 // / unprotected / {kid: '11'}
                 .insert(&map(|unprotected| {
-                    unprotected.insert_key_value(&2, &b"11".as_slice())
+                    unprotected.insert_key_value(&4, &b"11".as_slice())
                 }))?
                 // / payload / "This is the content."
                 .insert(&payload)?;
@@ -205,9 +196,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     bytes.cbor_diag(&mut fp)?;
     fp.flush()?;
 
-
     // Verify a COSE_Sign1 structure
-    let mut verifier = CBORDecoder::new(bytes);
+    let verifier = CBORDecoder::new(bytes);
     let mut alg = 0;
     let mut kid: [u8; 2] = [0; 2];
     let mut protected_hdrs = Vec::<u8>::new();
@@ -216,66 +206,39 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut tag: u64 = 18;
 
     // Extract the critical bits of the COSE Sign1 structure
-    let _r = verifier
-        .decode_with(is_tag_with_value(tag), |tagged| {
-            CBORDecoder::from_tag(tagged, &mut tag)?
-                .decode_with(is_array(), |array| {
-                    CBORDecoder::from_array(array)?
-                        // Protected Headers
-                        .decode_with(is_bstr(), |empty_or_cbor| {
-                            if let CBOR::Bstr(bs) = empty_or_cbor {
-                                // Make a copy of protected_hdrs
-                                if bs.len() > 0 {
-                                    // bstr containing CBOR
-                                    let mut prot = CBORDecoder::from_slice(bs);
-                                    prot.decode_with(is_map(), |map| {
-                                        // The CBOR contains a map, but we want the serialized map
-                                        // to be duplicated into the protected headers field of the
-                                        // to_be_verified structure
-                                        if let CBOR::Map(mb) = map {
-                                            dup_from_slice(bs, &mut protected_hdrs);
-                                            if let Some(alg_v @ CBOR::NInt(_)) = mb.get_int(1) {
-                                                alg = alg_v.try_into_i32()?;
-                                                return Ok(());
-                                            }
-                                        }
-                                        Err(CBORError::MalformedEncoding)
-                                    })?
-                                    .finalize()
-                                } else {
-                                    Err(CBORError::MalformedEncoding)
-                                }
-                            } else {
-                                Err(CBORError::ExpectedType("Should be a bstr here"))
-                            }
-                        })?
-                        // Unprotected Headers
-                        .decode_with(is_map(), |map| {
-                            if let CBOR::Map(mb) = map {
-                                if let Some(CBOR::Bstr(kid_v)) = mb.get(&CBOR::UInt(4)) {
-                                    let _ = &kid.copy_from_slice(&kid_v[0..1]);
-                                }
-                            }
+    let _v = verifier
+        .tag(|tb| {
+            if tb.get_tag() == 18 {
+                let ab = tb.item::<ArrayBuf>()?;
+                // Protected Headers
+                let prot_hdr = ab.item::<&[u8]>(0)?;
+                if prot_hdr.len() > 0 {
+                    let not_empty = CBORDecoder::from_slice(prot_hdr)
+                        .map(|mb| {
+                            dup_from_slice(prot_hdr, &mut protected_hdrs);
+                            alg = mb.lookup(1)?;
                             Ok(())
-                        })?
-                        // Payload
-                        .decode_with(is_bstr(), |pay| {
-                            dup_from_slice(pay.try_into_u8slice()?, &mut payload);
-                            Ok(())
-                        })?
-                        // Signature
-                        .decode_with(is_bstr(), |sig| {
-                            dup_from_slice(sig.try_into_u8slice()?, &mut signature);
-                            Ok(())
-                        })?
-                        .finalize()
-                })?
-                .finalize()
-        })?
-        .finalize();
+                        })?;
+                }
+                // Unprotected headers
+                let unprot_hdr = ab.item::<MapBuf>(1)?;
+                let _ = &kid.copy_from_slice(&unprot_hdr.lookup::<u64, &[u8]>(4)?[0..=1]);
+                // Payload
+                dup_from_slice(ab.item::<&[u8]>(2)?, &mut payload);
+                // Signature
+                dup_from_slice(ab.item::<&[u8]>(3)?, &mut signature);
+                Ok(())
+            } else {
+                Err(CBORError::ExpectedTag(18))
+            }
+        })?;
 
     // Verify the signature and extracted values
-    match cose_verify1(protected_hdrs.as_slice(), payload.as_slice(), signature.as_slice()) {
+    match cose_verify1(
+        protected_hdrs.as_slice(),
+        payload.as_slice(),
+        signature.as_slice(),
+    ) {
         Ok(()) => println!("Verification succeeded: message content {:?}", payload),
         Err(_) => println!("Verification failed"),
     }

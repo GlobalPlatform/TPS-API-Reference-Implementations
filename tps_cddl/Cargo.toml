@@ -18,7 +18,7 @@
 # rs_cddl package definition
 
 [package]
-name = "rs_cddl"
+name = "tps_cddl"
 version = "0.1.0"
 authors = ["Jeremy O'Donoghue <quic_jodonogh@quicinc.com>"]
 edition = "2018"

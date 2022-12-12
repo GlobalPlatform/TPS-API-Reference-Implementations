@@ -23,13 +23,14 @@
  * This implementation is designed for use in constrained systems and requires neither the Rust
  * standard library nor an allocator.
  **************************************************************************************************/
+use core::convert::TryFrom;
 use crate::ast::CBOR;
 use crate::decode::{DecodeBufIterator, DecodeBufIteratorSource};
 
-#[cfg(feature = "trace")]
-use func_trace::trace;
 use crate::encode::{EncodeBuffer, EncodeContext, EncodeItem};
 use crate::error::CBORError;
+#[cfg(feature = "trace")]
+use func_trace::trace;
 
 #[cfg(feature = "trace")]
 func_trace::init_depth_var!();
@@ -61,6 +62,22 @@ impl<'buf> TagBuf<'buf> {
     pub fn get_tag(&self) -> u64 {
         self.tag
     }
+
+    /// Return the item in the `TagBuf`, converted (fallibly) from CBOR.
+    ///
+    pub fn item<V>(&'buf self) -> Result<V, CBORError>
+        where V: TryFrom<CBOR<'buf>> + Clone
+    {
+        let mut it = self.into_iter();
+        let item = it.next();
+        match item {
+            Some(cbor) => match V::try_from(cbor) {
+                Ok(v) => Ok(v.clone()),
+                Err(_) => Err(CBORError::IncompatibleType)
+            },
+            None => Err(CBORError::MalformedEncoding)
+        }
+    }
 }
 
 impl<'buf> IntoIterator for TagBuf<'buf> {
@@ -91,20 +108,36 @@ impl<'buf> IntoIterator for TagBuf<'buf> {
 ///
 /// Users should never need to directly instantiate `Map`. Instead, see [`map`].
 pub struct Tag<F>
-    where F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError> {
+where
+    F: for<'f, 'buf> Fn(
+        &'f mut EncodeBuffer<'buf>,
+    ) -> Result<&'f mut EncodeBuffer<'buf>, CBORError>,
+{
     tag: u64,
-    f: F
+    f: F,
 }
 
-impl<F> Tag<F> where
-    F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError> {
-    pub fn new(tag: u64, f: F) -> Tag<F> { Tag { tag, f } }
+impl<F> Tag<F>
+where
+    F: for<'f, 'buf> Fn(
+        &'f mut EncodeBuffer<'buf>,
+    ) -> Result<&'f mut EncodeBuffer<'buf>, CBORError>,
+{
+    pub fn new(tag: u64, f: F) -> Tag<F> {
+        Tag { tag, f }
+    }
 }
 
 impl<F> EncodeItem for Tag<F>
-    where F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError>
+where
+    F: for<'f, 'buf> Fn(
+        &'f mut EncodeBuffer<'buf>,
+    ) -> Result<&'f mut EncodeBuffer<'buf>, CBORError>,
 {
-    fn encode<'f, 'buf>(&self, buf: &'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError> {
+    fn encode<'f, 'buf>(
+        &self,
+        buf: &'f mut EncodeBuffer<'buf>,
+    ) -> Result<&'f mut EncodeBuffer<'buf>, CBORError> {
         let mut tag_ctx = EncodeContext::new();
         buf.tag_start(&mut tag_ctx)?;
         let _ = buf.tag_next_item(self.tag)?;
@@ -113,8 +146,27 @@ impl<F> EncodeItem for Tag<F>
     }
 }
 
+/// A convenience function for the user to tag a CBOR item. The user provides a
+/// closure which constructs the array contents.
+///
+/// ```
+///# use tps_minicbor::encoder::CBORBuilder;
+///# use tps_minicbor::error::CBORError;
+///# use tps_minicbor::types::tag;
+///
+///# fn main() -> Result<(), CBORError> {
+///    let mut buffer = [0u8; 16];
+///
+///    let mut encoder = CBORBuilder::new(&mut buffer);
+///    encoder.insert(&tag(37, |buf| buf.insert(&-31i16)))?;
+///#    Ok(())
+///# }
+/// ```
 pub fn tag<F>(tag: u64, f: F) -> Tag<F>
-    where F: for<'f, 'buf> Fn(&'f mut EncodeBuffer<'buf>) -> Result<&'f mut EncodeBuffer<'buf>, CBORError>
+where
+    F: for<'f, 'buf> Fn(
+        &'f mut EncodeBuffer<'buf>,
+    ) -> Result<&'f mut EncodeBuffer<'buf>, CBORError>,
 {
     Tag::new(tag, f)
 }

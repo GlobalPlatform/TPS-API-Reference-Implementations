@@ -22,11 +22,11 @@
 mod ir;
 mod error;
 
-extern crate rs_cddl;
+extern crate tps_cddl;
 extern crate clap;
 extern crate thiserror;
 
-use rs_cddl::cddl::*;
+use tps_cddl::cddl::*;
 
 use clap::{App, Arg};
 use std::error::Error;

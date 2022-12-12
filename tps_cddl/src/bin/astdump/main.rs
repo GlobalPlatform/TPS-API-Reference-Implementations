@@ -24,11 +24,11 @@
  * - Determining whether a CDDL file is syntactically correct
  * - Investigation and analysis of how code generation will work
  **************************************************************************************************/
-extern crate rs_cddl;
+extern crate tps_cddl;
 extern crate clap;
 extern crate thiserror;
 
-use rs_cddl::cddl::*;
+use tps_cddl::cddl::*;
 
 use clap::{App, Arg};
 use std::error::Error;

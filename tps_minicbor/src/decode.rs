@@ -23,6 +23,32 @@
  * This implementation is designed for use in constrained systems and requires neither the Rust
  * standard library nor an allocator.
  **************************************************************************************************/
+/// # Low-level CBOR decoding functions
+///
+/// This module contains the low-level CBOR decoding primitives. While it is generally recommended
+/// to parse CBOR using the higher-level primitives in the [`decode_combinators`] module, where
+/// memory is very constrained, the low level parsing functions allow for a reasonably comfortable
+/// iterator-based decoding style.
+///
+/// CBOR input is parsed via a [`SequenceBuffer`], which is a constructed over a byte slice and
+/// keeps track of the current parse position and the like.
+///
+/// ## Example
+///
+/// ```
+///# use std::convert::TryFrom;
+///# use tps_minicbor::decoder::SequenceBuffer;
+///# use tps_minicbor::types::CBOR;
+/// let b = [0x18u8; 0x18];
+/// let buf = SequenceBuffer::new(&b);
+/// let mut it = buf.into_iter();
+/// if let Some(cbor) = it.next() {
+///     assert_eq!(CBOR::UInt(24), cbor);
+/// } else {
+///     assert!(false)
+/// }
+/// ```
+
 use crate::array::ArrayBuf;
 use crate::ast::CBOR;
 use crate::constants::*;
@@ -116,6 +142,13 @@ pub struct SequenceBuffer<'buf> {
 
 impl<'buf> SequenceBuffer<'buf> {
     /// Construct a new instance of `DecodeBuf` with all context initialized.
+    ///
+    /// ## Example
+    /// ```
+    ///# use tps_minicbor::decoder::SequenceBuffer;
+    /// let b = [0x18u8; 0x18];
+    /// let buf = SequenceBuffer::new(&b);
+    /// ```
     #[cfg_attr(feature = "trace", trace)]
     pub fn new(init: &'buf [u8]) -> SequenceBuffer<'buf> {
         SequenceBuffer { bytes: init }
