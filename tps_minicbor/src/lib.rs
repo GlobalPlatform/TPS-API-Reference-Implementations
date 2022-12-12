@@ -46,9 +46,9 @@ extern crate half;
 #[cfg(any(feature = "full", test))]
 extern crate chrono;
 
-mod cbor_diag;
 pub(crate) mod array;
 pub(crate) mod ast;
+mod cbor_diag;
 pub(crate) mod constants;
 pub(crate) mod decode;
 pub(crate) mod decode_combinators;
@@ -60,8 +60,8 @@ pub(crate) mod utils;
 pub mod error;
 
 pub mod types {
-    pub use super::ast::CBOR;
     pub use super::array::array;
+    pub use super::ast::CBOR;
     pub use super::map::map;
     pub use super::tag::tag;
 }
@@ -76,9 +76,11 @@ pub mod decoder {
     // Decode Combinators API
     #[cfg(any(feature = "combinators", test))]
     pub use super::decode_combinators::{
-        apply, cond, is_any, is_array, is_bool, is_bstr, is_eof, is_false, is_int, is_map, is_nint,
-        is_null, is_simple, is_tag, is_tag_with_value, is_true, is_tstr, is_uint, is_undefined,
-        opt, or, with_pred, with_value, CBORDecoder,
+        apply, cond, decode_bool, decode_bstr, decode_int, decode_nint, decode_null,
+        decode_simple, decode_tstr, decode_uint, decode_undefined, is_any, is_array, is_bool,
+        is_bstr, is_eof, is_false, is_int, is_map, is_nint, is_null, is_simple, is_tag,
+        is_tag_with_value, is_true, is_tstr, is_uint, is_undefined, opt, or, with_pred,
+        with_value, CBORDecodable, CBORDecoder,
     };
 
     #[cfg(any(feature = "combinators", test))]
@@ -98,7 +100,7 @@ pub mod encoder {
 #[cfg(any(feature = "full", test))]
 pub mod debug {
     #[cfg(any(feature = "full", test))]
-    pub use super::cbor_diag::Diag;
-    #[cfg(any(feature = "full", test))]
     pub use super::cbor_diag::print_hex;
+    #[cfg(any(feature = "full", test))]
+    pub use super::cbor_diag::Diag;
 }

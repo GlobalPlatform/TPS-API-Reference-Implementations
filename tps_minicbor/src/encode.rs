@@ -77,7 +77,7 @@ struct MtUnset(usize);
 ///         .insert(&array(|buff| buff.insert(&4u8)?.insert(&5u8)))
 ///    }));
 ///    assert_eq!(encoder.encoded()?, expected);
-///#    Ok(())
+///#   Ok(())
 ///# }
 /// ```
 #[derive(Debug)]
@@ -89,6 +89,12 @@ pub struct CBORBuilder<'buf> {
 #[cfg(feature = "combinators")]
 impl<'buf> CBORBuilder<'buf> {
     /// Create an instance of CBORBuilder from a mutable reference to a slice.
+    ///
+    /// ```
+    ///# use tps_minicbor::encoder::CBORBuilder;
+    /// let mut buffer = [0u8; 128];    ///
+    /// let mut encoded_cbor = CBORBuilder::new(&mut buffer);
+    /// ```
     pub fn new(buf: &'buf mut [u8]) -> Self {
         CBORBuilder {
             buf: EncodeBuffer::new(buf),
@@ -96,6 +102,19 @@ impl<'buf> CBORBuilder<'buf> {
     }
 
     /// Insert an `EncodeItem` item into an `EncodeBuffer`.
+    ///
+    /// ```
+    ///# use tps_minicbor::encoder::CBORBuilder;
+    ///# use tps_minicbor::error::CBORError;
+    ///# fn main() -> Result<(), CBORError> {
+    /// let mut buffer = [0u8; 128];    ///
+    /// let mut encoded_cbor = CBORBuilder::new(&mut buffer);
+    ///   encoded_cbor
+    ///     .insert(&32u8)?
+    ///     .insert(&"新年快乐")?;
+    ///# Ok(())
+    ///# }
+    /// ```
     #[inline]
     pub fn insert(&mut self, item: &dyn EncodeItem) -> Result<&mut Self, CBORError> {
         self.buf.insert(item)?;
@@ -132,6 +151,10 @@ impl<'buf> CBORBuilder<'buf> {
 /// `EncodeBuffer` is a smart view over a byte slice onto which we are encoding CBOR data. In most
 /// cases it is wrapped with a `CBORBuilder`, but it can be used stand-alone in which case the
 /// simplest code looks something like:
+///
+/// > Note that in most cases you will get a more compact CBOR Encoder implementation using the
+/// > [`CBORBuilder`] structure, which wraps an `EncodeBuffer` with several convenience methods.
+///
 /// ```
 ///# use tps_minicbor::encoder::EncodeBuffer;
 ///# use tps_minicbor::error::CBORError;
@@ -180,7 +203,26 @@ where
         }
     }
 
-    /// Insert an `EncodeItem` item into an `EncodeBuffer`.
+    /// Insert an [`EncodeItem`] item into an [`EncodeBuffer`].
+    ///
+    /// This function will attempt to encode a value whose type is an instance of [`EncodeItem`]
+    /// onto a CBOR [`EncodeBuffer`]. It will fail if, for example, the item is too large to fit
+    /// into the provided buffer.
+    ///
+    /// ```
+    ///# use tps_minicbor::encoder::*;
+    ///# use tps_minicbor::error::CBORError;
+    ///# fn main() -> Result<(), CBORError> {
+    ///
+    ///  use tps_minicbor::encoder::EncodeItem;
+    ///  let mut bytes = [0u8; 32];
+    ///  let mut buf = EncodeBuffer::new(&mut bytes);
+    ///  let val = &(0.0);
+    ///  val.encode(&mut buf)?;
+    ///  assert_eq!(buf.encoded()?, &[0xf9, 0x00, 0x00]);
+    ///# Ok(())
+    ///# }
+    /// ```
     pub fn insert(&mut self, item: &dyn EncodeItem) -> Result<&mut Self, CBORError> {
         let _ = item.encode(self)?;
         self.items += 1;
@@ -191,6 +233,25 @@ where
     ///
     /// This function is most likely to be useful when encoding CBOR maps, although it actually
     /// is just a convenience function for calling `insert` twice in sequence.
+    ///
+    /// ```
+    ///# use tps_minicbor::encoder::*;
+    ///# use tps_minicbor::types::map;
+    ///# use tps_minicbor::error::CBORError;
+    ///# fn main() -> Result<(), CBORError> {
+    ///
+    /// let mut buffer = [0u8; 64];
+    ///     let expected: &[u8] = &[0xa2, 0x01, 0x02, 0x03, 0x04];
+    ///
+    ///     let mut encoder = CBORBuilder::new(&mut buffer);
+    ///     let _ = encoder.insert(&map(|buff| {
+    ///         buff.insert_key_value(&0x01u8, &0x02u8)?
+    ///             .insert_key_value(&0x03u8, &0x04u8)
+    ///     }))?;
+    ///     assert_eq!(encoder.encoded()?, expected);
+    ///#    Ok(())
+    ///# }
+    /// ```
     pub fn insert_key_value(
         &mut self,
         key: &dyn EncodeItem,
@@ -211,10 +272,7 @@ where
     ///
     /// > Note: it is the responsibility of the caller to ensure that the inserted value is CBOR
     /// > encoded. Failure to do so is almost certain to lead to errors.
-    pub fn insert_bstr_cbor(
-        &mut self,
-        cbor: &[u8]
-    ) -> Result<&mut Self, CBORError> {
+    pub fn insert_bstr_cbor(&mut self, cbor: &[u8]) -> Result<&mut Self, CBORError> {
         self.write_slice_at_offset(0, cbor)?;
         let _ = self.update_index(cbor.len())?;
         Ok(self)
@@ -445,7 +503,7 @@ where
                 ContextType::Map => count_items(content) / 2,
                 // There should be no path to ContextType::Tag - context_finalize_common is
                 // not called from tag_finalize()
-                ContextType::Tag => return Err(CBORError::NotAllowed)
+                ContextType::Tag => return Err(CBORError::NotAllowed),
             }
         } else {
             0
@@ -481,7 +539,7 @@ where
             ContextType::Map => self.set_mt(MT_MAP),
             // There should be no path to ContextType::Tag - context_finalize_common is
             // not called from tag_finalize()
-            ContextType::Tag => return Err(CBORError::NotAllowed)
+            ContextType::Tag => return Err(CBORError::NotAllowed),
         }
         self.set_index_abs(context_encode_end + ctx_param_len);
 
@@ -494,10 +552,10 @@ where
                 } else {
                     Err(CBORError::MalformedEncoding)
                 }
-            },
+            }
             // There should be no path to ContextType::Tag - context_finalize_common is
             // not called from tag_finalize()
-            ContextType::Tag => return Err(CBORError::NotAllowed)
+            ContextType::Tag => return Err(CBORError::NotAllowed),
         }
     }
 }
@@ -505,7 +563,7 @@ where
 fn count_items(buf: &[u8]) -> usize {
     let mut count = 0;
     {
-        let mut decoder = CBORDecoder::from_slice(buf);
+        let decoder = CBORDecoder::from_slice(buf);
         let inc_count = |_a, _b| {
             count += 1;
             Ok(())
@@ -522,6 +580,59 @@ fn count_items(buf: &[u8]) -> usize {
 
 /// The `EncodeItem` trait encapsulates encoding operations as anything that can be serialized to
 /// CBOR.
+///
+/// `EncodeItem` supports a single method - [`EncodeItem::encode`], which attempts to encode an
+/// item onto an [`EncodeBuffer`] which is usually underlying a [`CBORBuilder`].
+///
+/// There are instances of `EncodeItem` for the CBOR AST type ([`CBOR`]) which underpins all
+/// encoding and decoding, as well as for the standard Rust integers, floats, &str and &[u8].
+/// There
+///
+/// In all cases, the value to be encoded is passed immutably borrowed.
+///
+/// The provided instances will:
+///
+/// - For integer types, encode onto the smallest CBOR integer representation possible.
+/// - For float types, encode onto the smallest float representation (floats are a crate
+///   feature that must be enabled at compile time)
+/// - [`&str`] will be encoded as a CBOR `tstr` type and copied to the encode buffer.
+/// - [`[u8]`] will be encoded as a CBOR `bstr` type.
+/// - There are also instances for CBOR Arrays ([`Array`]), Maps ([`Map`]) and tagged values
+///   ([`Tag`])
+///
+/// # Example
+///
+/// The following example shows how to encode a broad selection of values:
+///
+/// ```
+///# use tps_minicbor::encoder::*;
+///# use tps_minicbor::types::{array, CBOR, map, tag};
+///# use tps_minicbor::error::CBORError;
+///# fn main() -> Result<(), CBORError> {
+/// let mut bytes = [0u8; 128];
+///
+/// let mut encoded_cbor = CBORBuilder::new(&mut bytes);
+/// encoded_cbor
+///     .insert(&32u8)?
+///     .insert(&(-(0xa5a5a5i32)))?
+///     .insert(&"新年快乐")?
+///             .insert(&[1,2,3,4].as_slice())?
+///             .insert(&CBOR::Simple(234))?
+///             .insert(&CBOR::Undefined)?
+///             .insert(&tag(37, |buf| buf.insert(&0x5a5a5a5a5au64)))?
+///             .insert(&array(|buf| {
+///                 buf.insert(&"usine à gaz")?
+///                     .insert(&42u8)?
+///                     .insert(&CBOR::UInt(42))
+///             }))?
+///             .insert(&map(|buf| {
+///                 buf.insert_key_value(&1u8, &1023u32)?
+///                     .insert_key_value(&2u8, &1025u32)?
+///                     .insert_key_value(&(-1i8), &(-1024i32))
+///             }))?;
+///# Ok(())
+///# }
+/// ```
 pub trait EncodeItem {
     fn encode<'f, 'buf>(
         &self,

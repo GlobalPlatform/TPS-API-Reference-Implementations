@@ -19,7 +19,7 @@
 
 [package]
 name = "tps_minicbor"
-version = "0.3.1"
+version = "0.4.1"
 authors = ["Jeremy O'Donoghue<quic_jodonogh@quicinc.com"]
 edition = "2018"
 license-file = "LICENSE.txt"
@@ -37,9 +37,9 @@ required_features = ["full"]
 name = "trivial_cose"
 required_features = ["full"]
 
-# rs_minicbor can be built in the following variants:
-# - default: (no_std) No allocator or standard library required. Logging, indefinite length messaging
-#   and high-level API are not allowed as a consequence since these require an allocator.
+# tps_minicbor can be built in the following variants:
+# - default: (no_std) No allocator or standard library required. Logging, standard tags
+#   not allowed as a consequence since these require an allocator.
 # - full: (std) Requires standard library. Optionally supports logging, indefinite length messaging and a
 #   higher-level API which can be easier to use.
 

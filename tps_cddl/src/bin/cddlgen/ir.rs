@@ -20,7 +20,7 @@
  * Intermediate representation used to post-process from the AST
  **************************************************************************************************/
 use std::collections::HashMap;
-use rs_cddl::cddl::{Type, Value};
+use tps_cddl::cddl::{Type, Value};
 use crate::error::CddlError;
 
 #[derive(Debug)]

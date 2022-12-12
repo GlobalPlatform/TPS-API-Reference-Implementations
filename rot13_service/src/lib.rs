@@ -222,11 +222,11 @@ pub fn message_handler<'b>(
     in_msg_buf: &'b [u8],
     out_msg_buf: &'b mut [u8],
 ) -> Result<(), CBORError> {
-    let mut decoder = CBORDecoder::new(SequenceBuffer::new(in_msg_buf));
+    let decoder = CBORDecoder::new(SequenceBuffer::new(in_msg_buf));
     // The tag contains the message ID
     decoder.decode_with(is_tag(), |cbor| {
         let mut msg_id: u64 = 0;
-        let mut msg_body = CBORDecoder::from_tag(cbor, &mut msg_id)?;
+        let msg_body = CBORDecoder::from_tag(cbor, &mut msg_id)?;
         let mut encoder = CBORBuilder::new(out_msg_buf);
         match msg_id as u32 {
             // GET_FEATURES_REQ (tag 1) - Don't care about contents
@@ -331,7 +331,7 @@ fn rot13_req_helper<'b>(
     decoder: &'b CBOR<'b>,
     encoder: &'b mut CBORBuilder<'b>,
 ) -> Result<(), CBORError> {
-    let may_plaintext = decoder.try_into_str();
+    let may_plaintext = <&str>::try_from(*decoder);
 
     let (msg_id, text_key) = if op == Rot13Operation::Encode {
         (GPP_ROT13_ENCRYPT_RSP, GPP_ROT13_CIPHERTEXT_KEY)

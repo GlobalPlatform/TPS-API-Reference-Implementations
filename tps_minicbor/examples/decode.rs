@@ -32,10 +32,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let item = it.next();
 
     if let Some(item) = item {
-        let v1 = u16::try_from(&item); // should succeed
-        let v2 = u32::try_from(&item); // should succeed
-        let v3 = i32::try_from(&item); // should succeed
-        let v4 = u8::try_from(&item); // should fail
+        let v1 = u16::try_from(item); // should succeed
+        let v2 = u32::try_from(item); // should succeed
+        let v3 = i32::try_from(item); // should succeed
+        let v4 = u8::try_from(item); // should fail
         println!("v1 = {:?}, v2 = {:?}, v3 = {:?}, v4 = {:?}", v1, v2, v3, v4);
     }
 

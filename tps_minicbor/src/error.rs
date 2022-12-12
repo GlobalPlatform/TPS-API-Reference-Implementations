@@ -64,6 +64,8 @@ pub enum CBORError {
     ExpectedTag(u64),
     #[cfg_attr(any(feature="full", test), error("Map does not contain the requested key"))]
     KeyNotPresent,
+    #[cfg_attr(any(feature="full", test), error("Array index out of bounds"))]
+    IndexOutOfBounds,
     #[cfg_attr(any(feature="full", test), error("Map does not contain a value for the found key"))]
     ValueNotPresent,
     #[cfg_attr(any(feature="full", test), error("Range underflow"))]
