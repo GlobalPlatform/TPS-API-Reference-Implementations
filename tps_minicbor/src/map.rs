@@ -278,7 +278,7 @@ where
 /// closure which constructs the map contents.
 ///
 /// The user can insert the map keys and values separately, but the use of the convenience function
-/// [`insert_key_value`] helps to avoid errors.
+/// [`EncodeBuffer::insert_key_value`] helps to avoid errors.
 ///
 /// ```
 ///# use tps_minicbor::encoder::CBORBuilder;

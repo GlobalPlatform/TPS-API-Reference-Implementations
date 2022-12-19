@@ -42,10 +42,12 @@ pub fn within(buf: &[u8], start: usize, len: usize) -> bool {
     start + len <= buf.len()
 }
 
+#[doc(hidden)]
 #[cfg(feature = "combinators")]
 #[derive(Debug, Copy, Clone)]
 pub struct Allowable(u32);
 
+/// Allowable
 #[cfg(all(feature = "combinators", feature = "float"))]
 impl Allowable {
     pub fn new(v: u32) -> Self {
@@ -139,6 +141,8 @@ impl Allowable {
         self.0 & allow::FLOAT != 0
     }
 }
+
+#[doc(hidden)]
 #[cfg(feature = "combinators")]
 pub trait Filter {
     type Error;
