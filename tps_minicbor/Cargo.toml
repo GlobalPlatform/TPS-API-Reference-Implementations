@@ -20,7 +20,7 @@
 
 [package]
 name = "tps_minicbor"
-version = "0.4.1"
+version = "0.4.2"
 authors = ["Jeremy O'Donoghue<quic_jodonogh@quicinc.com"]
 edition = "2018"
 license = "MIT"
