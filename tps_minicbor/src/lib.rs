@@ -118,9 +118,9 @@
 //!
 //!     let mut encoded_cbor = CBORBuilder::new(&mut bytes);
 //!     encoded_cbor.insert(&map(|buff| {
-//!         buff.insert_key_value(&10, &[0x94, 0x8f, 0x88, 0x60, 0xd1, 0x3a, 0x46, 0x3e])?
+//!         buff.insert_key_value(&10, &[0x94, 0x8f, 0x88, 0x60, 0xd1, 0x3a, 0x46, 0x3e].as_slice())?
 //!             .insert_key_value(&256, &[0x01, 0x98, 0xf5, 0x0a, 0x4f, 0xf6, 0xc0, 0x58,
-//!                                       0x61, 0xc8, 0x86, 0x0d, 0x13, 0xa6, 0x38, 0xea])?
+//!                                       0x61, 0xc8, 0x86, 0x0d, 0x13, 0xa6, 0x38, 0xea].as_slice())?
 //!             .insert_key_value(&258, &64242)?
 //!             .insert_key_value(&261, &3)?
 //!             .insert_key_value(&262, &true)?
@@ -156,6 +156,23 @@
 //! use tps_minicbor::error::CBORError;
 //! use tps_minicbor::types::{array, map};
 //!
+//! #[derive(Debug, Clone)]
+//! struct TeeEat<'t> {
+//!     pub nonce: &'t [u8],
+//!     pub ueid: &'t [u8],
+//!     pub oemid: u64,
+//!     pub sec_level: u64,
+//!     pub sec_boot: bool,
+//!     pub debug_status: u64,
+//!     pub hw_version: HwVersion<'t>,
+//! }
+//!
+//! #[derive(Debug, Clone)]
+//! struct HwVersion<'t> {
+//!     s: &'t str,
+//!     v: u64,
+//! }
+//! 
 //! fn decode_tee_eat() -> Result<(), CBORError> {
 //!     let mut input: &[u8] = &[
 //!         167, 10, 72, 148, 143, 136, 96, 209, 58, 70, 62, 25, 1, 0, 80, 1, 152, 245,
