@@ -29,39 +29,27 @@ extern crate thiserror;
 
 use tps_cddl::cddl::*;
 
-use clap::{App, Arg};
+use clap::{Parser};
 use std::error::Error;
 use std::rc::Rc;
 use crate::error::CddlError;
 
 use crate::ir::{IRStore};
 
-fn main() -> Result<(), Box<dyn Error>> {
-    let cmd_line = App::new("cddlgen")
-        .version(env!("CARGO_PKG_VERSION"))
-        .author("Jeremy O'Donoghue <quic_jodonogh@quicinc.com")
-        .about("Generate Rust code capable of serializing and deserializing CBOR matching CDDL")
-        .arg(
-            Arg::with_name("cddl")
-                .short("c")
-                .long("cddl")
-                .required(true)
-                .takes_value(true)
-                .value_name("CDDL_FILE")
-                .help("Path to CDDL file")
-        )
-        .arg(
-            Arg::with_name("prelude")
-                .short("p")
-                .long("with-prelude")
-                .required(false)
-                .takes_value(false)
-                .help("Include the CDDL prelude definitions")
-        )
-        .get_matches();
+#[derive(Parser)]
+#[command(author, version, about)]
+struct Cli {
+    #[arg(short, long, value_name = "CDDL_FILE")]
+    cddl: String,
+    #[arg(short, long)]
+    prelude: bool
+}
 
-    let with_prelude = cmd_line.is_present("prelude");
-    let rc_filename = Rc::new(cmd_line.value_of("cddl").unwrap().to_string());
+fn main() -> Result<(), Box<dyn Error>> {
+    let cmd_line = Cli::parse();
+
+    let with_prelude = cmd_line.prelude;
+    let rc_filename = Rc::new(cmd_line.cddl.to_string());
     let ast = read(with_prelude, Rc::clone(&rc_filename))?;
     let mut ir = IRStore::new();
     pass1(&mut ir, &ast)?;

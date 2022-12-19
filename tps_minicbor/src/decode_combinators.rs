@@ -154,6 +154,13 @@ pub struct CBORDecoder<'buf> {
     decode_buf_iter: RefCell<DecodeBufIterator<'buf>>,
 }
 
+/// CBORDecoder provides a smart wrapper over a byte slice, keeping information on the current
+/// state of CBOR decoding.
+///
+/// It is a wrapper over an instance of a [`DecodeBufIterator`], since CBOR decoding is basically
+/// performed by iterating over instances of [`CBOR`] which map over the buffer.
+///
+/// You can build instances of `CBORDecoder` from byte slices, tagged items, arrays and maps
 #[cfg(feature = "combinators")]
 impl<'buf> CBORDecoder<'buf> {
     /// Construct a new instance of a `CBORDecoder` from a `SequenceBuffer`.

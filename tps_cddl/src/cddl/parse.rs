@@ -508,10 +508,7 @@ fn occur(b: Buf) -> ParseResult<Occurs> {
     // Helper parser for "+"
     fn one_or_more(b: Buf) -> ParseResult<Occurs> {
         let (i, _) = char_is('+')(b)?;
-        Ok((
-            i,
-            Occurs::OnePlus,
-        ))
+        Ok((i, Occurs::OnePlus))
     }
     // Helper parser for "?"
     fn optional(b: Buf) -> ParseResult<Occurs> {
@@ -726,6 +723,10 @@ fn bytes(b: Buf) -> ParseResult<Value> {
 
     // bytes_v is Vec<String> as many0 returns a vector of successful parses. Destructure it.
     let bytes: String = bytes_v.into_iter().collect();
+    let decode_engine = base64::engine::fast_portable::FastPortable::from(
+        &base64::alphabet::URL_SAFE,
+        base64::engine::fast_portable::PAD,
+    );
     match may_qual {
         //
         // String interpreted as a sequence of bytes. Note that any UTF8 characters permitted
@@ -751,20 +752,23 @@ fn bytes(b: Buf) -> ParseResult<Value> {
         //
         // String interpreted accoring to the URL-safe base64 encoding with padding
         //
-        Some(BsQual::Base64) => match base64::decode_config(&bytes, base64::URL_SAFE) {
+        Some(BsQual::Base64) => match base64::decode_engine(&bytes, &decode_engine) {
             // Successful base64 decode
             Ok(vec_u8) => Ok((i, Value::Bytes(vec_u8))),
             // Error - invalid byte
             Err(base64::DecodeError::InvalidByte(_, _)) => {
                 parse_err!(i, "bytes (b64): Invalid byte", ErrorKind::Many0)
-            }
+            },
             // Error - invalid length
             Err(base64::DecodeError::InvalidLength) => {
                 parse_err!(i, "bytes (b64): Invalid length", ErrorKind::Many0)
-            }
+            },
             // Error - invalid symbol
             Err(base64::DecodeError::InvalidLastSymbol(_, _)) => {
                 parse_err!(i, "bytes (b64): Invalid symbol", ErrorKind::Many0)
+            },
+            Err(base64::DecodeError::InvalidPadding) => {
+                parse_err!(i, "bytes (b64): Invalid padding", ErrorKind::Many0)
             }
         },
     }
@@ -1110,9 +1114,15 @@ mod tests {
     #[test]
     fn occur_t() {
         assert_eq!(occur("*foobar"), Ok(("foobar", Occurs::ZeroPlus)));
-        assert_eq!(occur("3*foobar"), Ok(("foobar", Occurs::Between(3, i64::MAX))));
+        assert_eq!(
+            occur("3*foobar"),
+            Ok(("foobar", Occurs::Between(3, i64::MAX)))
+        );
         assert_eq!(occur("*3foobar"), Ok(("foobar", Occurs::Between(0, 3))));
-        assert_eq!(occur("42*54foobar"), Ok(("foobar", Occurs::Between(42, 54 ))));
+        assert_eq!(
+            occur("42*54foobar"),
+            Ok(("foobar", Occurs::Between(42, 54)))
+        );
         assert_eq!(occur("?foobar"), Ok(("foobar", Occurs::Optional)));
         assert_eq!(occur("+foobar"), Ok(("foobar", Occurs::OnePlus)));
         assert_eq!(occur("0*1foobar"), Ok(("foobar", Occurs::Optional)));

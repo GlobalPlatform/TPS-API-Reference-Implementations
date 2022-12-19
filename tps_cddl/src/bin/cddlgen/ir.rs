@@ -63,7 +63,7 @@ impl IRStore {
                     vs.push(val.clone());
                     let _ = self.store.insert(k.clone(), IR::Values(vs));
                 },
-                Type::Types(ts) => {
+                Type::Types(_ts) => {
 
                 }
                 _ => ()

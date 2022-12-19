@@ -266,7 +266,7 @@ where
     /// Insert an item that has already been encoded in CBOR.
     ///
     /// This function is typically called when the &[u8] you wish to insert contains CBIR which has
-    /// been encoded as a `bstr`. If you call the normal [[`insert`]] function, you will get a
+    /// been encoded as a `bstr`. If you call the normal [[`EncodeBuffer::insert`]] function, you will get a
     /// `bstr` wrapped in a second `bstr`.
     ///
     /// In CDDL terms, this is used for `bstr .cbor ...`.
@@ -598,8 +598,7 @@ fn count_items(buf: &[u8]) -> usize {
 ///   feature that must be enabled at compile time)
 /// - [`&str`] will be encoded as a CBOR `tstr` type and copied to the encode buffer.
 /// - [`[u8]`] will be encoded as a CBOR `bstr` type.
-/// - There are also instances for CBOR Arrays ([`Array`]), Maps ([`Map`]) and tagged values
-///   ([`Tag`])
+/// - There are also instances for CBOR Arrays, Maps and tagged values.
 ///
 /// # Example
 ///

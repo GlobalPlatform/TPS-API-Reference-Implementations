@@ -22,7 +22,7 @@
 # SOFTWARE.
 
 [licenses]
-allow = [ "MIT", "BSD-3-Clause", "Unicode-DFS-2016" ]
+allow = [ "MIT", "Unicode-DFS-2016" ]
 copyleft = "deny"
 default = "warn"
 
