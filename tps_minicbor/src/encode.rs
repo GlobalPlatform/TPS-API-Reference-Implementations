@@ -1,5 +1,5 @@
 /***************************************************************************************************
- * Copyright (c) 2021, 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the “Software”), to deal in the Software without
@@ -82,12 +82,10 @@ struct MtUnset(usize);
 ///# }
 /// ```
 #[derive(Debug)]
-#[cfg(feature = "combinators")]
 pub struct CBORBuilder<'buf> {
     pub(self) buf: EncodeBuffer<'buf>,
 }
 
-#[cfg(feature = "combinators")]
 impl<'buf> CBORBuilder<'buf> {
     /// Create an instance of CBORBuilder from a mutable reference to a slice.
     ///
@@ -172,14 +170,12 @@ impl<'buf> CBORBuilder<'buf> {
 /// ```
 ///
 #[derive(Debug)]
-#[cfg(feature = "combinators")]
 pub struct EncodeBuffer<'buf> {
     bytes: &'buf mut [u8],
     index: usize,
     items: usize,
 }
 
-#[cfg(feature = "combinators")]
 impl<'buf, 'short> EncodeBuffer<'buf>
 where
     'buf: 'short,
@@ -634,6 +630,8 @@ fn count_items(buf: &[u8]) -> usize {
 ///# }
 /// ```
 pub trait EncodeItem {
+    /// `EncodeItem` supports a single method - [`EncodeItem::encode`], which attempts to encode an
+    /// item onto an [`EncodeBuffer`] which is usually underlying a [`CBORBuilder`].
     fn encode<'f, 'buf>(
         &self,
         buf: &'f mut EncodeBuffer<'buf>,

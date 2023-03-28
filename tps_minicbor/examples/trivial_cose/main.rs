@@ -1,5 +1,5 @@
 /***************************************************************************************************
- * Copyright (c) 2021, 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the “Software”), to deal in the Software without
@@ -37,13 +37,12 @@ use crypto_bigint::{ArrayEncoding, U256};
 use p256::ecdsa::signature::{Signature, Signer, Verifier};
 use p256::ecdsa::{SigningKey, VerifyingKey};
 
-use std::convert::TryInto;
 use std::error::Error;
 use std::io;
 use std::io::Write;
 
 use tps_minicbor::debug::{print_hex, Diag};
-use tps_minicbor::decoder::{is_array, is_bstr, is_map, is_tag_with_value, CBORDecoder, SequenceBuffer, ArrayBuf, MapBuf};
+use tps_minicbor::decoder::{CBORDecoder, SequenceBuffer, ArrayBuf, MapBuf};
 use tps_minicbor::encoder::*;
 use tps_minicbor::error::CBORError;
 use tps_minicbor::types::*;
@@ -204,7 +203,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut protected_hdrs = Vec::<u8>::new();
     let mut payload = Vec::<u8>::new();
     let mut signature = Vec::<u8>::new();
-    let mut tag: u64 = 18;
 
     // Extract the critical bits of the COSE Sign1 structure
     let _v = verifier
@@ -214,7 +212,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 // Protected Headers
                 let prot_hdr = ab.item::<&[u8]>(0)?;
                 if prot_hdr.len() > 0 {
-                    let not_empty = CBORDecoder::from_slice(prot_hdr)
+                    let _not_empty = CBORDecoder::from_slice(prot_hdr)
                         .map(|mb| {
                             dup_from_slice(prot_hdr, &mut protected_hdrs);
                             alg = mb.lookup(1)?;

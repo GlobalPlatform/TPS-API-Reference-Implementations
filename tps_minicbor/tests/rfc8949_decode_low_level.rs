@@ -1,5 +1,5 @@
 /***************************************************************************************************
- * Copyright (c) 2020-2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2020-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the “Software”), to deal in the Software without
@@ -26,6 +26,8 @@
 extern crate tps_minicbor;
 
 use std::convert::TryFrom;
+
+#[cfg(feature = "float")]
 use half::f16;
 
 use tps_minicbor::decoder::*;
@@ -522,6 +524,7 @@ fn rfc8949_decode_arr() {
 }
 
 #[test]
+#[cfg(feature = "float")]
 fn rfc8949_decode_float() {
     println!("<======================= rfc8949_decode_float =====================>");
 

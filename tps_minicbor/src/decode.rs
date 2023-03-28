@@ -1,5 +1,5 @@
 /***************************************************************************************************
- * Copyright (c) 2020-2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2020-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the “Software”), to deal in the Software without
@@ -138,6 +138,7 @@ impl<'buf> AnyUnsigned {
 /// This CBOR buffer implementation does not support indefinite length items.
 #[derive(Debug, Copy, Clone)]
 pub struct SequenceBuffer<'buf> {
+    /// Underlying reference to data buffer
     pub bytes: &'buf [u8],
 }
 

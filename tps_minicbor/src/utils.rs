@@ -1,5 +1,5 @@
 /***************************************************************************************************
- * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the “Software”), to deal in the Software without
@@ -43,12 +43,11 @@ pub fn within(buf: &[u8], start: usize, len: usize) -> bool {
 }
 
 #[doc(hidden)]
-#[cfg(feature = "combinators")]
 #[derive(Debug, Copy, Clone)]
 pub struct Allowable(u32);
 
 /// Allowable
-#[cfg(all(feature = "combinators", feature = "float"))]
+#[cfg(feature = "float")]
 impl Allowable {
     pub fn new(v: u32) -> Self {
         Allowable(v)
@@ -95,7 +94,7 @@ impl Allowable {
     }
 }
 
-#[cfg(all(feature = "combinators", not(feature = "float")))]
+#[cfg(not(feature = "float"))]
 impl Allowable {
     pub fn new(v: u32) -> Self {
         Allowable(v)
@@ -143,7 +142,6 @@ impl Allowable {
 }
 
 #[doc(hidden)]
-#[cfg(feature = "combinators")]
 pub trait Filter {
     type Error;
 
@@ -152,7 +150,6 @@ pub trait Filter {
         Self: Sized;
 }
 
-#[cfg(feature = "combinators")]
 impl<'buf> Filter for Option<CBOR<'buf>> {
     type Error = CBORError;
 
@@ -177,7 +174,7 @@ impl<'buf> Filter for Option<CBOR<'buf>> {
     }
 }
 
-#[cfg(all(feature = "combinators", feature = "float"))]
+#[cfg(feature = "float")]
 impl<'buf> Filter for CBOR<'buf> {
     type Error = CBORError;
 
@@ -251,7 +248,7 @@ impl<'buf> Filter for CBOR<'buf> {
     }
 }
 
-#[cfg(all(feature = "combinators", not(feature = "float")))]
+#[cfg(not(feature = "float"))]
 impl<'buf> Filter for CBOR<'buf> {
     type Error = CBORError;
 

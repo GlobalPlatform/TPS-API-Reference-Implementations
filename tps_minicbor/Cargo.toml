@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2022 Qualcomm Innovation Center, Inc. All rights reserved.
+# Copyright (c) 2020-2023 Qualcomm Innovation Center, Inc. All rights reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software
 # and associated documentation files (the “Software”), to deal in the Software without
@@ -20,7 +20,7 @@
 
 [package]
 name = "tps_minicbor"
-version = "0.4.3"
+version = "0.5.1"
 authors = ["Jeremy O'Donoghue<quic_jodonogh@quicinc.com"]
 edition = "2018"
 license = "MIT"
@@ -32,25 +32,25 @@ repository = "https://github.com/GlobalPlatform/TPS-API-Reference-Implementation
 
 [[example]]
 name = "decode"
-required_features = ["full"]
+required-features = ["full"]
 
 [[example]]
 name = "trivial_cose"
-required_features = ["full"]
+required-features = ["full"]
 
 # tps_minicbor can be built in the following variants:
 # - default: (no_std) No allocator or standard library required. Logging, standard tags
 #   not allowed as a consequence since these require an allocator.
 # - full: (std) Requires standard library. Optionally supports logging, indefinite length messaging and a
 #   higher-level API which can be easier to use.
-
+# - float: (no_std) Support floats in addition to default features
 [features]
-full = ["combinators", "std", "float", "dep:chrono"]
-default = ["combinators"]
+full = ["std", "float", "tags"]
+default = []
 
 trace = ["std"]                                     # Perform tracing on function entry/exit (for debug). Requires std
+tags = ["dep:chrono"]                               # Support standardized tags
 std = []                                            # Standard library available
-combinators = []                                    # Support higher-level APIs for encoding and decoding
 float = []                                          # Support floating point operations
 
 # Where dependencies are dual-licensed, this project uses the MIT license

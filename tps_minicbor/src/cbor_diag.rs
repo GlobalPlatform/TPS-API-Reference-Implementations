@@ -1,5 +1,5 @@
 /***************************************************************************************************
- * Copyright (c) 2021, 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the “Software”), to deal in the Software without
@@ -48,10 +48,10 @@
 ///   this could be simply a dump of the debug format (i.e. implementation of Debug trait, although
 ///   Display would be even better as it is intended for formatted output.
 ///
-#[cfg(any(feature = "float", test))]
+#[cfg(feature = "float")]
 extern crate half;
 
-#[cfg(any(feature = "full", test))]
+#[cfg(feature = "full")]
 extern crate chrono;
 
 #[cfg(any(feature = "full", test))]
@@ -72,10 +72,10 @@ use std::io::{Read, Write};
 #[cfg(any(feature = "full", test))]
 use std::string::String;
 
-#[cfg(any(feature = "float", test))]
+#[cfg(feature = "float")]
 use half::f16;
 
-#[cfg(any(feature = "full", test))]
+#[cfg(feature = "full")]
 use chrono::{DateTime, FixedOffset};
 
 #[cfg(any(feature = "full", test))]
@@ -88,6 +88,7 @@ use crate::types::CBOR;
 /// diagnostic format.
 #[cfg(any(feature = "full", test))]
 pub trait Diag {
+    /// Pretty-print this item in CBOR diagnostic format to the provided writer instance
     fn cbor_diag(&self, outfp: &mut dyn Write) -> Result<(), Box<dyn Error>>;
 }
 
@@ -131,8 +132,8 @@ pub trait DiagFormatter {
     ) -> Result<(), std::io::Error>;
 }
 
-// This variant used when std_tags or test features are enabled
-#[cfg(any(feature = "full", test))]
+// This variant used when full features are enabled
+#[cfg(feature = "full")]
 impl<'buf> DiagFormatter for CBOR<'buf> {
     fn diag(
         &self,
@@ -165,6 +166,67 @@ impl<'buf> DiagFormatter for CBOR<'buf> {
     }
 }
 
+// This variant used when std_tags or test features are enabled
+#[cfg(all(feature = "float", not(feature = "full")))]
+impl<'buf> DiagFormatter for CBOR<'buf> {
+    fn diag(
+        &self,
+        buf: &mut dyn std::io::Write,
+        idt: u32,
+    ) -> Result<(), std::io::Error> {
+        match self {
+            CBOR::UInt(v) => diag_uint(buf, v, idt),
+            CBOR::NInt(v) => diag_nint(buf, v, idt),
+            CBOR::Float64(v) => diag_f64(buf, v, idt),
+            CBOR::Float32(v) => diag_f32(buf, v, idt),
+            CBOR::Float16(v) => diag_f16(buf, v, idt),
+            CBOR::Bstr(bs) => diag_bstr(buf, *bs, idt),
+            CBOR::Tstr(s) => diag_tstr(buf, *s, idt),
+            CBOR::Array(ab) => ab.diag(buf, idt),
+            CBOR::Map(mb) => mb.diag(buf, idt),
+            CBOR::Tag(tb) => tb.diag(buf, idt),
+            CBOR::Simple(v) => diag_uint(buf, &(*v as u64), idt),
+            CBOR::False => diag_false(buf, idt),
+            CBOR::True => diag_true(buf, idt),
+            CBOR::Null => diag_null(buf, idt),
+            CBOR::Undefined => diag_undefined(buf, idt),
+            CBOR::Eof => Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                "EOF reached",
+            )),
+        }
+    }
+}
+
+// This variant used when std_tags or test features are enabled
+#[cfg(all(not(feature = "float"), not(feature = "full")))]
+impl<'buf> DiagFormatter for CBOR<'buf> {
+    fn diag(
+        &self,
+        buf: &mut dyn std::io::Write,
+        idt: u32,
+    ) -> Result<(), std::io::Error> {
+        match self {
+            CBOR::UInt(v) => diag_uint(buf, v, idt),
+            CBOR::NInt(v) => diag_nint(buf, v, idt),
+            CBOR::Bstr(bs) => diag_bstr(buf, *bs, idt),
+            CBOR::Tstr(s) => diag_tstr(buf, *s, idt),
+            CBOR::Array(ab) => ab.diag(buf, idt),
+            CBOR::Map(mb) => mb.diag(buf, idt),
+            CBOR::Tag(tb) => tb.diag(buf, idt),
+            CBOR::Simple(v) => diag_uint(buf, &(*v as u64), idt),
+            CBOR::False => diag_false(buf, idt),
+            CBOR::True => diag_true(buf, idt),
+            CBOR::Null => diag_null(buf, idt),
+            CBOR::Undefined => diag_undefined(buf, idt),
+            CBOR::Eof => Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                "EOF reached",
+            )),
+        }
+    }
+}
+
 #[cfg(any(feature = "full", test))]
 #[inline]
 fn diag_uint(
@@ -185,7 +247,7 @@ fn diag_nint(
     write!(buf, "{} {} ", indent(idt), (-1i128 - (*v as i128)))
 }
 
-#[cfg(any(feature = "full", test))]
+#[cfg(feature = "float")]
 #[inline]
 fn diag_f64(
     buf: &mut dyn std::io::Write,
@@ -195,7 +257,7 @@ fn diag_f64(
     write!(buf, "{} {} ", indent(idt), v)
 }
 
-#[cfg(any(feature = "full", test))]
+#[cfg(feature = "float")]
 #[inline]
 fn diag_f32(
     buf: &mut dyn std::io::Write,
@@ -205,7 +267,7 @@ fn diag_f32(
     write!(buf, "{} {} ", indent(idt), v)
 }
 
-#[cfg(any(feature = "full", test))]
+#[cfg(feature = "float")]
 #[inline]
 fn diag_f16(
     buf: &mut dyn std::io::Write,
@@ -270,7 +332,7 @@ fn diag_undefined(
     write!(buf, "{} undefined ", indent(idt))
 }
 
-#[cfg(any(feature = "full", test))]
+#[cfg(feature = "full")]
 #[inline]
 fn diag_date_time(
     buf: &mut dyn std::io::Write,
@@ -285,7 +347,7 @@ fn diag_date_time(
     )
 }
 
-#[cfg(any(feature = "full", test))]
+#[cfg(feature = "full")]
 #[inline]
 fn diag_epoch(
     buf: &mut dyn std::io::Write,

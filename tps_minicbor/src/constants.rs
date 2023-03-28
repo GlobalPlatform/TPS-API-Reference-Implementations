@@ -1,5 +1,5 @@
 /***************************************************************************************************
- * Copyright (c) 2020-2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2020-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the “Software”), to deal in the Software without
@@ -46,7 +46,7 @@ pub const MT_TAG: u8 = 0b110_00000;
 /// Major Type 7 (Floats, simple types etc.)
 pub const MT_SIMPLE: u8 = 0b111_00000;
 
-#[cfg(any(feature = "float", test))]
+#[cfg(feature = "float")]
 pub const MT_FLOAT: u8 = 0b111_00000;
 
 /// Maximum value of a "simple" payload mapped on AI bits
@@ -65,16 +65,25 @@ pub const PAYLOAD_EIGHT_BYTES: u8 = 27;
 
 /// Module defining bitfield values for what types are allowed by the filter trait. See
 /// `Allowable`.
-#[cfg(feature = "combinators")]
 pub mod allow {
+    /// Filter everything.
     pub const NONE: u32 = 1;
+    /// Allow CBOR positive integers.
     pub const UINT: u32 = 2;
+    /// Allow CBOR negative integers.
     pub const NINT: u32 = 4;
+    /// Allow CBOR byte strings
     pub const BSTR: u32 = 8;
+    /// Allow CBOR text strings
     pub const TSTR: u32 = 16;
+    /// Allow CBOR arrays
     pub const ARRAY: u32 = 32;
+    /// Allow CBOR maps
     pub const MAP: u32 = 64;
+    /// Allow tagged CBOR items
     pub const TAG: u32 = 128;
+    /// Allows floats
     pub const FLOAT: u32 = 256;
+    /// Allows CBOR simple values
     pub const SIMPLE: u32 = 512;
 }

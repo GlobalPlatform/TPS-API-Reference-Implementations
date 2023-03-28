@@ -1,5 +1,5 @@
 /***************************************************************************************************
- * Copyright (c) 2020-2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2020-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the “Software”), to deal in the Software without
@@ -172,7 +172,7 @@
 //!     s: &'t str,
 //!     v: u64,
 //! }
-//! 
+//!
 //! fn decode_tee_eat() -> Result<(), CBORError> {
 //!     let mut input: &[u8] = &[
 //!         167, 10, 72, 148, 143, 136, 96, 209, 58, 70, 62, 25, 1, 0, 80, 1, 152, 245,
@@ -242,22 +242,25 @@ extern crate std;
 #[cfg(all(not(feature = "std"), not(test)))]
 extern crate core as std;
 
-#[cfg(any(feature = "float", test))]
+#[cfg(feature = "float")]
 extern crate half;
 
-#[cfg(any(feature = "full", test))]
+#[cfg(feature = "full")]
 extern crate chrono;
 
-pub(crate) mod array;
-pub(crate) mod ast;
+mod array;
+mod ast;
+
+#[cfg(feature = "full")]
 mod cbor_diag;
-pub(crate) mod constants;
-pub(crate) mod decode;
-pub(crate) mod decode_combinators;
-pub(crate) mod encode;
-pub(crate) mod map;
-pub(crate) mod tag;
-pub(crate) mod utils;
+
+mod constants;
+mod decode;
+mod decode_combinators;
+mod encode;
+mod map;
+mod tag;
+mod utils;
 
 /// The `error` module contains error definitions used throughout `tps_minicbor`.
 pub mod error;
@@ -281,22 +284,19 @@ pub mod decoder {
     pub use super::tag::TagBuf;
 
     // Decode Combinators API
-    #[cfg(any(feature = "combinators", test))]
     pub use super::decode_combinators::{
         apply, cond, decode_bool, decode_bstr, decode_int, decode_nint, decode_null,
         decode_simple, decode_tstr, decode_uint, decode_undefined, is_any, is_array, is_bool,
         is_bstr, is_eof, is_false, is_int, is_map, is_nint, is_null, is_simple, is_tag,
         is_tag_with_value, is_true, is_tstr, is_uint, is_undefined, opt, or, with_pred,
-        with_value, CBORDecodable, CBORDecoder,
+        with_value, CBORDecoder,
     };
 
-    #[cfg(any(feature = "combinators", test))]
     pub use super::utils::{Allowable, Filter};
 
-    #[cfg(any(feature = "combinators", test))]
     pub use super::constants::allow::*;
 
-    #[cfg(any(all(feature = "full", feature = "combinators"), test))]
+    #[cfg(feature = "full")]
     pub use super::decode_combinators::{is_date_time, is_epoch};
 }
 
@@ -306,10 +306,11 @@ pub mod encoder {
     pub use super::encode::{CBORBuilder, EncodeBuffer, EncodeContext, EncodeItem};
 }
 
-#[cfg(any(feature = "full", test))]
+/// The `debug` module exports CBOR diagnostic pretty-printing
+#[cfg(feature = "full")]
 pub mod debug {
-    #[cfg(any(feature = "full", test))]
+    #[cfg(feature = "full")]
     pub use super::cbor_diag::print_hex;
-    #[cfg(any(feature = "full", test))]
+    #[cfg(feature = "full")]
     pub use super::cbor_diag::Diag;
 }
