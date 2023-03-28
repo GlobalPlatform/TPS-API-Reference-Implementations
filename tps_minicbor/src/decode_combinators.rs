@@ -1,5 +1,5 @@
 /***************************************************************************************************
- * Copyright (c) 2021, 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the “Software”), to deal in the Software without
@@ -149,11 +149,6 @@ type DCPResult<'buf, O> = core::result::Result<(DecodeBufIterator<'buf>, O), CBO
  * Top Level Decoder API
  **************************************************************************************************/
 
-#[cfg(feature = "combinators")]
-pub struct CBORDecoder<'buf> {
-    decode_buf_iter: RefCell<DecodeBufIterator<'buf>>,
-}
-
 /// CBORDecoder provides a smart wrapper over a byte slice, keeping information on the current
 /// state of CBOR decoding.
 ///
@@ -161,7 +156,10 @@ pub struct CBORDecoder<'buf> {
 /// performed by iterating over instances of [`CBOR`] which map over the buffer.
 ///
 /// You can build instances of `CBORDecoder` from byte slices, tagged items, arrays and maps
-#[cfg(feature = "combinators")]
+pub struct CBORDecoder<'buf> {
+    decode_buf_iter: RefCell<DecodeBufIterator<'buf>>,
+}
+
 impl<'buf> CBORDecoder<'buf> {
     /// Construct a new instance of a `CBORDecoder` from a `SequenceBuffer`.
     #[inline]
@@ -585,10 +583,6 @@ impl<'buf> CBORDecoder<'buf> {
     }
 }
 
-pub trait CBORDecodable<'t> {
-    fn decode(&'t mut self, buf: &CBORDecoder) -> Result<&CBORDecoder, CBORError>;
-}
-
 /***************************************************************************************************
  * CBOR decoding helpers
  **************************************************************************************************/
@@ -596,7 +590,6 @@ pub trait CBORDecodable<'t> {
 /// The CBOR parsing monad. Design is very similar to implementation of `Parser` in the `nom` crate.
 ///
 /// `DecodeParser` provides functions to manipulate parsers in various useful ways.
-#[cfg(feature = "combinators")]
 pub trait DecodeParser<'buf, O> {
     /// Parse monad: start with an input type and return `Result` containing (remaining input,
     /// output) or an error.
@@ -663,7 +656,6 @@ pub trait DecodeParser<'buf, O> {
 /// This instance of `DecodeParser` allows any function `F` of type
 /// `Fn(DecodeBufIterator) -> DCPResult<O>' to be used as a `DecodeParser` instance, which
 /// simplifies the definition of all of the simple parsers.
-#[cfg(feature = "combinators")]
 impl<'buf, O, F> DecodeParser<'buf, O> for F
 where
     F: Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf, O>,
@@ -674,14 +666,12 @@ where
 }
 
 /// Helper structure for `DecodeParser::map`.
-#[cfg(feature = "combinators")]
 pub struct Map<F1, F2, O1> {
     f1: F1,
     f2: F2,
     phantom: core::marker::PhantomData<O1>,
 }
 
-#[cfg(feature = "combinators")]
 impl<'buf, O1, O2, F1: DecodeParser<'buf, O1>, F2: Fn(O1) -> O2> DecodeParser<'buf, O2>
     for Map<F1, F2, O1>
 {
@@ -695,14 +685,12 @@ impl<'buf, O1, O2, F1: DecodeParser<'buf, O1>, F2: Fn(O1) -> O2> DecodeParser<'b
 }
 
 /// Helper structure for `DecodeParser::flat_map`.
-#[cfg(feature = "combinators")]
 pub struct FlatMap<F1, F2, O1> {
     f1: F1,
     f2: F2,
     phantom: core::marker::PhantomData<O1>,
 }
 
-#[cfg(feature = "combinators")]
 impl<'buf, O1, O2, F1: DecodeParser<'buf, O1>, F2: Fn(O1) -> P2, P2: DecodeParser<'buf, O2>>
     DecodeParser<'buf, O2> for FlatMap<F1, F2, O1>
 {
@@ -714,13 +702,11 @@ impl<'buf, O1, O2, F1: DecodeParser<'buf, O1>, F2: Fn(O1) -> P2, P2: DecodeParse
 }
 
 /// Helper structure for `DecodeParser::and`.
-#[cfg(feature = "combinators")]
 pub struct And<F1, F2> {
     f1: F1,
     f2: F2,
 }
 
-#[cfg(feature = "combinators")]
 impl<'buf, O1, O2, F1: DecodeParser<'buf, O1>, F2: DecodeParser<'buf, O2>>
     DecodeParser<'buf, (O1, O2)> for And<F1, F2>
 {
@@ -733,13 +719,11 @@ impl<'buf, O1, O2, F1: DecodeParser<'buf, O1>, F2: DecodeParser<'buf, O2>>
 }
 
 /// Helper structure for `DecodeParser::or`
-#[cfg(feature = "combinators")]
 pub struct Or<F1, F2> {
     f1: F1,
     f2: F2,
 }
 
-#[cfg(feature = "combinators")]
 impl<'buf, O, F1: DecodeParser<'buf, O>, F2: DecodeParser<'buf, O>> DecodeParser<'buf, O>
     for Or<F1, F2>
 {
@@ -756,14 +740,12 @@ impl<'buf, O, F1: DecodeParser<'buf, O>, F2: DecodeParser<'buf, O>> DecodeParser
 }
 
 /// Helper structure for `DecodeParser::into`.
-#[cfg(feature = "combinators")]
 pub struct Into<F, O1, O2: From<O1>> {
     f: F,
     phantom_o1: core::marker::PhantomData<O1>,
     phantom_o2: core::marker::PhantomData<O2>,
 }
 
-#[cfg(feature = "combinators")]
 impl<'buf, O1, O2: From<O1>, F: DecodeParser<'buf, O1>> DecodeParser<'buf, O2> for Into<F, O1, O2> {
     /// Parse over `Into` structure.
     fn parse(&self, i: DecodeBufIterator<'buf>) -> DCPResult<'buf, O2> {
@@ -779,7 +761,6 @@ impl<'buf, O1, O2: From<O1>, F: DecodeParser<'buf, O1>> DecodeParser<'buf, O2> f
  **************************************************************************************************/
 
 /// Match a CBOR positive integer
-#[cfg(feature = "combinators")]
 pub fn is_uint<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     move |mut iter| {
         let item = iter.next();
@@ -792,7 +773,6 @@ pub fn is_uint<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
 }
 
 /// Match a CBOR positive integer
-#[cfg(feature = "combinators")]
 pub fn is_nint<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     move |mut iter| {
         let item = iter.next();
@@ -805,7 +785,6 @@ pub fn is_nint<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
 }
 
 /// Match a CBOR bytestring
-#[cfg(feature = "combinators")]
 pub fn is_bstr<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     move |mut iter| {
         let item = iter.next();
@@ -818,7 +797,6 @@ pub fn is_bstr<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
 }
 
 /// Match a CBOR text string
-#[cfg(feature = "combinators")]
 pub fn is_tstr<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     move |mut iter| {
         let item = iter.next();
@@ -831,7 +809,6 @@ pub fn is_tstr<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
 }
 
 /// Match a CBOR `simple` value
-#[cfg(feature = "combinators")]
 pub fn is_simple<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     move |mut iter| {
         let item = iter.next();
@@ -844,7 +821,6 @@ pub fn is_simple<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
 }
 
 /// Match a CBOR `Array` value
-#[cfg(feature = "combinators")]
 pub fn is_array<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     move |mut iter| {
         let item = iter.next();
@@ -857,7 +833,6 @@ pub fn is_array<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
 }
 
 /// Match a CBOR `Map` value
-#[cfg(feature = "combinators")]
 pub fn is_map<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     move |mut iter| {
         let item = iter.next();
@@ -870,7 +845,6 @@ pub fn is_map<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
 }
 
 /// Match a CBOR `true` value
-#[cfg(feature = "combinators")]
 pub fn is_true<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     move |mut iter| {
         let item = iter.next();
@@ -883,7 +857,6 @@ pub fn is_true<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
 }
 
 /// Match a CBOR `false` value
-#[cfg(feature = "combinators")]
 pub fn is_false<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     move |mut iter| {
         let item = iter.next();
@@ -896,7 +869,6 @@ pub fn is_false<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
 }
 
 /// Match a CBOR `false` value
-#[cfg(feature = "combinators")]
 pub fn is_null<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     move |mut iter| {
         let item = iter.next();
@@ -909,7 +881,6 @@ pub fn is_null<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
 }
 
 /// Match a CBOR `false` value
-#[cfg(feature = "combinators")]
 pub fn is_undefined<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     move |mut iter| {
         let item = iter.next();
@@ -922,12 +893,11 @@ pub fn is_undefined<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf
 }
 
 /// Match a CBOR integer
-#[cfg(feature = "combinators")]
 pub fn is_int<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     move |iter| DecodeParser::or(is_uint(), is_nint()).parse(iter)
 }
 
-#[cfg(feature = "combinators")]
+/// Match a CBOR boolean value
 pub fn is_bool<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     move |iter| match decode_bool()(iter)? {
         (it, false) => Ok((it, CBOR::False)),
@@ -936,7 +906,6 @@ pub fn is_bool<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
 }
 
 /// Match any CBOR type
-#[cfg(feature = "combinators")]
 pub fn is_any<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     move |mut iter| {
         let item = iter.next();
@@ -948,7 +917,6 @@ pub fn is_any<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
 }
 
 /// Match a CBOR tagged value
-#[cfg(feature = "combinators")]
 pub fn is_tag<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     move |mut iter| {
         let item = iter.next();
@@ -961,7 +929,6 @@ pub fn is_tag<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
 }
 
 /// Match a CBOR tag with a specific value
-#[cfg(feature = "combinators")]
 pub fn is_tag_with_value<'buf>(v: u64) -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     move |mut iter| {
         let item = iter.next();
@@ -983,8 +950,9 @@ pub fn is_tag_with_value<'buf>(v: u64) -> impl Fn(DecodeBufIterator<'buf>) -> DC
     }
 }
 
+/// Match a CBOR tag with a CBOR date_time
 #[cfg_attr(feature = "trace", trace)]
-#[cfg(any(test, all(feature = "combinators", feature = "full")))]
+#[cfg(feature = "full")]
 pub fn is_date_time<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     is_tag_helper(0, |iter: DecodeBufIterator| {
         if let (_, CBOR::Tstr(date_time)) = is_tstr()(iter)? {
@@ -998,8 +966,9 @@ pub fn is_date_time<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf
     })
 }
 
+/// Match a CBOR tag with a CBOR epoch
 #[cfg_attr(feature = "trace", trace)]
-#[cfg(any(test, all(feature = "combinators", feature = "full")))]
+#[cfg(feature = "full")]
 pub fn is_epoch<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     use core::convert::TryInto;
 
@@ -1013,7 +982,7 @@ pub fn is_epoch<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
 }
 
 #[cfg_attr(feature = "trace", trace)]
-#[cfg(any(test, all(feature = "combinators", feature = "full")))]
+#[cfg(feature = "full")]
 fn is_tag_helper<'buf, F>(tag: u64, f: F) -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf>
 where
     F: Fn(DecodeBufIterator<'buf>) -> Result<CBOR<'buf>, CBORError>,
@@ -1035,7 +1004,6 @@ where
 }
 
 /// Match the end of the CBOR decode buffer
-#[cfg(feature = "combinators")]
 pub fn is_eof<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
     move |mut iter| {
         let item = iter.next();
@@ -1051,7 +1019,6 @@ pub fn is_eof<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCResult<'buf> {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// Decode a CBOR positive integer
-#[cfg(feature = "combinators")]
 pub fn decode_uint<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf, i128> {
     move |mut iter| {
         let item = iter.next();
@@ -1064,7 +1031,6 @@ pub fn decode_uint<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf
 }
 
 /// Decode a CBOR negative integer
-#[cfg(feature = "combinators")]
 pub fn decode_nint<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf, i128> {
     move |mut iter| {
         let item = iter.next();
@@ -1077,13 +1043,11 @@ pub fn decode_nint<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf
 }
 
 /// Decode a CBOR integer
-#[cfg(feature = "combinators")]
 pub fn decode_int<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf, i128> {
     move |iter| DecodeParser::or(decode_uint(), decode_nint()).parse(iter)
 }
 
 /// Decode a CBOR bytestring
-#[cfg(feature = "combinators")]
 pub fn decode_bstr<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf, &[u8]> {
     move |mut iter| {
         let item = iter.next();
@@ -1096,7 +1060,6 @@ pub fn decode_bstr<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf
 }
 
 /// Decode a CBOR bytestring
-#[cfg(feature = "combinators")]
 pub fn decode_tstr<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf, &str> {
     move |mut iter| {
         let item = iter.next();
@@ -1109,7 +1072,6 @@ pub fn decode_tstr<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf
 }
 
 /// Decode a CBOR `bool` value
-#[cfg(feature = "combinators")]
 pub fn decode_bool<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf, bool> {
     move |mut iter| {
         let item = iter.next();
@@ -1123,7 +1085,6 @@ pub fn decode_bool<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf
 }
 
 /// Decode a CBOR `null` value
-#[cfg(feature = "combinators")]
 pub fn decode_null<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf, CBOR> {
     move |mut iter| {
         let item = iter.next();
@@ -1136,7 +1097,6 @@ pub fn decode_null<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf
 }
 
 /// Decode a CBOR `null` value
-#[cfg(feature = "combinators")]
 pub fn decode_undefined<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf, CBOR> {
     move |mut iter| {
         let item = iter.next();
@@ -1149,7 +1109,6 @@ pub fn decode_undefined<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult
 }
 
 /// Decode a CBOR `null` value
-#[cfg(feature = "combinators")]
 pub fn decode_simple<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf, u8> {
     move |mut iter| {
         let item = iter.next();
@@ -1162,7 +1121,6 @@ pub fn decode_simple<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'b
 }
 
 /// Decode a CBOR array
-#[cfg(feature = "combinators")]
 pub fn decode_array<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf, ArrayBuf> {
     move |mut iter| {
         let item = iter.next();
@@ -1175,7 +1133,6 @@ pub fn decode_array<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'bu
 }
 
 /// Decode a CBOR map
-#[cfg(feature = "combinators")]
 pub fn decode_map<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf, MapBuf> {
     move |mut iter| {
         let item = iter.next();
@@ -1188,7 +1145,6 @@ pub fn decode_map<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf,
 }
 
 /// Decode a CBOR tag
-#[cfg(feature = "combinators")]
 pub fn decode_tag<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf, TagBuf> {
     move |mut iter| {
         let item = iter.next();
@@ -1205,7 +1161,6 @@ pub fn decode_tag<'buf>() -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf,
  **************************************************************************************************/
 
 /// Conditionally execute a parser, returning the result in an `Option<CBOR>`
-#[cfg(feature = "combinators")]
 pub fn cond<'buf, O, F>(
     b: bool,
     f: F,
@@ -1228,7 +1183,6 @@ where
 // Continue to match a rule until the provided mutable slice is filled.
 
 /// Optionally match a rule, returning result in `Option<CBOR>`.
-#[cfg(feature = "combinators")]
 pub fn opt<'buf, O, F>(f: F) -> impl Fn(DecodeBufIterator<'buf>) -> DCPResult<'buf, Option<O>>
 where
     F: DecodeParser<'buf, O>,
@@ -1240,7 +1194,6 @@ where
 }
 
 /// Match one of two rules, returning result in `Option<CBOR>`.
-#[cfg(feature = "combinators")]
 pub fn or<'buf, O, F>(
     f1: F,
     f2: F,
@@ -1264,7 +1217,6 @@ where
 
 /// If a rule succeeds, apply a verification function to its output. The verification function
 /// should return `true` if verification succeeded.
-#[cfg(feature = "combinators")]
 pub fn with_pred<'buf, O, F>(
     f: F,
     g: impl Fn(&O) -> bool,
@@ -1285,7 +1237,6 @@ where
 /// If a rule succeeds, unconditionally apply a function to its output and continue.
 ///
 /// This combinator is particularly useful where side-effects from parsing success are desired.
-#[cfg(feature = "combinators")]
 pub fn apply<'buf, O, F>(
     f: F,
     g: impl Fn(&O) -> (),
@@ -1301,7 +1252,6 @@ where
 }
 
 /// Succeeds if a value is matched.
-#[cfg(feature = "combinators")]
 pub fn with_value<'buf, O: PartialEq, F>(
     f: F,
     v: O,

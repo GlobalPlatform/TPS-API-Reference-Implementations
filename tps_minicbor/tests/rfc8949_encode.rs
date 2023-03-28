@@ -1,5 +1,5 @@
 /***************************************************************************************************
- * Copyright (c) 2020-2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2020-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the “Software”), to deal in the Software without
@@ -25,7 +25,9 @@
 
 extern crate tps_minicbor;
 
+#[cfg(feature = "float")]
 use half::f16;
+
 use tps_minicbor::encoder::*;
 use tps_minicbor::error::CBORError;
 use tps_minicbor::types::{array, map, tag, CBOR};
@@ -402,6 +404,7 @@ fn rfc8949_encode_simple() -> Result<(), CBORError> {
 }
 
 #[test]
+#[cfg(feature = "float")]
 fn rfc8949_encode_float() -> Result<(), CBORError> {
     println!("<======================= rfc8949_encode_float ======================>");
     let mut bytes = [0u8; 32];
@@ -515,6 +518,7 @@ fn rfc8949_encode_float() -> Result<(), CBORError> {
 }
 
 #[test]
+#[cfg(feature = "float")]
 fn rfc8949_encode_tag() -> Result<(), CBORError> {
     println!("<==================== rfc8949_encode_empty_array ===================>");
     let mut buffer = [0u8; 64];
@@ -530,6 +534,39 @@ fn rfc8949_encode_tag() -> Result<(), CBORError> {
 
         let mut encoder = CBORBuilder::new(&mut buffer);
         let _ = encoder.insert(&tag(1, |buff| buff.insert(&1363896240.5)))?;
+        assert_eq!(encoder.encoded()?, expected);
+    }
+    {
+        let expected: &[u8] = &[0xd7, 0x44, 0x01, 0x02, 0x03, 0x04];
+
+        let mut encoder = CBORBuilder::new(&mut buffer);
+        let _ = encoder.insert(&tag(23, |buff| {
+            buff.insert(&[1u8, 2u8, 3u8, 4u8].as_slice())
+        }))?;
+        assert_eq!(encoder.encoded()?, expected);
+    }
+    {
+        let expected: &[u8] = &[0xd7, 0x44, 0x01, 0x02, 0x03, 0x04];
+
+        let mut encoder = CBORBuilder::new(&mut buffer);
+        let _ = encoder.insert(&tag(23, |buff| {
+            buff.insert(&[1u8, 2u8, 3u8, 4u8].as_slice())
+        }))?;
+        assert_eq!(encoder.encoded()?, expected);
+    }
+    Ok(())
+}
+
+#[test]
+#[cfg(not(feature = "float"))]
+fn rfc8949_encode_tag() -> Result<(), CBORError> {
+    println!("<==================== rfc8949_encode_empty_array ===================>");
+    let mut buffer = [0u8; 64];
+    {
+        let expected: &[u8] = &[0xc1, 0x1a, 0x51, 0x4b, 0x67, 0xb0];
+
+        let mut encoder = CBORBuilder::new(&mut buffer);
+        let _ = encoder.insert(&tag(1, |buff| buff.insert(&1363896240)))?;
         assert_eq!(encoder.encoded()?, expected);
     }
     {

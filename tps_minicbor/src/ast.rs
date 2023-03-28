@@ -1,5 +1,5 @@
 /***************************************************************************************************
- * Copyright (c) 2020-2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2020-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the “Software”), to deal in the Software without
@@ -35,7 +35,7 @@ use std::mem::transmute;
 #[cfg(feature = "float")]
 use half::f16;
 
-#[cfg(any(feature = "full", test))]
+#[cfg(feature = "full")]
 use chrono::{DateTime, FixedOffset};
 
 #[cfg(feature = "trace")]
@@ -58,70 +58,155 @@ func_trace::init_depth_var!();
 /// - Maps are stored as a number of pairs and an immutable borrowed slice over the contents of the
 ///   map
 #[derive(PartialEq, Debug, Clone)]
-#[cfg(any(feature = "full", test))]
+#[cfg(feature = "full")]
 pub enum CBOR<'buf> {
+    /// A CBOR positive integer, which always has a u64 internal representation regardless of how
+    /// it is stored in the buffer (which will always be the smallest allowed representation).
     UInt(u64),
+    /// A CBOR negative integer, which always has a u64 internal representation regardless of how
+    /// it is stored in the buffer (which will always be the smallest allowed representation).
     NInt(u64),
+    /// A CBOR float encoded on 64 bits.
     Float64(f64),
+    /// A CBOR float encoded on 32 bits.
     Float32(f32),
+    /// A CBOR float encoded on 16 bits.
     Float16(f16),
+    /// A CBOR bytestring.
     Bstr(&'buf [u8]),
+    /// A CBOR text string (UTF-8). Note that Rust will not allow illegal UTF-8 codepoints in this
+    /// representation.
     Tstr(&'buf str),
+    /// A CBOR array, where the [`ArrayBuf`] contains the array contents.
     Array(ArrayBuf<'buf>),
+    /// A CBOR map, where the [`MapBuf`] holds the map contents.
     Map(MapBuf<'buf>),
+    /// A CBOR tagged item, there [`TagBuf`] holds the tagged CBOR item.
     Tag(TagBuf<'buf>),
+    /// A CBOR simple value.
     Simple(u8),
+    /// A CBOR `false` value.
     False,
+    /// A CBOR `true` value.
     True,
+    /// A CBOR `null` value.
     Null,
+    /// A CBOR `undefined` value
     Undefined,
+    /// An internal marker, which is never encoded, indicating that the end of the buffer has
+    /// been reached.
     Eof,
     // The following are the full extensions
+    /// A CBOR `Date-Time` items, converted into a UTC-compatible time.
     DateTime(DateTime<FixedOffset>),
+    /// A CBOR `Unix epoch` time.
     Epoch(i64),
 }
 
 // Manual implementation needed as there is no Copy instance for BigInt
-#[cfg(any(feature = "full", test))]
+#[cfg(feature = "full")]
 impl<'buf> Copy for CBOR<'buf> {}
 
+/// The data type for CBOR Items. CBOR types may borrow immutably from an underlying buffer which
+/// must therefore outlive the item itself - this is the 'buf lifetime.
+///
+/// CBOR item representations are as follows:
+///
+/// - Positive and negative integers are stored as a u64 with enum tags used to distinguish
+///   positive (UInt) and negative (NInt) numbers
+/// - The bstr and tstr types are held as immutable borrowed slices over the CBOR parse buffer
+/// - Simple types are stored as a u8
+/// - Arrays are stored as a number of items and an immutable borrowed slice over the contents of
+///   the array
+/// - Maps are stored as a number of pairs and an immutable borrowed slice over the contents of the
+///   map
 #[derive(PartialEq, Debug, Copy, Clone)]
-#[cfg(all(feature = "float", not(feature = "full"), not(test)))]
+#[cfg(all(feature = "float", not(feature = "full")))]
 pub enum CBOR<'buf> {
+    /// A CBOR positive integer, which always has a u64 internal representation regardless of how
+    /// it is stored in the buffer (which will always be the smallest allowed representation).
     UInt(u64),
+    /// A CBOR negative integer, which always has a u64 internal representation regardless of how
+    /// it is stored in the buffer (which will always be the smallest allowed representation).
     NInt(u64),
+    /// A CBOR float encoded on 64 bits.
     Float64(f64),
+    /// A CBOR float encoded on 32 bits.
     Float32(f32),
+    /// A CBOR float encoded on 16 bits.
     Float16(f16),
+    /// A CBOR bytestring.
     Bstr(&'buf [u8]),
+    /// A CBOR text string (UTF-8). Note that Rust will not allow illegal UTF-8 codepoints in this
+    /// representation.
     Tstr(&'buf str),
+    /// A CBOR array, where the [`ArrayBuf`] contains the array contents.
     Array(ArrayBuf<'buf>),
+    /// A CBOR map, where the [`MapBuf`] holds the map contents.
     Map(MapBuf<'buf>),
+    /// A CBOR tagged item, there [`TagBuf`] holds the tagged CBOR item.
     Tag(TagBuf<'buf>),
+    /// A CBOR simple value.
     Simple(u8),
+    /// A CBOR `false` value.
     False,
+    /// A CBOR `true` value.
     True,
+    /// A CBOR `null` value.
     Null,
+    /// A CBOR `undefined` value
     Undefined,
+    /// An internal marker, which is never encoded, indicating that the end of the buffer has
+    /// been reached.
     Eof,
 }
 
 // This variant used when Floating point operations are not included
+/// The data type for CBOR Items. CBOR types may borrow immutably from an underlying buffer which
+/// must therefore outlive the item itself - this is the 'buf lifetime.
+///
+/// CBOR item representations are as follows:
+///
+/// - Positive and negative integers are stored as a u64 with enum tags used to distinguish
+///   positive (UInt) and negative (NInt) numbers
+/// - The bstr and tstr types are held as immutable borrowed slices over the CBOR parse buffer
+/// - Simple types are stored as a u8
+/// - Arrays are stored as a number of items and an immutable borrowed slice over the contents of
+///   the array
+/// - Maps are stored as a number of pairs and an immutable borrowed slice over the contents of the
+///   map
 #[derive(PartialEq, Debug, Copy, Clone)]
-#[cfg(all(not(feature = "float"), not(test)))]
+#[cfg(all(not(feature = "float"), not(feature = "full")))]
 pub enum CBOR<'buf> {
+    /// A CBOR positive integer, which always has a u64 internal representation regardless of how
+    /// it is stored in the buffer (which will always be the smallest allowed representation).
     UInt(u64),
+    /// A CBOR negative integer, which always has a u64 internal representation regardless of how
+    /// it is stored in the buffer (which will always be the smallest allowed representation).
     NInt(u64),
+    /// A CBOR bytestring.
     Bstr(&'buf [u8]),
+    /// A CBOR text string (UTF-8). Note that Rust will not allow illegal UTF-8 codepoints in this
+    /// representation.
     Tstr(&'buf str),
+    /// A CBOR array, where the [`ArrayBuf`] contains the array contents.
     Array(ArrayBuf<'buf>),
+    /// A CBOR map, where the [`MapBuf`] holds the map contents.
     Map(MapBuf<'buf>),
+    /// A CBOR tagged item, there [`TagBuf`] holds the tagged CBOR item.
     Tag(TagBuf<'buf>),
+    /// A CBOR simple value.
     Simple(u8),
+    /// A CBOR `false` value.
     False,
+    /// A CBOR `true` value.
     True,
+    /// A CBOR `null` value.
     Null,
+    /// A CBOR `undefined` value
     Undefined,
+    /// An internal marker, which is never encoded, indicating that the end of the buffer has
+    /// been reached.
     Eof,
 }
 

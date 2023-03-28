@@ -1,5 +1,5 @@
 /***************************************************************************************************
- * Copyright (c) 2020-2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2020-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the “Software”), to deal in the Software without
@@ -118,9 +118,9 @@
 //!
 //!     let mut encoded_cbor = CBORBuilder::new(&mut bytes);
 //!     encoded_cbor.insert(&map(|buff| {
-//!         buff.insert_key_value(&10, &[0x94, 0x8f, 0x88, 0x60, 0xd1, 0x3a, 0x46, 0x3e])?
+//!         buff.insert_key_value(&10, &[0x94, 0x8f, 0x88, 0x60, 0xd1, 0x3a, 0x46, 0x3e].as_slice())?
 //!             .insert_key_value(&256, &[0x01, 0x98, 0xf5, 0x0a, 0x4f, 0xf6, 0xc0, 0x58,
-//!                                       0x61, 0xc8, 0x86, 0x0d, 0x13, 0xa6, 0x38, 0xea])?
+//!                                       0x61, 0xc8, 0x86, 0x0d, 0x13, 0xa6, 0x38, 0xea].as_slice())?
 //!             .insert_key_value(&258, &64242)?
 //!             .insert_key_value(&261, &3)?
 //!             .insert_key_value(&262, &true)?
@@ -155,6 +155,23 @@
 //! use tps_minicbor::decoder::{ArrayBuf, CBORDecoder};
 //! use tps_minicbor::error::CBORError;
 //! use tps_minicbor::types::{array, map};
+//!
+//! #[derive(Debug, Clone)]
+//! struct TeeEat<'t> {
+//!     pub nonce: &'t [u8],
+//!     pub ueid: &'t [u8],
+//!     pub oemid: u64,
+//!     pub sec_level: u64,
+//!     pub sec_boot: bool,
+//!     pub debug_status: u64,
+//!     pub hw_version: HwVersion<'t>,
+//! }
+//!
+//! #[derive(Debug, Clone)]
+//! struct HwVersion<'t> {
+//!     s: &'t str,
+//!     v: u64,
+//! }
 //!
 //! fn decode_tee_eat() -> Result<(), CBORError> {
 //!     let mut input: &[u8] = &[
@@ -225,22 +242,25 @@ extern crate std;
 #[cfg(all(not(feature = "std"), not(test)))]
 extern crate core as std;
 
-#[cfg(any(feature = "float", test))]
+#[cfg(feature = "float")]
 extern crate half;
 
-#[cfg(any(feature = "full", test))]
+#[cfg(feature = "full")]
 extern crate chrono;
 
-pub(crate) mod array;
-pub(crate) mod ast;
+mod array;
+mod ast;
+
+#[cfg(feature = "full")]
 mod cbor_diag;
-pub(crate) mod constants;
-pub(crate) mod decode;
-pub(crate) mod decode_combinators;
-pub(crate) mod encode;
-pub(crate) mod map;
-pub(crate) mod tag;
-pub(crate) mod utils;
+
+mod constants;
+mod decode;
+mod decode_combinators;
+mod encode;
+mod map;
+mod tag;
+mod utils;
 
 /// The `error` module contains error definitions used throughout `tps_minicbor`.
 pub mod error;
@@ -264,22 +284,19 @@ pub mod decoder {
     pub use super::tag::TagBuf;
 
     // Decode Combinators API
-    #[cfg(any(feature = "combinators", test))]
     pub use super::decode_combinators::{
         apply, cond, decode_bool, decode_bstr, decode_int, decode_nint, decode_null,
         decode_simple, decode_tstr, decode_uint, decode_undefined, is_any, is_array, is_bool,
         is_bstr, is_eof, is_false, is_int, is_map, is_nint, is_null, is_simple, is_tag,
         is_tag_with_value, is_true, is_tstr, is_uint, is_undefined, opt, or, with_pred,
-        with_value, CBORDecodable, CBORDecoder,
+        with_value, CBORDecoder,
     };
 
-    #[cfg(any(feature = "combinators", test))]
     pub use super::utils::{Allowable, Filter};
 
-    #[cfg(any(feature = "combinators", test))]
     pub use super::constants::allow::*;
 
-    #[cfg(any(all(feature = "full", feature = "combinators"), test))]
+    #[cfg(feature = "full")]
     pub use super::decode_combinators::{is_date_time, is_epoch};
 }
 
@@ -289,10 +306,11 @@ pub mod encoder {
     pub use super::encode::{CBORBuilder, EncodeBuffer, EncodeContext, EncodeItem};
 }
 
-#[cfg(any(feature = "full", test))]
+/// The `debug` module exports CBOR diagnostic pretty-printing
+#[cfg(feature = "full")]
 pub mod debug {
-    #[cfg(any(feature = "full", test))]
+    #[cfg(feature = "full")]
     pub use super::cbor_diag::print_hex;
-    #[cfg(any(feature = "full", test))]
+    #[cfg(feature = "full")]
     pub use super::cbor_diag::Diag;
 }

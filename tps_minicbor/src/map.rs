@@ -1,5 +1,5 @@
 /***************************************************************************************************
- * Copyright (c) 2021, 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the “Software”), to deal in the Software without
@@ -76,6 +76,13 @@ impl<'buf> MapBuf<'buf> {
         self.n_pairs == 0 && self.bytes.len() == 0
     }
 
+    /// Look-up a value using a key.
+    ///
+    /// The key is any value that can be transformed into a CBOR items (although integers and
+    /// short strings are strongly preferred as other types over keys).
+    ///
+    /// Lookup is fallible - function will return an error if the requested key is not present
+    /// in the map.
     pub fn lookup<K, V>(self, key: K) -> Result<V, CBORError>
     where
         K: Into<CBOR<'buf>>,
