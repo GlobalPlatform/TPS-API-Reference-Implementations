@@ -1,0 +1,10 @@
+;***************************************************************************************************
+; Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+; SPDX-License-Identifier: MIT
+;**************************************************************************************************/
+; RFC 8610 Appendix H example — person record
+person = {
+  name: tstr,
+  age: uint,
+  ? employer: tstr,
+}

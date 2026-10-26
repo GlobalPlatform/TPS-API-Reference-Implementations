@@ -1,0 +1,6 @@
+;***************************************************************************************************
+; Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+; SPDX-License-Identifier: MIT
+;**************************************************************************************************/
+start = outer.Foo
+;# import outer_mod as outer

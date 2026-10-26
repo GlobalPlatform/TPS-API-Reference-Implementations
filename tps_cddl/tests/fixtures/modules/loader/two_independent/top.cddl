@@ -1,0 +1,7 @@
+;***************************************************************************************************
+; Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+; SPDX-License-Identifier: MIT
+;**************************************************************************************************/
+;# include * from mod_x
+;# include * from mod_y
+top = uint

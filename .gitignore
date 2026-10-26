@@ -34,3 +34,4 @@ rp_2040_target/.vscode/launch.json
 /tock/third_party/libtock-rs/target
 /tock/third_party/elf2tab/target
 /tock/build/
+/Cargo.lock

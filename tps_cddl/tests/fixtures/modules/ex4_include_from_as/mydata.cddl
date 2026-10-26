@@ -1,0 +1,6 @@
+;***************************************************************************************************
+; Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+; SPDX-License-Identifier: MIT
+;**************************************************************************************************/
+mydata = {* cose.label => cose.values}
+;# include cose.label, cose.values from rfc9052 as cose

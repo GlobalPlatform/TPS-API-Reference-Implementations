@@ -11,5 +11,6 @@ members = [
     "tps_client_api",
     "tps_connector",
     "rot13_connector",
-    "rot13_service"
+    "rot13_service",
+    "tps_cddl",
 ]

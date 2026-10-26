@@ -1,0 +1,6 @@
+;***************************************************************************************************
+; Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+; SPDX-License-Identifier: MIT
+;**************************************************************************************************/
+mydata = {Fritz: cose.empty_or_serialized_map}
+;# import cose.empty_or_serialized_map from rfc9052 as cose

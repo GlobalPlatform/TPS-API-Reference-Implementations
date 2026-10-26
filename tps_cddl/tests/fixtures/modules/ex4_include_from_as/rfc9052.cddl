@@ -1,0 +1,14 @@
+;***************************************************************************************************
+; Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+; SPDX-License-Identifier: MIT
+;**************************************************************************************************/
+COSE_Key = {
+  1 => tstr / int,
+  ? 2 => bstr,
+  ? 3 => tstr / int,
+  ? 4 => [+ tstr / int],
+  ? 5 => bstr,
+  * label => values,
+}
+label = int / tstr
+values = any

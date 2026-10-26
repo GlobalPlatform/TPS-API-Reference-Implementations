@@ -1,0 +1,6 @@
+;***************************************************************************************************
+; Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+; SPDX-License-Identifier: MIT
+;**************************************************************************************************/
+start = cose.COSE_Key
+;# import rfc9052 as cose
