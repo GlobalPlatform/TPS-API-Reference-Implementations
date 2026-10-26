@@ -180,20 +180,45 @@ To check that the Client API crates still build in their normal `no_std` configu
 cargo check -p tps_client_common -p tps_error -p tps_connector -p tps_client_api
 ```
 
-`mkdir cmake-build-debug`
+### Checking the unsafe code with Miri
 
-Now you need to build everything with Cartgo, as this generates headers.
+The TPS Client API crates pass raw pointers across `extern "C"` boundaries, where neither the
+compiler nor `cargo test` can detect aliasing or pointer-provenance violations — such code can
+compile without warnings, pass its tests and still be undefined behaviour.
+[Miri](https://github.com/rust-lang/miri) interprets MIR instead of running native code and does
+detect them, along with out-of-bounds accesses, reads of uninitialized memory, misaligned
+accesses and data races.
 
-`cargo build`
+`run_miri.sh` runs the test suites of the six crates that contain `unsafe` code under Miri:
 
-This takes 30 seconds or so on my moderately powerful laptop with a decent internet connection.
-
+```shell
+./run_miri.sh                  # all six crates, Stacked Borrows (Miri's default model)
+./run_miri.sh -t               # the stricter, experimental Tree Borrows model
+./run_miri.sh -p tps_client_c  # a single crate
+./run_miri.sh -- some_filter   # pass a test-name filter to the harness
 ```
-cd cmake-build-debug
-cmake ..
-cd ..
-cmake --build cmake-build-debug
+
+It needs a nightly toolchain with the `miri` component — Miri is not available on stable:
+
+```shell
+rustup toolchain install nightly
+rustup component add --toolchain nightly miri rust-src
 ```
+
+Both aliasing models currently report no undefined behaviour. Notes on the setup:
+
+- The script sets `-Zmiri-disable-isolation`, needed because several `tps_client_c` tests read
+  the cbindgen-generated `tpsc_client_api.h` from disk and Miri denies filesystem access by
+  default. It grants host access only and does not relax any UB check.
+- Tests that cannot run under Miri are marked `#[cfg_attr(miri, ignore = "...")]` at the test
+  rather than filtered inside the script, so the reason stays with the test. Only two are
+  excluded, both because they spawn a subprocess (`cc`, `false`), which Miri cannot do.
+- `tree-sitter-cddl` and `tree-sitter-edn` link a C parser, so Miri cannot execute them; the
+  remaining crates (`tps_minicbor`, `tps_cose`, `tps_cddl` and the CLI/TUI tools) are safe Rust
+  and are not covered by the script.
+- Miri is slow — roughly a few seconds per crate under Stacked Borrows and several times that
+  under Tree Borrows, against hundredths of a second natively. It is a pre-merge check on the
+  `unsafe` crates, not part of the normal edit-compile-test loop.
 
 ### Running the TPS Client API End-to-end Example 
 
