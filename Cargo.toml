@@ -18,5 +18,6 @@ members = [
     "tps_edn_tool",
     "tree-sitter-cddl",
     "tree-sitter-edn",
-    "tps_ts_highlight_tool"
+    "tps_ts_highlight_tool",
+    "tps_cbor_tui"
 ]

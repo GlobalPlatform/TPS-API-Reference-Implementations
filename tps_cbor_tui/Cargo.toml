@@ -1,0 +1,40 @@
+#***************************************************************************************************
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+# SPDX-License-Identifier: MIT
+#*************************************************************************************************/
+
+[package]
+name = "tps_cbor_tui"
+version = "0.10.0"
+authors = ["Jeremy O'Donoghue <jodonogh@qti.qualcomm.com>"]
+edition = "2024"
+license = "MIT"
+description = "Terminal (ratatui) workbench for CDDL editing, CBOR/EDN viewing, and COSE sign/encrypt"
+homepage = "https://globalplatform.org"
+repository = "https://github.com/GlobalPlatform/TPS-API-Reference-Implementations"
+rust-version = "1.85"
+readme = "README.md"
+keywords = ["cbor", "cddl", "cose", "tui", "edn"]
+categories = ["command-line-utilities", "encoding"]
+
+[[bin]]
+name = "cbor-tui"
+path = "src/main.rs"
+
+[dependencies]
+ratatui = "0.30"
+crossterm = "0.29"
+tps_minicbor = { path = "../tps_minicbor", version = "0.10.0", features = ["std", "edn", "diagnostic", "float"] }
+tps_cddl = { path = "../tps_cddl", version = "0.10.0", features = ["modules"] }
+pest = "2"
+tps_cose = { path = "../tps_cose", version = "0.10.0", features = ["ring", "std", "cose_sign", "float"] }
+tree-sitter = "0.27"
+tree-sitter-highlight = "0.27"
+tree-sitter-edn = { path = "../tree-sitter-edn", version = "0.10.0" }
+hex = "0.4"
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", default-features = false, features = ["std"] }
+clap = { version = "4", features = ["derive"] }
+ring = "0.17"
+arboard = "3"
