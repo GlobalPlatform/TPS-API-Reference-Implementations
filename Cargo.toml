@@ -4,5 +4,7 @@
 [workspace]
 resolver = "2"
 members = [
-    "tps_minicbor"
+    "tps_minicbor",
+    "tps_error",
+    "tps_client_common"
 ]

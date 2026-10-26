@@ -5,47 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="95b3143c-3c61-4bcc-be08-6964f9dbffd9" name="Changes" comment="tps_minicbor v0.10. *API Breaking*.&#10;- Significant refactor of tps_minicbor with breaking API changes.&#10;- No longer parsed using nom. Faster, smaller, fewer dependencies.&#10;- no_std support. No allocator required for preferred encoding.&#10;- Support preferred encoding by default.&#10;- Deterministic decoding is an option for std targets. &#10;- Automatic calculation of array/map sized with configurable depth.&#10;- Optional float support.&#10;- No support for indefinite length objects.&#10;- No support for non-trivial NaN.&#10;- Extensive test suite includes all for RFC8949 tests&#10;&#10;55/55 unit tests pass.">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tps_minicbor/DESIGN.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tps_minicbor/src/decoder.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tps_minicbor/src/edn.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tps_minicbor/src/encoder.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tps_minicbor/src/tags.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tps_minicbor/tests/cbor_tests.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tps_minicbor/tests/diagnostic.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tps_minicbor/tests/diagnostic_pretty.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tps_minicbor/tests/edn.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tps_minicbor/tests/edn_spans.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tps_minicbor/tests/readme_examples.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tps_minicbor/tests/rfc8949_vectors.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tps_minicbor/tests/spans.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tps_minicbor/tests/standard_tags.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tps_minicbor/tests/support/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/tps_minicbor/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/LICENSE.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/tps_minicbor/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/examples/decode.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/examples/trivial_cose/main.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/src/array.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/src/ast.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/src/cbor_diag.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/src/constants.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/src/decode.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/src/decode_combinators.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/src/encode.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/src/error.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_minicbor/src/lib.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/src/map.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/src/tag.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/src/utils.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/tests/adversarial_bugfix.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/tests/encode_decode_examples.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/tests/rfc8949_decode_high_level.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/tests/rfc8949_decode_low_level.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_minicbor/tests/rfc8949_encode.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_minicbor/tests/rfc8949_encode.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_client_common/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/tps_client_common/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_client_common/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/tps_client_common/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_client_common/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_client_common/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_error/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/tps_error/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_error/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_error/src/lib.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -163,6 +128,7 @@
       <updated>1792773688218</updated>
       <workItem from="1792773689837" duration="8348000" />
       <workItem from="1793034282445" duration="1170000" />
+      <workItem from="1793035469161" duration="259000" />
     </task>
     <task id="LOCAL-00001" summary="Update tps_client_common and tps_error to version 0.10&#10;- Prelude to extensive (breaking) changes.&#10;- Updated dependencies and to Rust 2024.&#10;- Added README.md for tps_client_common&#10;- Added test cases&#10;- Added safety invariants to tps_client_common documentation.&#10;- Code review and tests generated with AI assistance.">
       <option name="closed" value="true" />
@@ -236,7 +202,15 @@
       <option name="project" value="LOCAL" />
       <updated>1792780774463</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="tps_minicbor v0.10. *API Breaking*.&#10;- Significant refactor of tps_minicbor with breaking API changes.&#10;- No longer parsed using nom. Faster, smaller, fewer dependencies.&#10;- no_std support. No allocator required for preferred encoding.&#10;- Support preferred encoding by default.&#10;- Deterministic decoding is an option for std targets. &#10;- Automatic calculation of array/map sized with configurable depth.&#10;- Optional float support.&#10;- No support for indefinite length objects.&#10;- No support for non-trivial NaN.&#10;- Extensive test suite includes all for RFC8949 tests&#10;&#10;55/55 unit tests pass.">
+      <option name="closed" value="true" />
+      <created>1793035546050</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1793035546050</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
