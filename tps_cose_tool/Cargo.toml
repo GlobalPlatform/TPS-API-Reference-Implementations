@@ -1,0 +1,32 @@
+#***************************************************************************************************
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+# SPDX-License-Identifier: MIT
+#**************************************************************************************************/
+
+[package]
+name = "tps_cose_tool"
+version = "0.10.0"
+edition = "2024"
+license = "MIT"
+description = "Command-line tool for COSE_Sign1/COSE_Encrypt0 operations and COSE key management"
+homepage = "https://globalplatform.org"
+repository = "https://github.com/GlobalPlatform/TPS-API-Reference-Implementations"
+rust-version = "1.85"
+readme = "README.md"
+keywords = ["cose", "rfc9052", "cbor", "crypto", "cli"]
+categories = ["command-line-utilities", "cryptography"]
+
+[[bin]]
+name = "cose-tool"
+path = "src/main.rs"
+
+[[bin]]
+name = "gen-testdata"
+path = "src/bin/gen_testdata.rs"
+
+[dependencies]
+tps_cose = { path = "../tps_cose", version = "0.10.0", features = ["ring", "std"] }
+clap = { version = "4", features = ["derive"] }
+thiserror = "2"
+hex = "0.4"
+ring = "0.17"

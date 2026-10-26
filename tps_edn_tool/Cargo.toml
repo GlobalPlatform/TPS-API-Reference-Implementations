@@ -1,0 +1,23 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+# SPDX-License-Identifier: MIT
+
+[package]
+name = "tps_edn_tool"
+version = "0.10.0"
+edition = "2024"
+description = "CBOR diagnostic notation (EDN) encoder/decoder — RFC 8949 §8"
+license = "MIT"
+homepage = "https://globalplatform.org"
+repository = "https://github.com/GlobalPlatform/TPS-API-Reference-Implementations"
+rust-version = "1.85"
+readme = "README.md"
+keywords = ["cbor", "edn", "rfc8949", "diagnostic", "cli"]
+categories = ["command-line-utilities", "encoding"]
+
+[[bin]]
+name = "edn-tool"
+path = "src/main.rs"
+
+[dependencies]
+tps_minicbor  = { path = "../tps_minicbor", version = "0.10.0", features = ["edn", "diagnostic", "float"] }
+clap      = { version = "4", features = ["derive"] }
