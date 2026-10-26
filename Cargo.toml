@@ -6,5 +6,10 @@ resolver = "2"
 members = [
     "tps_minicbor",
     "tps_error",
-    "tps_client_common"
+    "tps_client_common",
+    "tps_client_c",
+    "tps_client_api",
+    "tps_connector",
+    "rot13_connector",
+    "rot13_service"
 ]

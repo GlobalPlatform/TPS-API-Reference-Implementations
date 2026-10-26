@@ -1,21 +1,6 @@
 /***************************************************************************************************
- * Copyright (c) 2022 Jeremy O'Donoghue. All rights reserved.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
- * and associated documentation files (the “Software”), to deal in the Software without
- * restriction, including without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice (including the next
- * paragraph) shall be included in all copies or substantial portions of the
- * Software.
- *
- * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
- * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+ * SPDX-License-Identifier: MIT
  **************************************************************************************************/
 
 extern crate rot13_service;
@@ -25,324 +10,177 @@ use rot13_service::{
     GPP_ROT13_ENCRYPT_REQ, GPP_ROT13_ENCRYPT_RSP, GPP_ROT13_ERROR_NUMERIC, GPP_ROT13_ERROR_OTHER,
     GPP_ROT13_ERROR_SPACE, GPP_ROT13_PLAINTEXT_KEY,
 };
-use tps_minicbor::decoder::{is_map, is_tag_with_value, SequenceBuffer};
-use tps_minicbor::encoder::CBORBuilder;
-use tps_minicbor::error::CBORError;
-use tps_minicbor::types::{map, tag, CBOR};
+use tps_minicbor::{DecodeError, Decoder, EncodeError, EncoderStd, Item, Map};
+
+/// Build a `#6.<msg_id>({ 1 => text })` request into a buffer, returning the buffer and the
+/// length of the encoded message within it.
+fn build_req(msg_id: u32, key: u32, text: &str) -> Result<([u8; 100], usize), EncodeError> {
+    let mut buf = [0u8; 100];
+    let len = {
+        let mut encoder = EncoderStd::new(&mut buf);
+        let mut msg = encoder.tag(msg_id.into())?.map()?;
+        msg.insert_key_value(key, text)?;
+        msg.end()?;
+        encoder.encoded().len()
+    };
+    Ok((buf, len))
+}
+
+/// Decode a `#6.<msg_id>({ ... })` response, returning the response body map. The buffer may
+/// have unused trailing bytes, so `Decoder::next` is used rather than `Decoder::decode`.
+fn decode_rsp(buf: &[u8], expected_msg_id: u32) -> Result<Map<'_>, DecodeError> {
+    let tagged = match Decoder::new(buf).next()? {
+        Item::Tag(tagged) => tagged,
+        _ => return Err(DecodeError::UnexpectedItem),
+    };
+    assert_eq!(tagged.tag, expected_msg_id as u64);
+    match tagged.item()? {
+        Item::Map(map) => Ok(map),
+        _ => Err(DecodeError::UnexpectedItem),
+    }
+}
+
+/// Find the value for `key` in `map`, if present.
+fn map_get<'a>(map: &Map<'a>, key: u64) -> Option<Item<'a>> {
+    map.iter()
+        .find_map(|pair| pair.ok().filter(|(k, _)| matches!(k, Item::Unsigned(v) if *v == key)))
+        .map(|(_, v)| v)
+}
 
 #[test]
-fn test_encode_lowercase_success() -> Result<(), CBORError> {
+fn test_encode_lowercase_success() -> Result<(), DecodeError> {
     let plaintext = "thequickbrownfoxjumpsoverthelazydog";
     let ciphertext = "gurdhvpxoebjasbkwhzcfbiregurynmlqbt";
-    let mut send_buf = [0u8; 100];
+    let (send_buf, send_len) = build_req(GPP_ROT13_ENCRYPT_REQ, GPP_ROT13_PLAINTEXT_KEY, plaintext)
+        .expect("encode request");
     let mut receive_buf = [0u8; 100];
 
-    // Mutable borrows start here
-    {
-        let mut encoder = CBORBuilder::new(&mut send_buf);
-        let encode_buf = encoder
-            .insert(&tag(GPP_ROT13_ENCRYPT_REQ as u64, |buf| {
-                buf.insert(&map(|buf| {
-                    buf.insert_key_value(&GPP_ROT13_PLAINTEXT_KEY, &plaintext)
-                }))
-            }))?
-            .encoded()?;
-        message_handler(encode_buf, &mut receive_buf)?;
-    }
-    {
-        let decode_iter = SequenceBuffer::new(&mut receive_buf).into_iter();
-        if let (_, CBOR::Tag(tb)) = is_tag_with_value(GPP_ROT13_ENCRYPT_RSP as u64)(decode_iter)? {
-            if let (_, CBOR::Map(mb)) = is_map()(tb.into_iter())? {
-                match mb.get_int(1) {
-                    Some(cbor) => match cbor {
-                        CBOR::Tstr(receive_text) => assert_eq!(receive_text, ciphertext),
-                        _ => assert!(false),
-                    },
-                    None => assert!(false),
-                }
-            }
-        } else {
-            assert!(false)
-        }
+    message_handler(&send_buf[..send_len], &mut receive_buf).expect("message_handler");
+
+    let map = decode_rsp(&receive_buf, GPP_ROT13_ENCRYPT_RSP)?;
+    match map_get(&map, 1) {
+        Some(Item::Text(receive_text)) => assert_eq!(receive_text, ciphertext),
+        other => panic!("unexpected item: {other:?}"),
     }
     Ok(())
 }
 
 #[test]
-fn test_encode_uppercase_success() -> Result<(), CBORError> {
+fn test_encode_uppercase_success() -> Result<(), DecodeError> {
     let plaintext = "THEQUICKBROWNFOXJUMPSOVERTHELAZYDOG";
     let ciphertext = "GURDHVPXOEBJASBKWHZCFBIREGURYNMLQBT";
-    let mut send_buf = [0u8; 100];
+    let (send_buf, send_len) = build_req(GPP_ROT13_ENCRYPT_REQ, GPP_ROT13_PLAINTEXT_KEY, plaintext)
+        .expect("encode request");
     let mut receive_buf = [0u8; 100];
 
-    // Mutable borrows start here
-    {
-        let mut encoder = CBORBuilder::new(&mut send_buf);
-        let encode_buf = encoder
-            .insert(&tag(GPP_ROT13_ENCRYPT_REQ as u64, |buf| {
-                buf.insert(&map(|buf| {
-                    buf.insert_key_value(&GPP_ROT13_PLAINTEXT_KEY, &plaintext)
-                }))
-            }))?
-            .encoded()?;
+    message_handler(&send_buf[..send_len], &mut receive_buf).expect("message_handler");
 
-        message_handler(encode_buf, &mut receive_buf)?;
-    }
-    {
-        let decode_iter = SequenceBuffer::new(&mut receive_buf).into_iter();
-        if let (_, CBOR::Tag(tb)) = is_tag_with_value(GPP_ROT13_ENCRYPT_RSP as u64)(decode_iter)? {
-            if let (_, CBOR::Map(mb)) = is_map()(tb.into_iter())? {
-                match mb.get_int(1) {
-                    Some(cbor) => match cbor {
-                        CBOR::Tstr(receive_text) => assert_eq!(receive_text, ciphertext),
-                        _ => assert!(false),
-                    },
-                    None => assert!(false),
-                }
-            }
-        } else {
-            assert!(false)
-        }
+    let map = decode_rsp(&receive_buf, GPP_ROT13_ENCRYPT_RSP)?;
+    match map_get(&map, 1) {
+        Some(Item::Text(receive_text)) => assert_eq!(receive_text, ciphertext),
+        other => panic!("unexpected item: {other:?}"),
     }
     Ok(())
 }
 
 #[test]
-fn test_encode_digit_failure() -> Result<(), CBORError> {
+fn test_encode_digit_failure() -> Result<(), DecodeError> {
     let plaintext = "thequickbrownfox9umpsoverthelazydog";
-    let mut send_buf = [0u8; 100];
+    let (send_buf, send_len) = build_req(GPP_ROT13_ENCRYPT_REQ, GPP_ROT13_PLAINTEXT_KEY, plaintext)
+        .expect("encode request");
     let mut receive_buf = [0u8; 100];
 
-    // Mutable borrows start here
-    {
-        let mut encoder = CBORBuilder::new(&mut send_buf);
-        let encode_buf = encoder
-            .insert(&tag(GPP_ROT13_ENCRYPT_REQ as u64, |buf| {
-                buf.insert(&map(|buf| {
-                    buf.insert_key_value(&GPP_ROT13_PLAINTEXT_KEY, &plaintext)
-                }))
-            }))?
-            .encoded()?;
+    message_handler(&send_buf[..send_len], &mut receive_buf).expect("message_handler");
 
-        message_handler(encode_buf, &mut receive_buf)?;
-    }
-    {
-        let decode_iter = SequenceBuffer::new(&mut receive_buf).into_iter();
-        if let (_, CBOR::Tag(tb)) = is_tag_with_value(GPP_ROT13_ENCRYPT_RSP as u64)(decode_iter)? {
-            if let (_, CBOR::Map(mb)) = is_map()(tb.into_iter())? {
-                match mb.get_int(2) {
-                    Some(cbor) => match cbor {
-                        CBOR::UInt(error_code) => {
-                            assert_eq!(error_code, GPP_ROT13_ERROR_NUMERIC as u64)
-                        }
-                        _ => assert!(false),
-                    },
-                    None => assert!(false),
-                }
-            }
-        } else {
-            assert!(false)
-        }
+    let map = decode_rsp(&receive_buf, GPP_ROT13_ENCRYPT_RSP)?;
+    match map_get(&map, 2) {
+        Some(Item::Unsigned(error_code)) => assert_eq!(error_code, GPP_ROT13_ERROR_NUMERIC as u64),
+        other => panic!("unexpected item: {other:?}"),
     }
     Ok(())
 }
 
 #[test]
-fn test_decode_digit_failure() -> Result<(), CBORError> {
+fn test_decode_digit_failure() -> Result<(), DecodeError> {
     let ciphertext = "GURDHVPXOEBJ4SBKWHZCFBIREGURYNMLQBT";
-    let mut send_buf = [0u8; 100];
+    let (send_buf, send_len) = build_req(GPP_ROT13_DECRYPT_REQ, GPP_ROT13_CIPHERTEXT_KEY, ciphertext)
+        .expect("encode request");
     let mut receive_buf = [0u8; 100];
 
-    // Mutable borrows start here
-    {
-        let mut encoder = CBORBuilder::new(&mut send_buf);
-        let encode_buf = encoder
-            .insert(&tag(GPP_ROT13_DECRYPT_REQ as u64, |buf| {
-                buf.insert(&map(|buf| {
-                    buf.insert_key_value(&GPP_ROT13_CIPHERTEXT_KEY, &ciphertext)
-                }))
-            }))?
-            .encoded()?;
+    message_handler(&send_buf[..send_len], &mut receive_buf).expect("message_handler");
 
-        message_handler(encode_buf, &mut receive_buf)?;
-    }
-    {
-        let decode_iter = SequenceBuffer::new(&mut receive_buf).into_iter();
-        if let (_, CBOR::Tag(tb)) = is_tag_with_value(GPP_ROT13_DECRYPT_RSP as u64)(decode_iter)? {
-            if let (_, CBOR::Map(mb)) = is_map()(tb.into_iter())? {
-                match mb.get_int(2) {
-                    Some(cbor) => match cbor {
-                        CBOR::UInt(error_code) => {
-                            assert_eq!(error_code, GPP_ROT13_ERROR_NUMERIC as u64)
-                        }
-                        _ => assert!(false),
-                    },
-                    None => assert!(false),
-                }
-            }
-        } else {
-            assert!(false)
-        }
+    let map = decode_rsp(&receive_buf, GPP_ROT13_DECRYPT_RSP)?;
+    match map_get(&map, 2) {
+        Some(Item::Unsigned(error_code)) => assert_eq!(error_code, GPP_ROT13_ERROR_NUMERIC as u64),
+        other => panic!("unexpected item: {other:?}"),
     }
     Ok(())
 }
 
 #[test]
-fn test_encode_space_failure() -> Result<(), CBORError> {
+fn test_encode_space_failure() -> Result<(), DecodeError> {
     let plaintext = "the quick brown fox jumps over the lazy dog";
-    let mut send_buf = [0u8; 100];
+    let (send_buf, send_len) = build_req(GPP_ROT13_ENCRYPT_REQ, GPP_ROT13_PLAINTEXT_KEY, plaintext)
+        .expect("encode request");
     let mut receive_buf = [0u8; 100];
 
-    // Mutable borrows start here
-    {
-        let mut encoder = CBORBuilder::new(&mut send_buf);
-        let encode_buf = encoder
-            .insert(&tag(GPP_ROT13_ENCRYPT_REQ as u64, |buf| {
-                buf.insert(&map(|buf| {
-                    buf.insert_key_value(&GPP_ROT13_PLAINTEXT_KEY, &plaintext)
-                }))
-            }))?
-            .encoded()?;
+    message_handler(&send_buf[..send_len], &mut receive_buf).expect("message_handler");
 
-        message_handler(encode_buf, &mut receive_buf)?;
-    }
-    {
-        let decode_iter = SequenceBuffer::new(&mut receive_buf).into_iter();
-        if let (_, CBOR::Tag(tb)) = is_tag_with_value(GPP_ROT13_ENCRYPT_RSP as u64)(decode_iter)? {
-            if let (_, CBOR::Map(mb)) = is_map()(tb.into_iter())? {
-                match mb.get_int(2) {
-                    Some(cbor) => match cbor {
-                        CBOR::UInt(error_code) => {
-                            assert_eq!(error_code, GPP_ROT13_ERROR_SPACE as u64)
-                        }
-                        _ => assert!(false),
-                    },
-                    None => assert!(false),
-                }
-            }
-        } else {
-            assert!(false)
-        }
+    let map = decode_rsp(&receive_buf, GPP_ROT13_ENCRYPT_RSP)?;
+    match map_get(&map, 2) {
+        Some(Item::Unsigned(error_code)) => assert_eq!(error_code, GPP_ROT13_ERROR_SPACE as u64),
+        other => panic!("unexpected item: {other:?}"),
     }
     Ok(())
 }
 
 #[test]
-fn test_decode_space_failure() -> Result<(), CBORError> {
+fn test_decode_space_failure() -> Result<(), DecodeError> {
     let ciphertext = "GUR DHVPX OEBJA SBK WHZCF BIRE GUR YNML QBT";
-    let mut send_buf = [0u8; 100];
+    let (send_buf, send_len) = build_req(GPP_ROT13_DECRYPT_REQ, GPP_ROT13_CIPHERTEXT_KEY, ciphertext)
+        .expect("encode request");
     let mut receive_buf = [0u8; 100];
 
-    // Mutable borrows start here
-    {
-        let mut encoder = CBORBuilder::new(&mut send_buf);
-        let encode_buf = encoder
-            .insert(&tag(GPP_ROT13_DECRYPT_REQ as u64, |buf| {
-                buf.insert(&map(|buf| {
-                    buf.insert_key_value(&GPP_ROT13_CIPHERTEXT_KEY, &ciphertext)
-                }))
-            }))?
-            .encoded()?;
+    message_handler(&send_buf[..send_len], &mut receive_buf).expect("message_handler");
 
-        message_handler(encode_buf, &mut receive_buf)?;
-    }
-    {
-        let decode_iter = SequenceBuffer::new(&mut receive_buf).into_iter();
-        if let (_, CBOR::Tag(tb)) = is_tag_with_value(GPP_ROT13_DECRYPT_RSP as u64)(decode_iter)? {
-            if let (_, CBOR::Map(mb)) = is_map()(tb.into_iter())? {
-                match mb.get_int(2) {
-                    Some(cbor) => match cbor {
-                        CBOR::UInt(error_code) => {
-                            assert_eq!(error_code, GPP_ROT13_ERROR_SPACE as u64)
-                        }
-                        _ => assert!(false),
-                    },
-                    None => assert!(false),
-                }
-            }
-        } else {
-            assert!(false)
-        }
+    let map = decode_rsp(&receive_buf, GPP_ROT13_DECRYPT_RSP)?;
+    match map_get(&map, 2) {
+        Some(Item::Unsigned(error_code)) => assert_eq!(error_code, GPP_ROT13_ERROR_SPACE as u64),
+        other => panic!("unexpected item: {other:?}"),
     }
     Ok(())
 }
 
 #[test]
-fn test_encode_other_failure() -> Result<(), CBORError> {
+fn test_encode_other_failure() -> Result<(), DecodeError> {
     let plaintext = "";
-    let mut send_buf = [0u8; 100];
+    let (send_buf, send_len) = build_req(GPP_ROT13_ENCRYPT_REQ, GPP_ROT13_PLAINTEXT_KEY, plaintext)
+        .expect("encode request");
     let mut receive_buf = [0u8; 100];
 
-    // Mutable borrows start here
-    {
-        let mut encoder = CBORBuilder::new(&mut send_buf);
-        let encode_buf = encoder
-            .insert(&tag(GPP_ROT13_ENCRYPT_REQ as u64, |buf| {
-                buf.insert(&map(|buf| {
-                    buf.insert_key_value(&GPP_ROT13_PLAINTEXT_KEY, &plaintext)
-                }))
-            }))?
-            .encoded()?;
+    message_handler(&send_buf[..send_len], &mut receive_buf).expect("message_handler");
 
-        message_handler(encode_buf, &mut receive_buf)?;
-    }
-    {
-        let decode_iter = SequenceBuffer::new(&mut receive_buf).into_iter();
-        if let (_, CBOR::Tag(tb)) = is_tag_with_value(GPP_ROT13_ENCRYPT_RSP as u64)(decode_iter)? {
-            if let (_, CBOR::Map(mb)) = is_map()(tb.into_iter())? {
-                match mb.get_int(2) {
-                    Some(cbor) => match cbor {
-                        CBOR::UInt(error_code) => {
-                            assert_eq!(error_code, GPP_ROT13_ERROR_OTHER as u64)
-                        }
-                        _ => assert!(false),
-                    },
-                    None => assert!(false),
-                }
-            }
-        } else {
-            assert!(false)
-        }
+    let map = decode_rsp(&receive_buf, GPP_ROT13_ENCRYPT_RSP)?;
+    match map_get(&map, 2) {
+        Some(Item::Unsigned(error_code)) => assert_eq!(error_code, GPP_ROT13_ERROR_OTHER as u64),
+        other => panic!("unexpected item: {other:?}"),
     }
     Ok(())
 }
 
 #[test]
-fn test_decode_other_failure() -> Result<(), CBORError> {
+fn test_decode_other_failure() -> Result<(), DecodeError> {
     let ciphertext = "";
-    let mut send_buf = [0u8; 100];
+    let (send_buf, send_len) = build_req(GPP_ROT13_DECRYPT_REQ, GPP_ROT13_CIPHERTEXT_KEY, ciphertext)
+        .expect("encode request");
     let mut receive_buf = [0u8; 100];
 
-    // Mutable borrows start here
-    {
-        let mut encoder = CBORBuilder::new(&mut send_buf);
-        let encode_buf = encoder
-            .insert(&tag(GPP_ROT13_DECRYPT_REQ as u64, |buf| {
-                buf.insert(&map(|buf| {
-                    buf.insert_key_value(&GPP_ROT13_CIPHERTEXT_KEY, &ciphertext)
-                }))
-            }))?
-            .encoded()?;
+    message_handler(&send_buf[..send_len], &mut receive_buf).expect("message_handler");
 
-        message_handler(encode_buf, &mut receive_buf)?;
-    }
-    {
-        let decode_iter = SequenceBuffer::new(&mut receive_buf).into_iter();
-        if let (_, CBOR::Tag(tb)) = is_tag_with_value(GPP_ROT13_DECRYPT_RSP as u64)(decode_iter)? {
-            if let (_, CBOR::Map(mb)) = is_map()(tb.into_iter())? {
-                match mb.get_int(2) {
-                    Some(cbor) => match cbor {
-                        CBOR::UInt(error_code) => {
-                            assert_eq!(error_code, GPP_ROT13_ERROR_OTHER as u64)
-                        }
-                        _ => assert!(false),
-                    },
-                    None => assert!(false),
-                }
-            }
-        } else {
-            assert!(false)
-        }
+    let map = decode_rsp(&receive_buf, GPP_ROT13_DECRYPT_RSP)?;
+    match map_get(&map, 2) {
+        Some(Item::Unsigned(error_code)) => assert_eq!(error_code, GPP_ROT13_ERROR_OTHER as u64),
+        other => panic!("unexpected item: {other:?}"),
     }
     Ok(())
 }

@@ -4,13 +4,35 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="95b3143c-3c61-4bcc-be08-6964f9dbffd9" name="Changes" comment="tps_minicbor v0.10. *API Breaking*.&#10;- Significant refactor of tps_minicbor with breaking API changes.&#10;- No longer parsed using nom. Faster, smaller, fewer dependencies.&#10;- no_std support. No allocator required for preferred encoding.&#10;- Support preferred encoding by default.&#10;- Deterministic decoding is an option for std targets. &#10;- Automatic calculation of array/map sized with configurable depth.&#10;- Optional float support.&#10;- No support for indefinite length objects.&#10;- No support for non-trivial NaN.&#10;- Extensive test suite includes all for RFC8949 tests&#10;&#10;55/55 unit tests pass.">
+    <list default="true" id="95b3143c-3c61-4bcc-be08-6964f9dbffd9" name="Changes" comment="tps_error, tps_client_common v0.10.&#10;- Added test suite.&#10;- Added README.&#10;Claude code used in development of test suites.&#10;55/55 tests passed.">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_client_common/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/tps_client_common/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_client_common/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/tps_client_common/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_client_common/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_client_common/src/lib.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_error/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/tps_error/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_error/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_error/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rot13_connector/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/rot13_connector/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rot13_connector/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/rot13_connector/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rot13_connector/src/c_api.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rot13_connector/src/c_api.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rot13_connector/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rot13_connector/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rot13_connector/src/service.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rot13_connector/src/service.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rot13_service/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/rot13_service/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rot13_service/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/rot13_service/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rot13_service/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rot13_service/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rot13_service/tests/rot13_test.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rot13_service/tests/rot13_test.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_client_api/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/tps_client_api/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_client_api/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/tps_client_api/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_client_api/src/connector.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_client_api/src/connector.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_client_api/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_client_api/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_client_api/src/services.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_client_api/src/services.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_client_c/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/tps_client_c/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_client_c/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/tps_client_c/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_client_c/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/tps_client_c/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_client_c/build.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_client_c/build.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_client_c/c_example/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/tps_client_c/c_example/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_client_c/c_example/c_example.c" beforeDir="false" afterPath="$PROJECT_DIR$/tps_client_c/c_example/c_example.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_client_c/cbindgen.toml" beforeDir="false" afterPath="$PROJECT_DIR$/tps_client_c/cbindgen.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_client_c/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_client_c/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_connector/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/tps_connector/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_connector/build.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_connector/build.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_connector/cbindgen.toml" beforeDir="false" afterPath="$PROJECT_DIR$/tps_connector/cbindgen.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_connector/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_connector/src/lib.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -128,7 +150,7 @@
       <updated>1792773688218</updated>
       <workItem from="1792773689837" duration="8348000" />
       <workItem from="1793034282445" duration="1170000" />
-      <workItem from="1793035469161" duration="259000" />
+      <workItem from="1793035469161" duration="2269000" />
     </task>
     <task id="LOCAL-00001" summary="Update tps_client_common and tps_error to version 0.10&#10;- Prelude to extensive (breaking) changes.&#10;- Updated dependencies and to Rust 2024.&#10;- Added README.md for tps_client_common&#10;- Added test cases&#10;- Added safety invariants to tps_client_common documentation.&#10;- Code review and tests generated with AI assistance.">
       <option name="closed" value="true" />
@@ -210,7 +232,15 @@
       <option name="project" value="LOCAL" />
       <updated>1793035546050</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="tps_error, tps_client_common v0.10.&#10;- Added test suite.&#10;- Added README.&#10;Claude code used in development of test suites.&#10;55/55 tests passed.">
+      <option name="closed" value="true" />
+      <created>1793035836863</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1793035836863</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -252,6 +282,7 @@
     <MESSAGE value="Tree sitter grammars for EDN and CDDL. Workspace updates.&#10;- Tree-sitter grammar for CDDL for editors that support it&#10;- Tree-sitter grammar for END for editors that support it&#10;- Updates to the workspace including Miri support and rules on&#10;  licensing and contribution." />
     <MESSAGE value="tps_minicbor v0.10. *API Breaking*.&#10;- Significant refactor of tps_minicbor with breaking API changes.&#10;- No longer parsed using nom. Faster, smaller, fewer dependencies.&#10;- no_std support. No allocator required for preferred encoding.&#10;- Support preferred encoding by default.&#10;- Deterministic decoding is an option for std targets. &#10;- Automatic calculation of array/map sized with configurable depth.&#10;- Optional float support.&#10;- No support for indefinite length objects.&#10;- No support for non-trivial NaN.&#10;- Extensive test suite includes all for RFC8949 tests" />
     <MESSAGE value="tps_minicbor v0.10. *API Breaking*.&#10;- Significant refactor of tps_minicbor with breaking API changes.&#10;- No longer parsed using nom. Faster, smaller, fewer dependencies.&#10;- no_std support. No allocator required for preferred encoding.&#10;- Support preferred encoding by default.&#10;- Deterministic decoding is an option for std targets. &#10;- Automatic calculation of array/map sized with configurable depth.&#10;- Optional float support.&#10;- No support for indefinite length objects.&#10;- No support for non-trivial NaN.&#10;- Extensive test suite includes all for RFC8949 tests&#10;&#10;55/55 unit tests pass." />
-    <option name="LAST_COMMIT_MESSAGE" value="tps_minicbor v0.10. *API Breaking*.&#10;- Significant refactor of tps_minicbor with breaking API changes.&#10;- No longer parsed using nom. Faster, smaller, fewer dependencies.&#10;- no_std support. No allocator required for preferred encoding.&#10;- Support preferred encoding by default.&#10;- Deterministic decoding is an option for std targets. &#10;- Automatic calculation of array/map sized with configurable depth.&#10;- Optional float support.&#10;- No support for indefinite length objects.&#10;- No support for non-trivial NaN.&#10;- Extensive test suite includes all for RFC8949 tests&#10;&#10;55/55 unit tests pass." />
+    <MESSAGE value="tps_error, tps_client_common v0.10.&#10;- Added test suite.&#10;- Added README.&#10;Claude code used in development of test suites.&#10;55/55 tests passed." />
+    <option name="LAST_COMMIT_MESSAGE" value="tps_error, tps_client_common v0.10.&#10;- Added test suite.&#10;- Added README.&#10;Claude code used in development of test suites.&#10;55/55 tests passed." />
   </component>
 </project>
