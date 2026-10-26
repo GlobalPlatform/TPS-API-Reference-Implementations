@@ -1,44 +1,67 @@
-# Copyright © 2022 Qualcomm Innovation Center, Inc. All rights reserved.
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-# documentation files (the “Software”), to deal in the Software without restriction, including without limitation
-# the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
-# to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice (including the next
-# paragraph) shall be included in all copies or substantial portions of the
-# Software.
-#
-# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+# SPDX-License-Identifier: MIT
+
 [package]
 name = "rot13_connector"
-version = "0.1.0"
-edition = "2021"
+version = "0.10.0"
+edition = "2024"
 license = "MIT"
-authors = ["Jeremy O'Donoghue<quic_jodonogh@quicinc.com"]
-description = "Minmal reference implementation of a Connector for the GlobalPlatform Trusted Platform Services API"
+authors = ["Jeremy O'Donoghue <quic_jodonogh@quicinc.com>", "Jeremy O'Donoghue <jodonogh@qti.qualcomm.com>"]
+description = "Minimal reference implementation of a Connector for the GlobalPlatform Trusted Platform Services API"
 homepage = "https://globalplatform.org"
 repository = "https://github.com/GlobalPlatform/TPS-API-Reference-Implementations"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+rust-version = "1.85"
+readme = "README.md"
+keywords = ["tps", "globalplatform", "connector", "example", "no-std"]
+categories = ["no-std", "embedded"]
+# Not published to crates.io: this is a worked reference example of a TPS connector, not a
+# supported library. Publishing it would imply a public API commitment it is not meant to carry.
+# Read it in the GitHub repository instead.
+publish = false
+
 
 [dependencies]
-getrandom = { version = "0.2.7" }
-tps_client_common = { path = "../tps_client_common" }
-tps_connector = { path = "../tps_connector"}
-tps_error = { path = "../tps_error" }
-rot13_service = { path = "../rot13_service" }
+getrandom = { version = "0.4.3", default-features = false }
+tps_client_common = { path = "../tps_client_common", version = "0.10.0" }
+tps_connector = { path = "../tps_connector", version = "0.10.0"}
+tps_error = { path = "../tps_error", version = "0.10.0" }
+tps_minicbor = { path = "../tps_minicbor", version = "0.10.0" }
+rot13_service = { path = "../rot13_service", version = "0.10.0" }
 
 [lib]
 crate-type = ["lib", "staticlib"]
 
-# [features]       # Features not yet used
-# std = []
+# rot13_connector is normally built `no_std`. `std` is enabled for host-side testing/tooling.
+#
+# There is deliberately no cargo feature here for bare-metal entropy. getrandom 0.2 selected a
+# caller-supplied entropy source through its `custom` cargo feature, which this crate re-exported
+# as `custom-rng`; from getrandom 0.3 onwards that feature does not exist. A custom backend is now
+# selected by the *final binary's* build configuration rather than by a dependency's features:
+#
+#   RUSTFLAGS='--cfg getrandom_backend="custom"'
+#
+# and the embedding platform must then define the entropy source as a free function
+#
+#   #[no_mangle]
+#   unsafe extern "Rust" fn __getrandom_v03_custom(dest: *mut u8, len: usize)
+#       -> Result<(), getrandom::Error>
+#
+# A cargo feature cannot set a `--cfg` on a dependency, so `custom-rng` is not expressible any
+# more and has been removed rather than left in place as a no-op. This is no loss of function:
+# the feature only ever enabled a hook that this reference implementation does not fill in.
+#
+# `std` must forward to every dependency that has its own `std` feature. A bare `std = []` gates
+# only this crate's own `extern crate std` and silently leaves the whole dependency graph `no_std`,
+# so a `--features std` build is not actually a `std` build of the library it links against.
 
-[profile.release]
-opt-level = 'z'
-lto = true
+[features]
+std = [
+    "tps_client_common/std",
+    "tps_connector/std",
+    "tps_error/std",
+    "tps_minicbor/std",
+    "rot13_service/std",
+    "getrandom/std",
+]

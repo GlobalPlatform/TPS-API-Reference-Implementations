@@ -1,29 +1,14 @@
 /****************************************************************************************************
-* Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
-*
-* Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-* and associated documentation files (the “Software”), to deal in the Software without
-* restriction, including without limitation the rights to use, copy, modify, merge, publish,
-* distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
-* Software is furnished to do so, subject to the following conditions:
-*
-* The above copyright notice and this permission notice (including the next
-* paragraph) shall be included in all copies or substantial portions of the
-* Software.
-*
-* THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
-* BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-* NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-* DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+* Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+* SPDX-License-Identifier: MIT
 ***************************************************************************************************/
 /*
  * A simple example of use of TPS Client API from C code
  */
 #include <stdio.h>
 #include <stdint.h>
-#include <strings.h>
-#include <libc.h>
+#include <stdlib.h>
+#include <string.h>
 #include "tpsc_client_api.h"
 
 /* Defines a ROT13 service called "GPP ROT13" using the normative namespace 87bae713-b08f-5e28-b9ee-4aa6e202440e */
@@ -63,25 +48,25 @@ uint32_t DoServiceDiscovery(TPSC_ServiceIdentifier* service_id) {
             .secure_component_instance = TPSC_UUID_NIL,
             .secure_component_type = TPSC_UUID_NIL,
             .service_version_range = {
-                    .lowest_acceptable_version = { .tag = Inclusive,
+                    .lowest_acceptable_version = { .tag = TPSC_Inclusive,
                                                    .inclusive = {
                                                         .major_version = 0,
                                                         .minor_version = 0,
                                                         .patch_version = 1
                     }},
-                    .first_excluded_version = { .tag = Inclusive,
+                    .first_excluded_version = { .tag = TPSC_Inclusive,
                                                 .inclusive = {
                                                     .major_version = 1,
                                                     .minor_version = 1,
                                                     .patch_version = 1
                     }},
-                    .last_excluded_version = { .tag = Exclusive,
+                    .last_excluded_version = { .tag = TPSC_Exclusive,
                                                .exclusive = {
                                                     .major_version = 1,
                                                     .minor_version = 2,
                                                     .patch_version = 0
                     }},
-                    .highest_acceptable_version = { .tag = Exclusive,
+                    .highest_acceptable_version = { .tag = TPSC_Exclusive,
                                                     .exclusive = {
                                                         .major_version = 2,
                                                         .minor_version = 0,
@@ -93,7 +78,7 @@ uint32_t DoServiceDiscovery(TPSC_ServiceIdentifier* service_id) {
     size_t no_of_services = sizeof(services_available) / sizeof(TPSC_ServiceIdentifier);
 
     // Call Service Discovery
-    uint32_t retval = TPSC_ServiceDiscovery(&selector, &no_of_services, services_available);
+    uint32_t retval = TPSC_DiscoverServices(&selector, &no_of_services, services_available);
 
     // The service we want is the first one in the list
     *service_id = services_available[0];
@@ -116,9 +101,9 @@ void PrintMessage(char *heading, uint8_t* msg, size_t len) {
 int PrepareMessage(const uint8_t *src, const size_t src_len, uint8_t *dest, const size_t dest_len) {
     if (src_len <= dest_len) {
         memcpy(dest, src, src_len);
-        return TRUE;
+        return 1;
     } else
-        return FALSE;
+        return 0;
 }
 
 int main(int argc, char** argv) {
@@ -127,6 +112,10 @@ int main(int argc, char** argv) {
     PrintMessage("Input Message", send_msg, 20 /* ARRAY_SIZE(send_msg, uint8_t)*/);
 
     if (DoServiceDiscovery(&svc_id) == TPSC_SUCCESS) {
+        /* svc_id.service_instance must remain valid for the entire lifetime of `session` below
+         * (through TPSC_CloseSession), not merely for the duration of this TPSC_OpenSession
+         * call - session.service_id is a pointer to it, not a copy. Declaring svc_id in this
+         * same stack frame, above session, satisfies that. */
         TPSC_Session session;
         if (TPSC_OpenSession(&(svc_id.service_instance), TPSC_LOGIN_PUBLIC, NULL, &session) == TPSC_SUCCESS) {
             void *send_buffer = malloc(TRANSACTION_BUFFER_SIZE);
@@ -142,9 +131,17 @@ int main(int argc, char** argv) {
                 } else {
                     printf("Transaction failed!");
                 }
+                /* Every successful TPSC_InitializeTransaction call must be matched by a
+                 * TPSC_FinalizeTransaction call before the backing buffer is freed. */
+                TPSC_FinalizeTransaction(&send_buf);
+                TPSC_FinalizeTransaction(&recv_buf);
             }
+            free(send_buffer);
+            free(recv_buffer);
+            TPSC_CloseSession(&session);
         }
     } else {
         printf("Service discovery failed");
     }
+    return 0;
 }

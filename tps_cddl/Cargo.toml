@@ -1,41 +1,45 @@
-# Copyright (c) 2019-2021 Jeremy O'Donoghue. All rights reserved.
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-# and associated documentation files (the “Software”), to deal in the Software without
-# restriction, including without limitation the rights to use, copy, modify, merge, publish,
-# distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
-# Software is furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice (including the next
-# paragraph) shall be included in all copies or substantial portions of the
-# Software.
-#
-# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
-# BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-#
-# rs_cddl package definition
+#***************************************************************************************************
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+# SPDX-License-Identifier: MIT
+#***************************************************************************************************
 
 [package]
 name = "tps_cddl"
-version = "0.1.0"
-authors = ["Jeremy O'Donoghue <quic_jodonogh@quicinc.com>"]
-edition = "2018"
+authors = ["Jeremy O'Donoghue <jodonogh@quti.qualcomm.com>"]
+version = "0.10.0"
+edition = "2024"
+description = "IETF CDDL (RFC 8610, RFC9165, RFC9682) parser, validator, and code generator"
 license = "MIT"
+homepage = "https://globalplatform.org"
+repository = "https://github.com/GlobalPlatform/TPS-API-Reference-Implementations"
+rust-version = "1.85"
+readme = "README.md"
+keywords = ["cddl", "rfc8610", "cbor", "validator", "codegen"]
+categories = ["parser-implementations", "encoding", "development-tools"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "tps_cddl"
+path = "src/lib.rs"
 
 [[bin]]
-name = "astdump"
-
-[[bin]]
-name = "cddlgen"
+name = "cddl"
+path = "src/main.rs"
 
 [dependencies]
-nom = { version = "7", features = ["std"] }
-hex = "0.4.0"
-base64 = "0.20.0"
-thiserror = "^1"
-clap = { version = "^4", features = ["default", "derive"] }
+clap = { version = "4", features = ["derive"] }
+thiserror = "2"
+miette = { version = "7", features = ["fancy"] }
+pest = "2"
+pest_derive = "2"
+tps_minicbor = { path = "../tps_minicbor", version = "0.10.0", features = ["float", "spans"] }
+serde_json = { version = "1", default-features = false, features = ["std"] }
+
+[features]
+# Enable RFC 9165 additional control operators
+rfc9165 = []
+# Enable RFC 9682 grammar corrections and additions
+rfc9682 = []
+# Enable all extensions
+all_extensions = ["rfc9165", "rfc9682"]
+# Enable CDDL module structure (draft-ietf-cbor-cddl-modules-06): ;# import/include directives
+modules = []

@@ -1,45 +1,55 @@
-# Copyright © 2022 Jeremy O'Donoghue. All rights reserved.
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-# documentation files (the “Software”), to deal in the Software without restriction, including without limitation
-# the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
-# to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice (including the next
-# paragraph) shall be included in all copies or substantial portions of the
-# Software.
-#
-# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+# SPDX-License-Identifier: MIT
+
 [package]
 name = "tps_client_c"
-version = "0.1.0"
-edition = "2021"
-authors = ["Jeremy O'Donoghue<quic_jodonogh@quicinc.com"]
+version = "0.10.0"
+edition = "2024"
+authors = ["Jeremy O'Donoghue <quic_jodonogh@quicinc.com>", "Jeremy O'Donoghue<jodonogh@qti.qualcomm.com>"]
 license = "MIT"
 description = "Reference implementation of the GlobalPlatform Trusted Platform Services API"
 homepage = "https://globalplatform.org"
 repository = "https://github.com/GlobalPlatform/TPS-API-Reference-Implementations"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+rust-version = "1.85"
+readme = "README.md"
+keywords = ["tps", "globalplatform", "ffi", "no-std", "staticlib"]
+categories = ["external-ffi-bindings", "no-std", "embedded"]
+# Not published to crates.io: `crate-type = ["staticlib"]` cannot be linked as a Rust
+# dependency, so a registry release would serve no consumer. The GitHub repository is the
+# distribution channel for the C binding and its generated header.
+publish = false
+
+
 [lib]
 name = "tps_client_api_c"
 crate-type = ["staticlib"]
 
 [features]
-std = []
+# `std` must forward to every dependency that has its own `std` feature, not just gate this
+# crate's `extern crate std`. `tps_client_api/std` is what enables `critical-section/std`, which
+# registers the `critical_section::Impl` that `tps_client_api::services`' global service store
+# needs at link time; without the forward, `--features std` produced a `std` build of this crate
+# on top of a `no_std` dependency graph and the resulting staticlib failed to link with
+# undefined references to `_critical_section_1_0_acquire`.
+std = ["tps_client_api/std", "tps_client_common/std"]
 trace = ["std"]
 
 [dependencies]
-tps_client_common = { path = "../tps_client_common" }
-tps_client_api = { path = "../tps_client_api" }
+tps_client_common = { path = "../tps_client_common", version = "0.10.0" }
+tps_client_api = { path = "../tps_client_api", version = "0.10.0" }
 func_trace = "1.0.3"
 
-[build-dependencies]
-cbindgen = "0.24.3"
+[dev-dependencies]
+rot13_connector = { path = "../rot13_connector", version = "0.10.0", features = ["std"] }
+# `tps_client_api::sync` (pulled in transitively) is built on `critical_section::with`, which
+# panics at runtime unless some crate registers an `Impl`. `tps_client_api` provides this for its
+# own tests via a `std`-featured `critical-section` dev-dependency (see its Cargo.toml comment);
+# `tps_client_c` needs the identical dev-dependency for exactly the same reason once its own
+# tests start calling into functions that reach `tps_client_api::services` (e.g.
+# `TPSC_OpenSession`/`TPSC_DiscoverServices`). Test-only: does not affect the real `std`/no_std
+# build of this crate's own code.
+critical-section = { version = "1.2.0", features = ["std"] }
 
-[profile.release]
-opt-level = 'z'
-lto = true
+[build-dependencies]
+cbindgen = "0.29.4"

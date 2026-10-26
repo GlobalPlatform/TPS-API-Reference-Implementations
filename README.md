@@ -1,135 +1,251 @@
-## TPS Client API
+# TPS API Reference Implementations
 
 ## Overview
 
-This crate contains a reference implementation of the GlobalPlatform TPS Client API.
-This implementation is intended to be suitable for relatively constrained embedded targets.
+This repository is a Cargo workspace containing reference implementations of
+[GlobalPlatform](https://globalplatform.org) Trusted Platform Services (TPS) specifications,
+together with a set of libraries and command-line tools for working with the IETF CBOR
+ecosystem that those specifications are built on.
 
-The Client API is implemented as a library which can be linked with anything that
-exposes a C language FFI (which means virtually anything). It also provides a Rust
-API to simplify integration with applications written in Rust.
+Two things live here:
 
-Communication with Secure Components is provided by _Connectors_ which provide an
-abstract service-oriented interface to TPS Services implemented on Secure Components.
+- **The TPS Client API** — a reference implementation of the GlobalPlatform TPS Client API
+  (`specifications/GPP_TPS_Client_API_Spec_v1.0_PublicRelease_signed.pdf`), with a sample
+  Connector and a sample Service, suitable for constrained embedded targets.
+- **A CBOR/COSE/CDDL toolchain** — encoders, decoders, validators, tree-sitter grammars and
+  CLI/TUI/GUI tools used to author and inspect the artifacts the TPS services exchange.
 
-The implementations are intended to support `no_std` environments and thus have no
-dependency on the Rust standard library. 
+The Client API is implemented as a library which can be linked with anything that exposes a
+C language FFI (which means virtually anything). It also provides a Rust API to simplify
+integration with applications written in Rust.
 
-The Trusted Platform Services APIs make heavy use of
-[CBOR](https://www.rfc-editor.org/info/rfc8949) and related technologies such as 
-[COSE](https://www.rfc-editor.org/info/rfc8152) and 
+Communication with Secure Components is provided by _Connectors_, which provide an abstract
+service-oriented interface to TPS Services implemented on Secure Components.
+
+The TPS APIs make heavy use of [CBOR](https://www.rfc-editor.org/info/rfc8949) and related
+technologies such as [COSE](https://www.rfc-editor.org/info/rfc9052) and
 [CDDL](https://www.rfc-editor.org/info/rfc8610), which are standardized by the IETF.
 
-This project is composed of multiple sub-crates:
+### `no_std` and embedded support
+
+The crates that make up a shipped TPS Client API implementation are `no_std` by default, with
+an opt-in `std` feature used for host-side testing and tooling. Platform-specific code is
+featurized rather than assumed, so the same sources build for a host and for bare metal.
+
+The developer tools in this workspace (`cose-tool`, `edn-tool`, `cbor-tui`, `ts-highlight`,
+`cddl`, the GUI and the tree-sitter grammars) are `std`-only by design — they are not intended
+to be deployed to a constrained target.
+
+`tock/` contains a bare-metal validation of the Client API on [TockOS](https://tockos.org),
+running the client and the ROT13 service as two separate Tock processes over Tock IPC, against
+unmodified `tps_client_api`, `tps_connector` and `rot13_service` crates. It targets the
+Raspberry Pi Pico (Arm Cortex-M0+) and the OpenTitan/Ibex `earlgrey-cw310` board (RISC-V, run
+under QEMU). It is a **separate, isolated Cargo workspace** and is deliberately not built by
+the root `cargo build --workspace`. See `tock/README.md`.
+
+## Project status
+
+Current version: **0.10.0**. All crates are Rust **edition 2024**.
+
+The TPS Client API implementation is complete through Phase 6 of
+`specifications/TPS_CLIENT_API_PLAN.md`, which is the living plan and decision record for this
+work — including spec errata found during implementation and the rationale for each design
+ruling. The automated bare-metal round-trip test passes on Ibex/QEMU; Pico build, package and
+flash tooling is complete, with on-hardware observation documented as a manual step.
+
+`CODE_REVIEW_CAMPAIGN.md` tracks the multi-stage spec-compliance and code review of the core
+crates.
+
+## Crates
+
+### TPS Client API
 
 - `tps_client_api` implements most of the Client API functionality in a Rust crate.
-- `tps_client_api_c` creates a statically linkable C library with a C language API
-  which allows the TPS Client API to be used anywhere that supports a C language FFI.
-  This library includes `tps_client_api`, and is able to connect to libraries that
-  export the `tps_connector` API.
-- `tps_client_common` provides definitions that are used across multiple crates in
-  a system. It has no dependencies.
+- `tps_client_c` wraps `tps_client_api` in a C language API and builds a statically linkable
+  library (`libtps_client_api_c.a`), allowing the TPS Client API to be used anywhere that
+  supports a C language FFI. It links against any library exporting the `tps_connector` API.
+  The C header (`tps_client_c/tpsc_client_api.h`) is generated by `cbindgen` from the crate's  `build.rs`.
+- `tps_client_common` provides definitions used across multiple crates in a system. It has no
+  dependencies.
 - `tps_error` contains error definitions for any crate using the TPS API ecosystem.
-- `tps_connector` defines an API which enables security component back-ends to be
-  called from `tps_client_api`. Both Rust and C language APIs are provided, 
-  allowing Connector instances to be written in either language.
-- `rot13_connector` provides a minimal implementation of the TPS Connector API
+- `tps_connector` defines an API which enables security component back-ends to be called from  `tps_client_api`. Both Rust and C language APIs are provided, allowing Connector instances to
+  be written in either language.
+- `rot13_connector` provides a minimal implementation of the TPS Connector API.
 - `rot13_service` provides a minimal implementation of a TPS Service (in this case, ROT13
-  "encryption).
-- `tps_minicbor` is an implementation of [IETF CBOR (RFC8949)](https://www.rfc-editor.org/rfc/rfc8949.html)
-  encoding and decoding, with no requirement for an allocator or the standard
-  library.
+  "encryption").
+
+### CBOR, COSE and CDDL libraries
+
+- `tps_minicbor` is an implementation of [CBOR (RFC 8949)](https://www.rfc-editor.org/info/rfc8949)
+  encoding and decoding with preferred serialization, requiring neither an allocator nor the
+  standard library.
+- `tps_cose` is an implementation of [COSE (RFC 9052)](https://www.rfc-editor.org/info/rfc9052)
+  encoding and decoding, supporting a selection of crypto algorithms.
+- `tps_cddl` is a [CDDL (RFC 8610)](https://www.rfc-editor.org/info/rfc8610) parser, validator
+  and code generator, with support for
+  [RFC 9165](https://www.rfc-editor.org/info/rfc9165) and
+  [RFC 9682](https://www.rfc-editor.org/info/rfc9682).
+
+### Tools
+
+- `tps_cose_tool` provides the `cose-tool` CLI for COSE_Sign1/COSE_Encrypt0 operations and COSE
+  key management (plus a `gen-testdata` helper).
+- `tps_edn_tool` provides the `edn-tool` CLI for converting between CBOR extended diagnostic
+  notation (EDN) and binary CBOR.
+- `tps_cddl` additionally provides the `cddl` CLI for validating CDDL, checking CBOR/JSON
+  against a schema, and generating `tps_minicbor` encoders/decoders from a schema.
+- `tps_cbor_tui` provides `cbor-tui`, a terminal workbench for CDDL editing, CBOR/EDN viewing
+  and COSE sign/encrypt.
+- `tps_cbor_gui` is a cross-platform Tauri GUI IDE for the CBOR/COSE/CDDL ecosystem. The Rust
+  crate lives in `tps_cbor_gui/src-tauri`.
+- `tps_ts_highlight_tool` provides `ts-highlight`, a terminal syntax-highlighting preview for
+  the tree-sitter grammars below.
+- `tree-sitter-cddl` is a tree-sitter grammar for CDDL.
+- `tree-sitter-edn` is a tree-sitter grammar for CBOR EDN.
+
+## Documentation
+
+- `USAGE.md` — walkthrough of the `tps_minicbor` and `tps_cose` APIs.
+- `CONTRIBUTING.md` — contribution process, DCO sign-off, GPG signing and dependency licensing
+  rules.
+- `specifications/TPS_CLIENT_API_PLAN.md` — Client API implementation plan, spec errata and
+  design rulings.
+- `CODE_REVIEW_CAMPAIGN.md` — code review campaign scope and progress.
+- `specifications/` — the TPS Client API specification and the relevant IETF RFCs.
+- Individual crates carry their own `README.md` and, where useful, `DESIGN.md`.
 
 ## License
 
-All parts of the TPS Client API are MIT licensed, See LICENSE.
+All parts of this project are MIT licensed. See `LICENSE` for the full text. Every crate
+declares `license = "MIT"`, and every source file authored for this project carries the header:
+
+```
+Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+SPDX-License-Identifier: MIT
+```
+
+(EDN files use "and its subsidiaries" without the slash, because RFC 8610 Appendix G.6 delimits
+an EDN comment with a pair of `/` and a slash inside one would terminate it early.)
+
+Third-party content is covered by its own upstream licenses and retains its own copyright
+notices: code vendored under `tock/third_party/` (the Tock kernel, `libtock-rs` and `elf2tab`,
+included as git submodules), the tree-sitter runtime headers under
+`tree-sitter-{cddl,edn}/src/tree_sitter/`, the IETF RFC and draft texts under `specifications/`,
+`tps_cose/`, `tps_cddl/` and `tps_minicbor/`, the COSE test vectors in
+`tps_cose/tests/Examples/`, and GlobalPlatform normative material.
+
 
 ## Building
 
-> The current version of the project is built using CMake. This is likely to change
-> in a future version to a build system based entirely on Cargo.
-
-The build system is in a state of flux, and doesn't manage generated header files as
-it should. The following instructions should enable you to build and run the example
-and tests.
+The workspace is built with Cargo. The `CMakeLists.txt` files are a legacy path retained only
+for building the C example (see below); they are not required to build the Rust crates.
 
 ### Build dependencies
 
-You will need to have the following installed:
+- **Rust toolchain 1.85 or later.** All crates are edition 2024, which 1.85 is the first release
+  to support. There is no root `rust-toolchain.toml`, so your default toolchain is used.
+- **[cbindgen](https://github.com/eqrion/cbindgen) on `PATH`.** `tps_client_c/build.rs` invokes
+  the `cbindgen` binary to regenerate `tpsc_client_api.h` and fails the build if it is absent.
+  Install with `cargo install --force cbindgen`.
+- **A C compiler**, needed to build the `tree-sitter-cddl` and `tree-sitter-edn` grammars.
 
-- Rust toolchain (tested for Rust v1.64.0)
-- [cbindgen](https://github.com/eqrion/cbindgen)
-  - `cargo install --force cbindgen` is easiest way to install.
-- CMake (tested for version 3.20 - this is set as a lower bound in the scripts, so
-  older versions will not work)
-  - Install from [CMake downloads](https://cmake.org/download/) or your package manager.
-- [CMakeRust](https://github.com/Devolutions/CMakeRust)
-  - Instructions to use CMakeRust can be found on
-    [Devolutions blog](https://blog.devolutions.net/2018/06/insider-series-using-rust-code-in-a-cc-project-with-cmake/)
+Only if you want to build `tps_cbor_gui`:
 
-#### Using CMakeRust in the build system
+- **Tauri system dependencies** — on Linux this includes `webkit2gtk` and its development
+  headers; see the [Tauri prerequisites](https://tauri.app/start/prerequisites/).
+- **Node.js and npm**, for the GUI frontend.
 
-Create a directory in the top of the repo for CMakeRust:
+### Building and testing the Rust crates
 
-`cd <path_to_tps_repository>`
-`mkdir cmake_rust`
+To build everything except the GUI:
 
-Copy the contents of the cmake directory in the CMakeRust repository into the `cmake_rust` directory. I have
-the following files:
-
-- `CargoLink.cmake`
-- `CMakeCargo.cmake`
-- `CMakeDetermineRustCOmpiler.cmake`
-- `CMakeRustCompiler.cmake.in`
-- `CMakeRustInformation.cmake`
-- `CMakeTestRustCompiler.cmake`
-- `FindRust.cmake`
-- Various license files.
-
-Credit to the team at [Devolutions](https://devolutions.net) for CMakeRust, which is dual MIT/Apache2 licensed. 
-
-### Building the example
-
-This assumes that you are in the top directory of the repository.
-
-`cd <path_to_tps_repository`
-
-Next, create a directory for CMake artifacts
-
-`mkdir cmake-build-debug`
-
-Now you need to build everything with Cartgo, as this generates headers.
-
-`cargo build`
-
-This takes 30 seconds or so on my moderately powerful laptop with a decent internet connection.
-
+```shell
+cargo build --workspace --exclude tps_cbor_gui --features std
 ```
-cd cmake-build-debug
-cmake ..
-cd ..
-cmake --build cmake-build-debug
+
+To run the test suite:
+
+```shell
+cargo test --workspace --exclude tps_cbor_gui --features std
 ```
+
+The `std` feature is what makes the crates testable on a host; it pulls in, among other things,
+the `critical-section` implementation that `tps_client_api`'s global service store needs at link
+time. A real `no_std` consumer registers its own via `critical_section::set_impl!` — see the
+comments in `tps_client_api/Cargo.toml` and `tock/tock_rot13_client` for a worked example.
+
+To check that the Client API crates still build in their normal `no_std` configuration:
+
+```shell
+cargo check -p tps_client_common -p tps_error -p tps_connector -p tps_client_api
+```
+
+### Checking the unsafe code with Miri
+
+The TPS Client API crates pass raw pointers across `extern "C"` boundaries, where neither the
+compiler nor `cargo test` can detect aliasing or pointer-provenance violations — such code can
+compile without warnings, pass its tests and still be undefined behaviour.
+[Miri](https://github.com/rust-lang/miri) interprets MIR instead of running native code and does
+detect them, along with out-of-bounds accesses, reads of uninitialized memory, misaligned
+accesses and data races.
+
+`run_miri.sh` runs the test suites of the six crates that contain `unsafe` code under Miri:
+
+```shell
+./run_miri.sh                  # all six crates, Stacked Borrows (Miri's default model)
+./run_miri.sh -t               # the stricter, experimental Tree Borrows model
+./run_miri.sh -p tps_client_c  # a single crate
+./run_miri.sh -- some_filter   # pass a test-name filter to the harness
+```
+
+It needs a nightly toolchain with the `miri` component — Miri is not available on stable:
+
+```shell
+rustup toolchain install nightly
+rustup component add --toolchain nightly miri rust-src
+```
+
+Both aliasing models currently report no undefined behaviour. Notes on the setup:
+
+- The script sets `-Zmiri-disable-isolation`, needed because several `tps_client_c` tests read
+  the cbindgen-generated `tpsc_client_api.h` from disk and Miri denies filesystem access by
+  default. It grants host access only and does not relax any UB check.
+- Tests that cannot run under Miri are marked `#[cfg_attr(miri, ignore = "...")]` at the test
+  rather than filtered inside the script, so the reason stays with the test. Only two are
+  excluded, both because they spawn a subprocess (`cc`, `false`), which Miri cannot do.
+- `tree-sitter-cddl` and `tree-sitter-edn` link a C parser, so Miri cannot execute them; the
+  remaining crates (`tps_minicbor`, `tps_cose`, `tps_cddl` and the CLI/TUI tools) are safe Rust
+  and are not covered by the script.
+- Miri is slow — roughly a few seconds per crate under Stacked Borrows and several times that
+  under Tree Borrows, against hundredths of a second natively. It is a pre-merge check on the
+  `unsafe` crates, not part of the normal edit-compile-test loop.
 
 ### Running the TPS Client API End-to-end Example 
 
-This example can be found in `tps_client_c/c_example/c_example.c`. It is about the simples possible example of
-performing a service discovery and then performing an "encryption" using the ROT13 service.
+`tps_client_c/c_example/c_example.c` is about the simplest possible example of performing a
+service discovery and then performing an "encryption" using the ROT13 service. The object file
+produced by compiling it is linked against the static libraries generated for the TPS Client API
+(`libtps_client_api_c.a`) and for the ROT13 Connector (`librot13_connector.a`). It depends on
+the C standard library, even though the Rust components do not.
 
-The object file produced compiling `c_example.c` is linked with the libraries generated for the TPS Client API
-(`libtps_client_api_c.a`) and for the ROT13 connector (`librot13_connector.a`).
-
-You can run the example as follows (from the top directory of the repository, and assuming you are using a Unix-like
-shell)
+Build the static libraries and link the example (from the top of the repository):
 
 ```shell
-cd cmake-build-debug/tps_client_c/c_example
+cargo build -p tps_client_c -p rot13_connector --features std
+cc -std=c99 -I tps_client_c -o c_example tps_client_c/c_example/c_example.c \
+   target/debug/libtps_client_api_c.a target/debug/librot13_connector.a \
+   -lpthread -ldl -lm
 ./c_example
 ```
 
+Each crate's `std` feature forwards to the `std` features of its dependencies, so enabling it on
+the two crates that produce static libraries is enough: `tps_client_c/std` pulls in
+`tps_client_api/std`, which in turn enables `critical-section/std` and so registers the
+`critical_section::Impl` the link needs.
+
 The expected output is:
 
-```shell
+```
 Input Message
 ca,
 a1, 1, 70, 54, 68, 69, 73, 67,
@@ -139,34 +255,18 @@ Received Message
 ca,
 a1, 1, 70, 47, 75, 76, 66, 74,
 62, 72, 66, 67, 62, 72, 79, 72,
-69, 72, 61, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0,
+69, 72, 61,
 ```
+
+### Legacy CMake build of the C example
+
+An older CMake-driven build of the C example is still present
+(`CMakeLists.txt`, `tps_client_c/CMakeLists.txt`, `rot13_connector/CMakeLists.txt`,
+`rot13_service/CMakeLists.txt`, `tps_client_c/c_example/CMakeLists.txt`). It needs CMake 3.20 or
+later plus [CMakeRust](https://github.com/Devolutions/CMakeRust), whose `cmake` directory must be
+copied into a `cmake_rust/` directory at the top of this repository — that directory is not
+checked in, and this path is not covered by CI. Prefer the Cargo instructions above.
+
+Credit to the team at [Devolutions](https://devolutions.net) for CMakeRust, which is dual
+MIT/Apache-2.0 licensed.
+

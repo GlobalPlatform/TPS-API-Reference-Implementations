@@ -1,0 +1,185 @@
+//**************************************************************************************************
+// Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+// SPDX-License-Identifier: MIT
+//*************************************************************************************************/
+// CDDL PEG Grammar — RFC 8610 base, updated by RFC 9682
+// Pest uses PEG ordered-choice semantics (matching RFC 8610 Appendix A).
+//
+// This grammar covers both RFC 8610 and RFC 9682. The RFC 9682 extensions
+// (empty data models, non-literal head-numbers) are structurally accepted
+// here; enforcement of RFC 8610 strictness is done in the semantic validator.
+//
+// Conventions:
+//   _rule  — silent (whitespace/trivia, not captured in CST)
+//   RULE   — atomic (no internal whitespace allowed)
+//   Rule   — normal (whitespace skipped between sub-expressions)
+
+// ─── Top-level ───────────────────────────────────────────────────────────────
+
+// RFC 9682 §3.1: cddl = S *(rule S)  (RFC 8610 required at least one rule)
+cddl = { SOI ~ S ~ (rule ~ S)* ~ EOI }
+
+rule = {
+    typename ~ genericparm? ~ S ~ assignt ~ S ~ type_
+  | groupname ~ genericparm? ~ S ~ assigng ~ S ~ grpent
+}
+
+// typename and groupname are both just `id` — distinction is contextual.
+typename  = { id }
+groupname = { id }
+
+assignt = { "/=" | "=" }
+assigng = { "//=" | "=" }
+
+// ─── Generic parameters / arguments ─────────────────────────────────────────
+
+genericparm = { "<" ~ S ~ id ~ S ~ ("," ~ S ~ id ~ S)* ~ ">" }
+genericarg  = { "<" ~ S ~ type1 ~ S ~ ("," ~ S ~ type1 ~ S)* ~ ">" }
+
+// ─── Type expressions ────────────────────────────────────────────────────────
+
+type_ = { type1 ~ (S ~ "/" ~ S ~ type1)* }
+
+type1 = { type2 ~ (S ~ (rangeop | ctlop) ~ S ~ type2)? }
+
+type2 = {
+    value
+  | typename ~ genericarg?
+  | "(" ~ S ~ type_ ~ S ~ ")"
+  | "{" ~ S ~ group ~ S ~ "}"
+  | "[" ~ S ~ group ~ S ~ "]"
+  | "~" ~ S ~ typename ~ genericarg?
+  | "&" ~ S ~ "(" ~ S ~ group ~ S ~ ")"
+  | "&" ~ S ~ groupname ~ genericarg?
+  // RFC 9682 §3.2: #6[.head_number](type) and #7[.head_number]
+  | "#" ~ "6" ~ ("." ~ head_number)? ~ "(" ~ S ~ type_ ~ S ~ ")"
+  | "#" ~ "7" ~ ("." ~ head_number)?
+  // RFC 8610: #DIGIT[.uint] for other major types
+  | "#" ~ ASCII_DIGIT ~ ("." ~ uint)?
+  | "#"
+}
+
+rangeop = { "..." | ".." }
+
+ctlop = { "." ~ id }
+
+// RFC 9682 §3.2: head-number = uint / ("<" type ">")
+head_number = { "<" ~ S ~ type_ ~ S ~ ">" | uint }
+
+// ─── Groups ───────────────────────────────────────────────────────────────────
+
+group     = { grpchoice ~ (S ~ "//" ~ S ~ grpchoice)* }
+grpchoice = { (grpent ~ optcom)* }
+
+grpent = {
+    occur? ~ S ~ memberkey? ~ S ~ type_
+  | occur? ~ S ~ groupname ~ genericarg?
+  | occur? ~ S ~ "(" ~ S ~ group ~ S ~ ")"
+}
+
+memberkey = {
+    type1 ~ S ~ "^"? ~ S ~ "=>"
+  | bareword ~ S ~ ":"
+  | value ~ S ~ ":"
+}
+
+bareword = { id }
+
+optcom = _{ S ~ ("," ~ S)? }
+
+// ─── Occurrence ───────────────────────────────────────────────────────────────
+
+occur = { uint? ~ "*" ~ uint? | "+" | "?" }
+
+// ─── Unsigned integers ───────────────────────────────────────────────────────
+
+uint = @{
+    DIGIT1 ~ ASCII_DIGIT*
+  | ^"0x" ~ ASCII_HEX_DIGIT+
+  | ^"0b" ~ ASCII_BIN_DIGIT+
+  | "0"
+}
+
+// ─── Values ───────────────────────────────────────────────────────────────────
+
+value = { number | text | bytes }
+
+int = @{ "-"? ~ uint }
+
+// Float if it has a fraction or exponent; int otherwise.
+number  = @{ hexfloat | (int ~ ("." ~ ASCII_DIGIT+)? ~ (^"e" ~ ("+" | "-")? ~ ASCII_DIGIT+)?) }
+hexfloat = @{ "-"? ~ ^"0x" ~ ASCII_HEX_DIGIT+ ~ ("." ~ ASCII_HEX_DIGIT+)? ~ ^"p" ~ ("+" | "-")? ~ ASCII_DIGIT+ }
+
+// Text string: double-quoted, with escape sequences.
+// RFC 9682 §2.1: updated SESC/SCHAR/BCHAR rules
+text  = @{ "\"" ~ SCHAR* ~ "\"" }
+SCHAR = {
+    '\x20'..'\x21'
+  | '\x23'..'\x5B'
+  | '\x5D'..'\x7E'
+  | NONASCII
+  | SESC
+}
+// RFC 9682 §2.1.1: SESC updated to allow \uXXXX, \u{hex}, and \' in BCHAR
+SESC = {
+    "\\" ~ (
+        "\""
+      | "/"
+      | "\\"
+      | "b"
+      | "f"
+      | "n"
+      | "r"
+      | "t"
+      | ("u" ~ hexchar)
+    )
+  // Fallback: allow any printable/non-ASCII after backslash for RFC 8610 compat
+  | "\\" ~ ('\x20'..'\x7E' | NONASCII)
+}
+hexchar = {
+    "{" ~ ASCII_HEX_DIGIT+ ~ "}"
+  | non_surrogate
+  | (high_surrogate ~ "\\" ~ "u" ~ low_surrogate)
+}
+non_surrogate    = @{ (ASCII_DIGIT | "A" | "B" | "C" | "E" | "F") ~ ASCII_HEX_DIGIT{3}
+                    | "D" ~ '\x30'..'\x37' ~ ASCII_HEX_DIGIT{2} }
+high_surrogate   = @{ "D" ~ ("8" | "9" | "A" | "B") ~ ASCII_HEX_DIGIT{2} }
+low_surrogate    = @{ "D" ~ ("C" | "D" | "E" | "F") ~ ASCII_HEX_DIGIT{2} }
+
+// Byte string: single-quoted with optional qualifier.
+// RFC 9682 §2.1: BCHAR updated — excludes 0x7F-0x9F, adds explicit \', NONASCII
+bytes = @{ bsqual? ~ "'" ~ BCHAR* ~ "'" }
+BCHAR = {
+    '\x20'..'\x26'
+  | '\x28'..'\x5B'
+  | '\x5D'..'\x7E'
+  | NONASCII
+  | SESC
+  | "\\'"
+  | CRLF
+}
+bsqual = { "h" | "b64" }
+
+// RFC 9682 §2.1.2: NONASCII excludes surrogates and C1 controls
+NONASCII = { '\u{A0}'..'\u{D7FF}' | '\u{E000}'..'\u{10FFFD}' }
+
+// ─── Identifiers ─────────────────────────────────────────────────────────────
+
+id     = @{ EALPHA ~ (("-" | ".")* ~ (EALPHA | ASCII_DIGIT))* }
+EALPHA = { ASCII_ALPHA | "@" | "_" | "$" }
+
+// ─── Whitespace and comments ─────────────────────────────────────────────────
+
+S       = _{ WS* }
+WS      = _{ SP | NL }
+SP      = _{ " " | "\t" }
+NL      = _{ COMMENT | CRLF }
+// RFC 9682 §2.1.2: PCHAR updated to use NONASCII (excludes C1 controls)
+COMMENT = _{ ";" ~ PCHAR* ~ CRLF }
+PCHAR   = _{ '\x20'..'\x7E' | NONASCII }
+CRLF    = _{ "\n" | "\r\n" }
+
+// ─── Character class aliases ─────────────────────────────────────────────────
+
+DIGIT1 = _{ '\x31'..'\x39' }
+

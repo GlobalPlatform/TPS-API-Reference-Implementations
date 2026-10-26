@@ -1,21 +1,6 @@
 /***************************************************************************************************
- * Copyright (c) 2022 Jeremy O'Donoghue. All rights reserved.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
- * and associated documentation files (the “Software”), to deal in the Software without
- * restriction, including without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice (including the next
- * paragraph) shall be included in all copies or substantial portions of the
- * Software.
- *
- * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
- * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+ * SPDX-License-Identifier: MIT
  **************************************************************************************************/
 
 //! This file contains a minimal example of the connector implementation for a TPS Service, in this
@@ -33,6 +18,7 @@ extern crate tps_connector;
 
 use rot13_service::{
     message_handler, GPP_ROT13_SERVICE_NAME, GPP_ROT13_SERVICE_VERSION, GPP_TEST_SC_TYPE,
+    Rot13Error,
 };
 use tps_client_common::c_login::{
     LOGIN_APPLICATION, LOGIN_GROUP, LOGIN_GROUP_APPLICATION, LOGIN_PUBLIC, LOGIN_USER,
@@ -40,8 +26,8 @@ use tps_client_common::c_login::{
 };
 use tps_client_common::c_structs::{ConnectionData, ServiceIdentifier, UUID};
 use tps_error::*;
+use tps_minicbor::EncodeError;
 
-use getrandom::getrandom;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 
 /// Secure Component instance ID.
@@ -104,8 +90,9 @@ static TRANSACTION_ID: AtomicU32 = AtomicU32::new(0);
 /// at this point.
 ///
 /// > In this sample code, the connection ID is always 1, and we return an error on attempts to
-/// > create more than one connection. This s done in a way that should not cause race conditions
-/// > as it uses atomics.
+/// > create more than one connection. `IS_CONNECTED` is updated with a single
+/// > `compare_exchange`, so two concurrent callers can never both observe "not connected" and
+/// > both proceed to claim connection ID 1 (which a separate load-then-store would allow).
 pub(crate) fn connect(
     connection_method: u32,
     _connection_data: Option<&ConnectionData>,
@@ -117,14 +104,11 @@ pub(crate) fn connect(
         || connection_method == LOGIN_USER_APPLICATION
         || connection_method == LOGIN_GROUP_APPLICATION
     {
-        if !IS_CONNECTED.load(Ordering::Acquire) {
-            // Nothing connected yet
-            IS_CONNECTED.store(true, Ordering::Release);
-            // Always returns connection ID = 1
-            Ok(1)
-        } else {
+        match IS_CONNECTED.compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire) {
+            // Nothing connected yet; always returns connection ID = 1
+            Ok(_) => Ok(1),
             // There is already another connection
-            Err(TPSError::Busy)
+            Err(_) => Err(TPSError::Busy),
         }
     } else {
         Err(TPSError::BadIdentifier)
@@ -133,17 +117,16 @@ pub(crate) fn connect(
 
 /// Disconnect from a Secure Component
 ///
-/// We check whether there is an active connection and then close it.
+/// We check whether there is an active connection and then close it, via a single
+/// `compare_exchange` so a concurrent `disconnect` call cannot also observe "connected" and race
+/// to close a connection this call already closed.
 ///
 /// Some Secure Components may require additional processing to clean-up.
 pub(crate) fn disconnect(_connection_id: u32) -> Result<(), TPSError> {
-    if IS_CONNECTED.load(Ordering::Acquire) {
-        // Disconnect
-        IS_CONNECTED.store(false, Ordering::Release);
-        Ok(())
-    } else {
-        // There is already another connection
-        Err(TPSError::BadState)
+    match IS_CONNECTED.compare_exchange(true, false, Ordering::AcqRel, Ordering::Acquire) {
+        Ok(_) => Ok(()),
+        // There is no active connection
+        Err(_) => Err(TPSError::BadState),
     }
 }
 
@@ -156,7 +139,7 @@ pub(crate) fn disconnect(_connection_id: u32) -> Result<(), TPSError> {
 ///
 /// Secure Components on which services are installable and updatable will likely require a more
 /// sophisticated implementation.
-pub(crate) fn service_discovery() -> Result<&'static [ServiceIdentifier], TPSError> {
+pub(crate) fn discover_services(_connection_id: u32) -> Result<&'static [ServiceIdentifier], TPSError> {
     Ok(SERVICES)
 }
 
@@ -173,26 +156,42 @@ pub(crate) fn service_discovery() -> Result<&'static [ServiceIdentifier], TPSErr
 /// An active session is a random integer between 1 and u32::MAX, with a distribution
 /// dependent on the system entropy source plus a slight peak at 42, in recognition of Douglas
 /// Adams.
-pub(crate) fn open_session(_service_instance: &UUID) -> Result<u32, TPSError> {
-    if SESSION_INFO.load(Ordering::Acquire) == 0 {
-        // No session active
-        let mut rnd_bytes: [u8; 4] = [0, 0, 0, 0];
-        match getrandom(rnd_bytes.as_mut_slice()) {
-            Ok(()) => {
-                let mut session_id = u32::from_ne_bytes(rnd_bytes);
-                // There is a small probability that we have zero as session_id, and we are using
-                // 0 to indicate no session, so we will hard-code a solution to this.
-                if session_id == 0 {
-                    session_id += 42;
-                }
-                SESSION_INFO.store(session_id, Ordering::Release);
-                Ok(session_id)
+///
+/// The transition from "no session" (0) to "reserved" (`u32::MAX`, a sentinel distinct from every
+/// value this function can hand out as a real session id — see the `session_id == u32::MAX` check
+/// below) is a single `compare_exchange`, so two concurrent callers cannot both observe "no
+/// session" and both go on to mint and store their own session id.
+pub(crate) fn open_session(_connection_id: u32, _service_instance: &UUID) -> Result<u32, TPSError> {
+    if SESSION_INFO
+        .compare_exchange(0, u32::MAX, Ordering::AcqRel, Ordering::Acquire)
+        .is_err()
+    {
+        // There is an active session (or another caller is concurrently opening one). Since we
+        // support only one session, this is an error.
+        return Err(TPSError::Busy);
+    }
+    // We now exclusively hold the "reserved" state: no other caller can be in this function
+    // concurrently until we store a final value below.
+    // `getrandom::u32` rather than filling a 4-byte buffer: getrandom 0.2's free `getrandom()`
+    // function was renamed to `fill()` in 0.3, and `u32()` is the purpose-built accessor for
+    // exactly this case, so the intermediate byte array and its `from_ne_bytes` decode are no
+    // longer needed.
+    match getrandom::u32() {
+        Ok(value) => {
+            let mut session_id = value;
+            // There is a small probability that we have zero or u32::MAX as session_id, and we
+            // are using those values as sentinels, so we will hard-code a solution to this.
+            if session_id == 0 || session_id == u32::MAX {
+                session_id = 42;
             }
-            Err(_) => Err(TPSError::GenericError),
+            SESSION_INFO.store(session_id, Ordering::Release);
+            Ok(session_id)
         }
-    } else {
-        // There is an active session. SInce we support only one session, this is an error
-        Err(TPSError::Busy)
+        Err(_) => {
+            // Release the reservation so a subsequent call is not permanently locked out.
+            SESSION_INFO.store(0, Ordering::Release);
+            Err(TPSError::GenericError)
+        }
     }
 }
 
@@ -201,30 +200,45 @@ pub(crate) fn open_session(_service_instance: &UUID) -> Result<u32, TPSError> {
 /// This implementation supports only a single session, with session information stored in
 /// the atomic variable `SESSION_INFO`.
 ///
-/// The value 0 indicates no active session. Any other value is the active session_id.
+/// The value 0 indicates no active session. Any other value is the active session_id. The check
+/// and the transition back to 0 are a single `compare_exchange` on the expected `session_id`, so
+/// a concurrent `close_session`/`open_session` call cannot race with this one.
 pub(crate) fn close_session(session_id: u32) -> Result<(), TPSError> {
-    let current_session = SESSION_INFO.load(Ordering::Acquire);
-    if current_session != 0 && current_session == session_id {
-        // Active session
-        SESSION_INFO.store(0, Ordering::Release);
-        Ok(())
-    } else {
-        // There is an active session. Since we support only one session, this is an error
-        Err(TPSError::BadState)
+    if session_id == 0 || session_id == u32::MAX {
+        return Err(TPSError::BadState);
+    }
+    match SESSION_INFO.compare_exchange(session_id, 0, Ordering::AcqRel, Ordering::Acquire) {
+        Ok(_) => Ok(()),
+        // There is no active session with this id. Since we support only one session, this is
+        // an error.
+        Err(_) => Err(TPSError::BadState),
     }
 }
 
 /// Execute a transaction.
 ///
-/// This implementation does not support proper session handling.
-///
-/// TODO: Implement session handling
-pub(crate) fn execute_transaction(in_buf: &[u8], out_buf: &mut [u8]) -> Result<u32, TPSError> {
+/// `session_id` is validated against the single active session tracked in `SESSION_INFO`; a
+/// mismatch (including no active session) is reported as `TPSError::BadState`. Returns the
+/// transaction ID and the number of bytes written to `out_buf`.
+pub(crate) fn execute_transaction(
+    session_id: u32,
+    in_buf: &[u8],
+    out_buf: &mut [u8],
+) -> Result<(u32, usize), TPSError> {
+    let current_session = SESSION_INFO.load(Ordering::Acquire);
+    if current_session == 0 || current_session != session_id {
+        return Err(TPSError::BadState);
+    }
     match message_handler(in_buf, out_buf) {
-        Ok(()) => {
-            let last_transaction = TRANSACTION_ID.load(Ordering::Acquire);
-            TRANSACTION_ID.store(last_transaction + 1, Ordering::Release);
-            Ok(last_transaction + 1)
+        Ok(recv_len) => {
+            // `fetch_add` makes the read-modify-write a single atomic step, so two concurrent
+            // transactions can never be assigned the same id (which a separate load-then-store
+            // would allow).
+            let transaction_id = TRANSACTION_ID.fetch_add(1, Ordering::AcqRel) + 1;
+            Ok((transaction_id, recv_len))
+        }
+        Err(Rot13Error::Encode(EncodeError::OutOfSpace(needed))) => {
+            Err(TPSError::ShortBuffer(needed))
         }
         Err(_) => Err(TPSError::GenericError),
     }
@@ -235,4 +249,143 @@ pub(crate) fn execute_transaction(in_buf: &[u8], out_buf: &mut [u8]) -> Result<u
 /// This sample implementation does not support transaction cancellation.
 pub(crate) fn cancel_transaction(_transaction_id: u32) -> Result<(), TPSError> {
     Err(TPSError::NotSupported)
+}
+
+/// Stage 3 security review regression tests (rot13_connector). `connect`/`disconnect`/
+/// `open_session`/`close_session` used to check-then-act on `IS_CONNECTED`/`SESSION_INFO` via a
+/// separate `load` followed by a separate `store`, which is not atomic as a whole: two concurrent
+/// callers could both observe "not connected"/"no session" and both proceed, corrupting the
+/// single-connection/single-session invariant this module's doc comments claim to hold. Fixed by
+/// using `compare_exchange`/`fetch_add` so each check-and-transition is one atomic step.
+///
+/// All tests here share the same process-global `IS_CONNECTED`/`SESSION_INFO`/`TRANSACTION_ID`
+/// statics, and Cargo runs `#[test]`s in a crate concurrently by default, so every test serializes
+/// against `TEST_GUARD` (mirroring the pattern already used for the same reason in
+/// `tps_client_api/tests/rot13_integration.rs`).
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Mutex;
+
+    static TEST_GUARD: Mutex<()> = Mutex::new(());
+
+    /// Leaves `IS_CONNECTED`/`SESSION_INFO`/`TRANSACTION_ID` at their initial ("nothing active")
+    /// values so each test starts from a known state regardless of what a previous test (or a
+    /// panic mid-test) left behind.
+    fn reset_state() {
+        IS_CONNECTED.store(false, Ordering::Release);
+        SESSION_INFO.store(0, Ordering::Release);
+        TRANSACTION_ID.store(0, Ordering::Release);
+    }
+
+    #[test]
+    fn connect_disconnect_round_trip() {
+        let _guard = TEST_GUARD.lock().unwrap();
+        reset_state();
+        assert!(matches!(connect(LOGIN_PUBLIC, None), Ok(1)));
+        assert!(matches!(disconnect(1), Ok(())));
+    }
+
+    #[test]
+    fn connect_twice_without_disconnect_is_busy() {
+        let _guard = TEST_GUARD.lock().unwrap();
+        reset_state();
+        assert!(matches!(connect(LOGIN_PUBLIC, None), Ok(1)));
+        assert!(matches!(connect(LOGIN_PUBLIC, None), Err(TPSError::Busy)));
+        disconnect(1).unwrap();
+    }
+
+    #[test]
+    fn disconnect_without_connect_is_bad_state() {
+        let _guard = TEST_GUARD.lock().unwrap();
+        reset_state();
+        assert!(matches!(disconnect(1), Err(TPSError::BadState)));
+    }
+
+    #[test]
+    fn connect_rejects_unrecognized_login_method() {
+        let _guard = TEST_GUARD.lock().unwrap();
+        reset_state();
+        assert!(matches!(
+            connect(0xFFFF_FFFF, None),
+            Err(TPSError::BadIdentifier)
+        ));
+    }
+
+    #[test]
+    fn open_close_session_round_trip() {
+        let _guard = TEST_GUARD.lock().unwrap();
+        reset_state();
+        let uuid = UUID { bytes: [0; 16] };
+        let session_id = open_session(1, &uuid).expect("open_session");
+        assert_ne!(session_id, 0);
+        assert_ne!(session_id, u32::MAX);
+        assert!(matches!(close_session(session_id), Ok(())));
+    }
+
+    #[test]
+    fn open_session_twice_without_close_is_busy() {
+        let _guard = TEST_GUARD.lock().unwrap();
+        reset_state();
+        let uuid = UUID { bytes: [0; 16] };
+        let session_id = open_session(1, &uuid).expect("open_session");
+        assert!(matches!(open_session(1, &uuid), Err(TPSError::Busy)));
+        close_session(session_id).unwrap();
+    }
+
+    #[test]
+    fn close_session_rejects_mismatched_id() {
+        let _guard = TEST_GUARD.lock().unwrap();
+        reset_state();
+        let uuid = UUID { bytes: [0; 16] };
+        let session_id = open_session(1, &uuid).expect("open_session");
+        assert!(matches!(
+            close_session(session_id.wrapping_add(1)),
+            Err(TPSError::BadState)
+        ));
+        close_session(session_id).unwrap();
+    }
+
+    #[test]
+    fn close_session_rejects_sentinel_values() {
+        let _guard = TEST_GUARD.lock().unwrap();
+        reset_state();
+        assert!(matches!(close_session(0), Err(TPSError::BadState)));
+        assert!(matches!(close_session(u32::MAX), Err(TPSError::BadState)));
+    }
+
+    #[test]
+    fn execute_transaction_rejects_unknown_session() {
+        let _guard = TEST_GUARD.lock().unwrap();
+        reset_state();
+        let mut out = [0u8; 16];
+        assert!(matches!(
+            execute_transaction(1, &[], &mut out),
+            Err(TPSError::BadState)
+        ));
+    }
+
+    #[test]
+    fn execute_transaction_assigns_increasing_ids() {
+        let _guard = TEST_GUARD.lock().unwrap();
+        reset_state();
+        let uuid = UUID { bytes: [0; 16] };
+        let session_id = open_session(1, &uuid).expect("open_session");
+        // `TPS_GetFeatures_Req` (#6.1, empty map) is the simplest message `message_handler`
+        // accepts; only the resulting transaction id sequencing is under test here.
+        let mut req_buf = [0u8; 16];
+        let req_len = {
+            let mut encoder = tps_minicbor::EncoderStd::new(&mut req_buf);
+            let msg = encoder.tag(1u64).unwrap().map().unwrap();
+            msg.end().unwrap();
+            encoder.encoded().len()
+        };
+        let mut out = [0u8; 100];
+        let (first_id, _) =
+            execute_transaction(session_id, &req_buf[..req_len], &mut out).expect("transaction 1");
+        let (second_id, _) =
+            execute_transaction(session_id, &req_buf[..req_len], &mut out).expect("transaction 2");
+        assert_eq!(second_id, first_id + 1);
+        close_session(session_id).unwrap();
+    }
 }

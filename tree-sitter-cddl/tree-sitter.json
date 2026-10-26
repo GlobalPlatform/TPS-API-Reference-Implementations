@@ -1,0 +1,20 @@
+{
+  "grammars": [
+    {
+      "name": "cddl",
+      "camelcase": "Cddl",
+      "scope": "source.cddl",
+      "path": ".",
+      "file-types": ["cddl"],
+      "highlights": "queries/highlights.scm"
+    }
+  ],
+  "metadata": {
+    "version": "0.10.0",
+    "license": "MIT",
+    "description": "CDDL (RFC 8610 / RFC 9165 / RFC 9682 / cddl-modules) grammar for tree-sitter",
+    "links": {
+      "repository": "https://github.com/GlobalPlatform/TPS-API-Reference-Implementations"
+    }
+  }
+}

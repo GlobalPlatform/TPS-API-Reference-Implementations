@@ -1,0 +1,13 @@
+;***************************************************************************************************
+; Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+; SPDX-License-Identifier: MIT
+;**************************************************************************************************/
+; A small stand-in for a GlobalPlatform EAT-style profile schema, playing
+; `gp_eap.cddl`'s role in the `;# constrain` fixture. Array-shaped since
+; `.cborseq`'s controller type describes the reassembled sequence-as-array
+; (RFC 8610 §3.8.4), not a per-element type.
+
+Something = [
+    claim : tstr,
+    value : int,
+]

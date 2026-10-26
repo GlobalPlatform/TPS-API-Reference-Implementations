@@ -33,20 +33,33 @@ generated from definitions in the `tps_client_c` crate.
 
 At the top level there are a set of exported functions:
 
-- `cancel_transaction`: cancel an ongoing transaction (currently not implemented)
-- `clear_transaction`: not implemented, and likely to be removed.
+- `cancel_transaction`: request cancellation of a pending operation. This
+  reference implementation is single-threaded and synchronous throughout, so
+  it is a no-op in practice — there is never an in-progress call on another
+  thread left to cancel — but it is implemented so that a Connector
+  supporting genuine concurrent cancellation can be plugged in without
+  further changes to this layer.
 - `close_session`: close a session
 - `execute_transaction`: perform an operation on a session which is connected to
   a service.
-- `finalize_transaction`: sanitize the contents of a transaction buffer.
-- `initialize_transaction`: Initialize the buffer structures used in message 
-  transactions.
 - `open_session`: Open a session to a specific service running on a specified
   Secure Component.
 - `service_discovery`: Determine which services are available on a given device,
   and what Secure Components they are running on.
 
+## `MessageBuf`
+
+`MessageBuf` (`message_buf.rs`) is an RAII wrapper around the shared
+`MessageBuffer` type used by `execute_transaction` and `cancel_transaction`
+to hold transaction request/response data. Constructing a `MessageBuf` over
+a caller-owned `&mut [u8]` performs the equivalent of the spec's
+`TPSC_InitializeTransaction`; dropping it performs the equivalent of
+`TPSC_FinalizeTransaction` (sanitizing the backing buffer and resetting the
+message size), per Annex A.3.2's informative `SafeMessageBuf` sketch. This
+removes the need for Rust callers to invoke initialize/finalize explicitly.
+
 ## Current limitations
+
 
 - Not yet working on embedded platforms.
 - Current implementation is not optimized for multi-threaded environments.

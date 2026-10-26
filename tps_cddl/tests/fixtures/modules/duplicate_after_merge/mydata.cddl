@@ -1,0 +1,7 @@
+;***************************************************************************************************
+; Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+; SPDX-License-Identifier: MIT
+;**************************************************************************************************/
+start = cose.Foo
+;# import mod_a as cose
+;# import mod_b as cose

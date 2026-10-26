@@ -1,0 +1,7 @@
+#***************************************************************************************************
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+# SPDX-License-Identifier: MIT
+#*************************************************************************************************/
+name = "EDN"
+grammar = "edn"
+path_suffixes = ["edn", "diag"]

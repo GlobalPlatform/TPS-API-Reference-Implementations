@@ -1,0 +1,9 @@
+;***************************************************************************************************
+; Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+; SPDX-License-Identifier: MIT
+;**************************************************************************************************/
+; References an undefined type
+person = {
+  name: tstr,
+  dept: department,
+}

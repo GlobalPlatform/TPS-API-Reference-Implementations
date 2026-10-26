@@ -1,0 +1,7 @@
+;***************************************************************************************************
+; Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+; SPDX-License-Identifier: MIT
+;**************************************************************************************************/
+;# include * from diamond_a
+;# include * from diamond_b
+top = uint

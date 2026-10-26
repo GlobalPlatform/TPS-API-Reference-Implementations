@@ -1,0 +1,24 @@
+#***************************************************************************************************
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+# SPDX-License-Identifier: MIT
+#*************************************************************************************************/
+id = "edn"
+name = "EDN"
+version = "0.1.0"
+schema_version = 1
+authors = ["Jeremy O'Donoghue <jodonogh@qti.qualcomm.com>"]
+description = "CBOR Extended Diagnostic Notation (EDN, RFC 8610 Appendix G) syntax highlighting"
+repository = "https://github.com/GlobalPlatform/TPS-API-Reference-Implementations"
+languages = ["languages/edn"]
+
+[grammars.edn]
+# TODO: this repository is not currently published anywhere Zed's extension
+# installer can fetch a grammar from (Zed clones `repository` at `rev` and
+# builds the grammar itself; it does not accept a local path here). Until
+# `tree-sitter-edn` is split into its own published repo (or this monorepo
+# is pushed somewhere fetchable), load this extension as a *dev extension*
+# instead (see README.md) — dev extensions build the grammar from the local
+# checkout and do not need this section to resolve.
+repository = "https://github.com/GlobalPlatform/TPS-API-Reference-Implementations"
+rev = "TODO-set-to-a-commit-that-publishes-tree-sitter-edn"
+

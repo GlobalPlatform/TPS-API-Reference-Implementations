@@ -1,0 +1,10 @@
+;***************************************************************************************************
+; Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+; SPDX-License-Identifier: MIT
+;**************************************************************************************************/
+;# import rfc9052 as cose
+;# import gp_eap as eap
+
+;# constrain cose.NoSuchRule as COSE_Sign1_EAT { payload: bstr .cborseq eap.Something }
+
+start = COSE_Sign1_EAT

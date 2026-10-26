@@ -1,21 +1,6 @@
 /***************************************************************************************************
- * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
- * and associated documentation files (the “Software”), to deal in the Software without
- * restriction, including without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice (including the next
- * paragraph) shall be included in all copies or substantial portions of the
- * Software.
- *
- * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
- * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+ * SPDX-License-Identifier: MIT
  **************************************************************************************************/
 // Default configuration
 #![no_std]
@@ -55,7 +40,7 @@
 ///
 /// For this service, `TPS_GetFeatures_Rsp` returns the following:
 ///
-/// - `svc_name`: h'87bae713b08f5e28b9ee4aa6e202440e'
+/// - `svc_name`: "GPP ROT13" (tstr)
 /// - `login_method`: [0]
 ///
 /// - `$$svc_features` //= (128 => [0, 1])   // "encrypt" and "decrypt"
@@ -85,6 +70,7 @@
 /// - 1: space character detected
 /// - 2: numeric character detected
 /// - 3: some other symbol detected
+/// - 4: input too large (`MAX_STRING_SIZE` bytes or more)
 ///
 /// ## Decrypt
 ///
@@ -111,6 +97,7 @@
 /// - 1: space character detected
 /// - 2: numeric character detected
 /// - 3: some other symbol detected
+/// - 4: input too large (`MAX_STRING_SIZE` bytes or more)
 // Pull in std if we are testing or if it is defined as feature (because we run tests on a
 // platform supporting I/O and full feature set.
 #[cfg(any(feature = "std", test))]
@@ -128,10 +115,7 @@ use std::mem::size_of;
 
 use tps_client_common::c_login::LOGIN_PUBLIC;
 use tps_client_common::c_structs::ServiceVersion;
-use tps_minicbor::decoder::{is_map, is_tag, CBORDecoder, SequenceBuffer};
-use tps_minicbor::encoder::CBORBuilder;
-use tps_minicbor::error::CBORError;
-use tps_minicbor::types::{array, map, tag, CBOR};
+use tps_minicbor::{DecodeError, Decoder, EncodeError, EncoderStd, Item, TaggedItem};
 
 /***************************************************************************************************
  * Constants
@@ -169,6 +153,9 @@ pub const GPP_ROT13_SERVICE_NAME: [u8; 16] = [
     0x87, 0xba, 0xe7, 0x13, 0xb0, 0x8f, 0x5e, 0x28, 0xb9, 0xee, 0x4a, 0xa6, 0xe2, 0x02, 0x44, 0x0e,
 ];
 
+/// `svc_name` value reported in `TPS_GetFeatures_Rsp`.
+pub const GPP_ROT13_SVC_NAME: &str = "GPP ROT13";
+
 /// UUID uniquely identifying this secure component type.
 ///
 /// We do not use one of the standard SC types in this implementation as we are not a real secure
@@ -203,6 +190,25 @@ enum Rot13Operation {
     Decode,
 }
 
+/// Error returned by [`message_handler`], combining CBOR decode and encode errors.
+#[derive(Debug)]
+pub enum Rot13Error {
+    Decode(DecodeError),
+    Encode(EncodeError),
+}
+
+impl From<DecodeError> for Rot13Error {
+    fn from(e: DecodeError) -> Self {
+        Self::Decode(e)
+    }
+}
+
+impl From<EncodeError> for Rot13Error {
+    fn from(e: EncodeError) -> Self {
+        Self::Encode(e)
+    }
+}
+
 /***************************************************************************************************
  * Rust Entry Point
  **************************************************************************************************/
@@ -217,168 +223,128 @@ enum Rot13Operation {
 /// service supports tags 1 (TPS_GetFeatures_Req/Rsp), 10 (GPP_ROT13_Encrypt_Req/Rsp) and 11
 /// (GPP_ROT13_Decrypt_Req/Rsp)
 ///
-/// In this function we are generally returning `Err(CBORError)`, which will be converted into
+/// In this function we are generally returning `Err(Rot13Error)`, which will be converted into
 /// a `u32` before it is passed back to the connector.
 pub fn message_handler<'b>(
     in_msg_buf: &'b [u8],
     out_msg_buf: &'b mut [u8],
-) -> Result<(), CBORError> {
-    let decoder = CBORDecoder::new(SequenceBuffer::new(in_msg_buf));
+) -> Result<usize, Rot13Error> {
     // The tag contains the message ID
-    decoder.decode_with(is_tag(), |cbor| {
-        let mut msg_id: u64 = 0;
-        let msg_body = CBORDecoder::from_tag(cbor, &mut msg_id)?;
-        let mut encoder = CBORBuilder::new(out_msg_buf);
-        match msg_id as u32 {
-            // GET_FEATURES_REQ (tag 1) - Don't care about contents
-            TPS_GET_FEATURES_REQ => handle_get_features(&mut encoder),
-            // ROT13_ENCRYPT_REQ (tag 10) - we should have { 1: tstr }
-            GPP_ROT13_ENCRYPT_REQ => {
-                let _ = msg_body.decode_with(is_map(), |cbor| {
-                    let mut encoder = CBORBuilder::new(out_msg_buf);
-                    if let CBOR::Map(mb) = cbor {
-                        // Get the CBOR item at key == 1, which should be a tstr
-                        if let Some(text_body) = mb.get_int(1) {
-                            handle_encrypt_req(&text_body, &mut encoder)
-                        } else {
-                            Err(CBORError::IncompatibleType)
-                        }
-                    } else {
-                        Err(CBORError::IncompatibleType)
-                    }
-                })?;
-                Ok(())
-            }
-            // ROT13_ENCRYPT_REQ (tag 11) - we should have { 1: tstr }
-            GPP_ROT13_DECRYPT_REQ => {
-                let _ = msg_body.decode_with(is_map(), |cbor| {
-                    let mut encoder = CBORBuilder::new(out_msg_buf);
-                    if let CBOR::Map(mb) = cbor {
-                        // Get the CBOR item at key == 1, which should be a tstr
-                        if let Some(text_body) = mb.get_int(1) {
-                            handle_decrypt_req(&text_body, &mut encoder)
-                        } else {
-                            Err(CBORError::IncompatibleType)
-                        }
-                    } else {
-                        Err(CBORError::IncompatibleType)
-                    }
-                })?;
-                Ok(())
-            }
-            _ => Err(CBORError::IncompatibleType),
+    let tagged = match Decoder::new(in_msg_buf).decode()? {
+        Item::Tag(tagged) => tagged,
+        _ => return Err(DecodeError::UnexpectedItem.into()),
+    };
+    let msg_id = u32::try_from(tagged.tag).map_err(|_| DecodeError::OutOfRange)?;
+    // Sized to comfortably exceed the largest single response this service can produce: a
+    // tag + one-entry map wrapping a `tstr` of at most `MAX_STRING_SIZE` bytes, plus a small
+    // margin for CBOR header overhead.
+    let mut overflow_scratch: [u8; MAX_STRING_SIZE + 32] = [0; MAX_STRING_SIZE + 32];
+    let mut encoder = EncoderStd::new_with_overflow(out_msg_buf, &mut overflow_scratch);
+    match msg_id {
+        // GET_FEATURES_REQ (tag 1) - Don't care about contents
+        TPS_GET_FEATURES_REQ => handle_get_features(&mut encoder),
+        // ROT13_ENCRYPT_REQ (tag 10) - we should have { 1: tstr }
+        GPP_ROT13_ENCRYPT_REQ => {
+            let text_body = rot13_req_text(&tagged)?;
+            handle_encrypt_req(text_body, &mut encoder)
         }
-    })?;
+        // ROT13_DECRYPT_REQ (tag 11) - we should have { 1: tstr }
+        GPP_ROT13_DECRYPT_REQ => {
+            let text_body = rot13_req_text(&tagged)?;
+            handle_decrypt_req(text_body, &mut encoder)
+        }
+        _ => return Err(DecodeError::UnexpectedItem.into()),
+    }?;
+    Ok(encoder.encoded().len())
+}
+
+/// Extract the `tstr` at map key 1 from a request body of the form `{ 1 => tstr }`.
+fn rot13_req_text<'b>(tagged: &TaggedItem<'b>) -> Result<&'b str, Rot13Error> {
+    let map = match tagged.item()? {
+        Item::Map(map) => map,
+        _ => return Err(DecodeError::UnexpectedItem.into()),
+    };
+    for pair in map.iter() {
+        let (key, value) = pair?;
+        if matches!(key, Item::Unsigned(1)) {
+            return Ok(<&str>::try_from(value)?);
+        }
+    }
+    Err(DecodeError::UnexpectedItem.into())
+}
+
+/// Handler for the `TPS_GetFeatures_Req/Rsp` message pair.
+///
+/// In this case, as the `TPS_GetFeatures_Req` message is so simple, it is handled entirely by the
+/// caller. For many messages, this will not be the case. This is the reason for having only an
+/// `EncoderStd` parameter to the function.
+fn handle_get_features(encoder: &mut EncoderStd) -> Result<(), Rot13Error> {
+    let mut msg = encoder.tag(TPS_GET_FEATURES_RSP.into())?.map()?;
+    // 1 => svc_name (tstr)
+    msg.insert_key_value(TPS_GET_FEATURES_SVC_NAME_KEY, GPP_ROT13_SVC_NAME)?;
+    // 2 => [+ login_method]
+    let mut login_method = msg.key(TPS_GET_FEATURES_LOGIN_METHOD_KEY)?.array()?;
+    login_method.insert(LOGIN_PUBLIC)?;
+    login_method.end()?;
+    // 0x80 => [0, 1]
+    let mut features = msg.key(GPP_SVC_FEATURES_KEY)?.array()?;
+    features.insert(GPP_ROT13_ENCRYPT_SERVICE)?;
+    features.insert(GPP_ROT13_DECRYPT_SERVICE)?;
+    features.end()?;
+    msg.end()?;
     Ok(())
 }
 
-/// Handler for the `TPS_GetFeatures_Req/Rsp` message pair.
-///
-/// In this case, as the `TPS_GetFeatures_Req` message is so simple, it is handled entirely by the
-/// caller. For many messages, this will not be the case. This is the reason for having only a
-/// `CBOREncoder` parameter to the function.
-fn handle_get_features(encoder: &mut CBORBuilder) -> Result<(), CBORError> {
-    match encoder
-        // Tag: Message ID
-        .insert(&tag(TPS_GET_FEATURES_RSP.into(), |buf| {
-            buf.insert(&map(|buf| {
-                buf
-                    // 1 => svc_name (bstr .size 16)
-                    .insert_key_value(
-                        &TPS_GET_FEATURES_SVC_NAME_KEY,
-                        &GPP_ROT13_SERVICE_NAME.as_slice(),
-                    )?
-                    // 2 => [+ login_method]
-                    .insert_key_value(
-                        &TPS_GET_FEATURES_LOGIN_METHOD_KEY,
-                        &array(|buf| buf.insert(&LOGIN_PUBLIC)),
-                    )?
-                    // 0x80 => [0, 1]
-                    .insert_key_value(
-                        &GPP_SVC_FEATURES_KEY,
-                        &array(|buf| {
-                            buf.insert(&GPP_ROT13_ENCRYPT_SERVICE)?
-                                .insert(&GPP_ROT13_DECRYPT_SERVICE)
-                        }),
-                    )
-            }))
-        })) {
-        Ok(_) => Ok(()),
-        Err(e) => Err(e),
-    }
+/// Handler for the `GPP_ROT13_Encrypt_Req/Rsp` message pair.
+fn handle_encrypt_req(plaintext: &str, encoder: &mut EncoderStd) -> Result<(), Rot13Error> {
+    rot13_req_helper(Rot13Operation::Encode, plaintext, encoder)
 }
 
-/// Handler for the `TPS_GetFeatures_Req/Rsp` message pair.
-///
-/// In this case, as the `TPS_GetFeatures_Req` message is so simple, it is handled entirely by the
-/// caller. For many messages, this will not be the case. This is the reason for having only a
-/// `CBOREncoder` parameter to the function.
-fn handle_encrypt_req<'b>(
-    decoder: &'b CBOR<'b>,
-    encoder: &'b mut CBORBuilder<'b>,
-) -> Result<(), CBORError> {
-    rot13_req_helper(Rot13Operation::Encode, decoder, encoder)
+/// Handler for the `GPP_ROT13_Decrypt_Req/Rsp` message pair.
+fn handle_decrypt_req(plaintext: &str, encoder: &mut EncoderStd) -> Result<(), Rot13Error> {
+    rot13_req_helper(Rot13Operation::Decode, plaintext, encoder)
 }
 
-fn handle_decrypt_req<'b>(
-    decoder: &'b CBOR<'b>,
-    encoder: &'b mut CBORBuilder<'b>,
-) -> Result<(), CBORError> {
-    rot13_req_helper(Rot13Operation::Decode, decoder, encoder)
-}
-
-fn rot13_req_helper<'b>(
+fn rot13_req_helper(
     op: Rot13Operation,
-    decoder: &'b CBOR<'b>,
-    encoder: &'b mut CBORBuilder<'b>,
-) -> Result<(), CBORError> {
-    let may_plaintext = <&str>::try_from(*decoder);
-
+    plaintext: &str,
+    encoder: &mut EncoderStd,
+) -> Result<(), Rot13Error> {
     let (msg_id, text_key) = if op == Rot13Operation::Encode {
         (GPP_ROT13_ENCRYPT_RSP, GPP_ROT13_CIPHERTEXT_KEY)
     } else {
         (GPP_ROT13_DECRYPT_RSP, GPP_ROT13_PLAINTEXT_KEY)
     };
 
-    if let Ok(plaintext) = may_plaintext {
-        // Want this to work as no_std, so we cannot use strings. There are some contortions here
-        // with a stack allocated [u8] which we later convert to &str using core::str::from_utf8()
-        let mut ciphertext_buf: [u8; MAX_STRING_SIZE] = [0; MAX_STRING_SIZE];
+    // Want this to work as no_std, so we cannot use strings. There are some contortions here
+    // with a stack allocated [u8] which we later convert to &str using core::str::from_utf8()
+    let mut ciphertext_buf: [u8; MAX_STRING_SIZE] = [0; MAX_STRING_SIZE];
 
-        match rot13(op, plaintext, &mut ciphertext_buf.as_mut_slice()) {
-            Ok(ciphertext_len) => {
-                match core::str::from_utf8(&ciphertext_buf.as_slice()[0..ciphertext_len]) {
-                    Ok(ciphertext) => {
-                        encoder.insert(&tag(msg_id as u64, |buf| {
-                            buf.insert(&map(|buf| buf.insert_key_value(&text_key, &ciphertext)))
-                        }))?;
-                        Ok(())
-                    }
-                    Err(_) => Err(CBORError::UTF8Error),
-                }
-            }
-            Err(e) => {
-                let error_code = CBOR::UInt(e as u64);
-                encoder.insert(&tag(msg_id as u64, |buf| {
-                    buf.insert(&map(|buf| {
-                        buf.insert_key_value(&GPP_ROT13_ERROR_KEY, &error_code)
-                    }))
-                }))?;
-                Ok(())
-            }
+    match rot13(op, plaintext, ciphertext_buf.as_mut_slice()) {
+        Ok(ciphertext_len) => {
+            let ciphertext = core::str::from_utf8(&ciphertext_buf.as_slice()[0..ciphertext_len])
+                .map_err(|_| DecodeError::InvalidUtf8)?;
+            let mut msg = encoder.tag(msg_id.into())?.map()?;
+            msg.insert_key_value(text_key, ciphertext)?;
+            msg.end()?;
+            Ok(())
         }
-    } else {
-        Err(CBORError::MalformedEncoding)
+        Err(error_code) => {
+            let mut msg = encoder.tag(msg_id.into())?.map()?;
+            msg.insert_key_value(GPP_ROT13_ERROR_KEY, error_code)?;
+            msg.end()?;
+            Ok(())
+        }
     }
 }
 
-fn rot13<'b>(operation: Rot13Operation, input: &str, output: &mut [u8]) -> Result<usize, u32> {
+fn rot13(operation: Rot13Operation, input: &str, output: &mut [u8]) -> Result<usize, u32> {
     // In this function we only alter values in the ASCII 'A'-'Z', 'a'-'z' range, which means that
     // input_bytes is always a valid unicode string
-    let a_lower = u8::from(b'a');
-    let a_upper = u8::from(b'A');
+    let a_lower = b'a';
+    let a_upper = b'A';
 
-    if input.len() == 0 {
+    if input.is_empty() {
         Err(GPP_ROT13_ERROR_OTHER)
     } else if input.len() >= MAX_STRING_SIZE {
         Err(GPP_ROT13_ERROR_TOO_LARGE)

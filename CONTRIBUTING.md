@@ -71,6 +71,22 @@ Code should be of generally good quality. This means that:
 Code which is intended to run in a `no_std` environment should be tested to ensure that it does so. In practice, code
 may well need to make use of Rust features.
 
+Code which uses `unsafe` — in practice the crates handling raw pointers across the `extern "C"`
+boundary (`tps_client_api`, `tps_client_c`, `tps_connector`, `tps_client_common`,
+`rot13_connector`) — should additionally be checked with Miri by running `./run_miri.sh` before
+raising a pull request. Neither the compiler nor `cargo test` can detect aliasing or pointer
+provenance violations, so `unsafe` code can compile without warnings and pass its tests while
+still being undefined behaviour. See the Miri section of `README.md` for setup and for which
+crates are covered.
+
+Two consequences for tests covering `unsafe` code:
+
+- A test that cannot run under Miri (for example because it spawns a subprocess) should be marked
+  `#[cfg_attr(miri, ignore = "<reason>")]` so that the reason travels with the test.
+- A test must reach the `unsafe` operation it is meant to cover. A test that only exercises the
+  early-return paths of a pointer-handling function tells Miri nothing about the pointer
+  handling.
+
 It is accepted that early contributions of larger features may be incomplete or lacking in some of the above areas, 
 and the maintainer has some discretion to consider whether to accept contributions where this is the case. The guiding
 principle is that any contribution must provide some useful feature that is end-to-end usable and of good quality of
@@ -94,9 +110,24 @@ the file.
 Copyright (C) <year>, <name>, <e-mail address>
 ```
 
-Where code introduces new dependencies, these MUST have the option of MIT licensing. *Code which introduces
-dependencies that are not MIT licensed will be rejected*. This is done to ensure that users of the project have
-certainty about the licensing conditions for the project.
+Where code introduces new dependencies, these MUST be available under a permissive licence that imposes no
+obligation beyond attribution. The following are accepted: MIT, Apache-2.0 (including the variant carrying the
+LLVM exception), BSD-2-Clause, BSD-3-Clause, ISC, Zlib, BSL-1.0, 0BSD, CC0-1.0 and Unicode-3.0. Where a
+dependency is offered under a choice of licences, at least one of them must appear in that list.
+
+*Code which introduces a dependency under a reciprocal ("copyleft") licence will be rejected.* This includes
+file-scoped reciprocal licences such as MPL-2.0, which do not affect this project's own code but do oblige
+anyone shipping a binary to publish the source of the covered files. Where such a dependency is genuinely
+unavoidable it may be admitted only as a named exception in `deny.toml`, recording which licence applies, which
+component pulls it in, and what obligation is thereby incurred.
+
+`cargo deny check licenses` is the normative test, and its configuration in `deny.toml` is the authoritative
+list. A contribution that causes that check to fail will be rejected.
+
+
+The purpose of this rule is to ensure that users of the project have certainty about the licensing conditions
+for the project: everything the project itself publishes is MIT, and no dependency imposes a condition that an
+MIT distribution cannot satisfy.
 
 ## Getting Started
 

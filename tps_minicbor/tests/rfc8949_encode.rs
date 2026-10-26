@@ -1,39 +1,11 @@
 /***************************************************************************************************
- * Copyright (c) 2020-2023 Qualcomm Innovation Center, Inc. All rights reserved.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
- * and associated documentation files (the “Software”), to deal in the Software without
- * restriction, including without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice (including the next
- * paragraph) shall be included in all copies or substantial portions of the
- * Software.
- *
- * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
- * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+ * SPDX-License-Identifier: MIT
  **************************************************************************************************/
-/***************************************************************************************************
- * Test cases from RFC8949, for encoding
- *
- * Test cases from RFC7049, Table 6.
- **************************************************************************************************/
-
-extern crate tps_minicbor;
-
-#[cfg(feature = "float")]
-use half::f16;
-
-use tps_minicbor::encoder::*;
-use tps_minicbor::error::CBORError;
-use tps_minicbor::types::{array, map, tag, CBOR};
+use tps_minicbor::{EncodeError, Encoder, Simple, Tag, Undefined};
 
 #[test]
-fn rfc8949_encode_int() -> Result<(), CBORError> {
+fn rfc8949_encode_int() -> Result<(), EncodeError> {
     println!("<======================= rfc8949_encode_int =====================>");
     let mut bytes = [0u8; 32];
     let u1: &[u8] = &[0x00];
@@ -54,7 +26,7 @@ fn rfc8949_encode_int() -> Result<(), CBORError> {
     let s5: &[u8] = &[0x3b, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
 
     // 64 bit encodings
-    for (val, expect) in [
+    for &(val, expect) in [
         (0u64, u1),
         (1u64, u2),
         (10u64, u3),
@@ -71,15 +43,15 @@ fn rfc8949_encode_int() -> Result<(), CBORError> {
     {
         println!(
             "<======================= Encode u64 {} =====================>",
-            *val
+            val
         );
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, *expect);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), expect);
     }
 
     // 32 bit encodings
-    for (val, expect) in [
+    for &(val, expect) in [
         (0u32, u1),
         (1u32, u2),
         (10u32, u3),
@@ -94,15 +66,15 @@ fn rfc8949_encode_int() -> Result<(), CBORError> {
     {
         println!(
             "<======================= Encode u32 {} =====================>",
-            *val
+            val
         );
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, *expect);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), expect);
     }
 
     // 16 bit encodings
-    for (val, expect) in [
+    for &(val, expect) in [
         (0u16, u1),
         (1u16, u2),
         (10u16, u3),
@@ -116,15 +88,15 @@ fn rfc8949_encode_int() -> Result<(), CBORError> {
     {
         println!(
             "<======================= Encode u16 {} =====================>",
-            *val
+            val
         );
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, *expect);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), expect);
     }
 
     // 8 bit encodings
-    for (val, expect) in [
+    for &(val, expect) in [
         (0u8, u1),
         (1u8, u2),
         (10u8, u3),
@@ -137,27 +109,27 @@ fn rfc8949_encode_int() -> Result<(), CBORError> {
     {
         println!(
             "<======================= Encode u8 {} =====================>",
-            *val
+            val
         );
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, *expect);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), expect);
     }
 
     // Concatenations
     {
         println!("<======================= Concatenate 2 x u32 =====================>");
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let _ = &(1000000u32).encode(&mut buf)?;
-        let _ = &(1000001u32).encode(&mut buf)?;
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert(1000000u32)?;
+        encoder.insert(1000001u32)?;
         assert_eq!(
-            buf.encoded()?,
+            encoder.encoded(),
             &[0x1a, 0x00, 0x0f, 0x42, 0x40, 0x1a, 0x00, 0x0f, 0x42, 0x41]
         );
     }
 
     // i64 encodings
-    for (val, expect) in [
+    for &(val, expect) in [
         (0i64, u1),
         (1i64, u2),
         (10i64, u3),
@@ -177,15 +149,15 @@ fn rfc8949_encode_int() -> Result<(), CBORError> {
     {
         println!(
             "<======================= Encode i64 {} =====================>",
-            *val
+            val
         );
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, *expect);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), expect);
     }
 
     // i32 encodings
-    for (val, expect) in [
+    for &(val, expect) in [
         (0i32, u1),
         (1i32, u2),
         (10i32, u3),
@@ -204,15 +176,15 @@ fn rfc8949_encode_int() -> Result<(), CBORError> {
     {
         println!(
             "<======================= Encode i32 {} =====================>",
-            *val
+            val
         );
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, *expect);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), expect);
     }
 
     // i16 encodings
-    for (val, expect) in [
+    for &(val, expect) in [
         (0i16, u1),
         (1i16, u2),
         (10i16, u3),
@@ -230,15 +202,15 @@ fn rfc8949_encode_int() -> Result<(), CBORError> {
     {
         println!(
             "<======================= Encode i16 {} =====================>",
-            *val
+            val
         );
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, *expect);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), expect);
     }
 
     // i8 encodings
-    for (val, expect) in [
+    for &(val, expect) in [
         (0i16, u1),
         (1i16, u2),
         (10i16, u3),
@@ -254,15 +226,15 @@ fn rfc8949_encode_int() -> Result<(), CBORError> {
     {
         println!(
             "<======================= Encode i8 {} =====================>",
-            *val
+            val
         );
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, *expect);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), expect);
     }
 
     // i128 encodings
-    for (val, expect) in [
+    for &(val, expect) in [
         (0i128, u1),
         (1i128, u2),
         (10i128, u3),
@@ -283,242 +255,398 @@ fn rfc8949_encode_int() -> Result<(), CBORError> {
     {
         println!(
             "<======================= Encode i64 {} =====================>",
-            *val
+            val
         );
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, *expect);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), expect);
     }
 
     Ok(())
 }
 
 #[test]
-fn rfc8949_encode_tstr() -> Result<(), CBORError> {
+fn rfc8949_encode_tstr() -> Result<(), EncodeError> {
     println!("<======================= rfc8949_encode_tstr =====================>");
     let mut bytes = [0u8; 32];
 
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        "".encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0x60]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert("")?;
+        assert_eq!(encoder.encoded(), &[0x60]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        "a".encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0x61, 0x61]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert("a")?;
+        assert_eq!(encoder.encoded(), &[0x61, 0x61]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        "IETF".encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0x64, 0x49, 0x45, 0x54, 0x46]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert("IETF")?;
+        assert_eq!(encoder.encoded(), &[0x64, 0x49, 0x45, 0x54, 0x46]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        "\"\\".encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0x62, 0x22, 0x5c]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert("\"\\")?;
+        assert_eq!(encoder.encoded(), &[0x62, 0x22, 0x5c]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        "\u{00fc}".encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0x62, 0xc3, 0xbc]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert("\u{00fc}")?;
+        assert_eq!(encoder.encoded(), &[0x62, 0xc3, 0xbc]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        "\u{6c34}".encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0x63, 0xe6, 0xb0, 0xb4]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert("\u{6c34}")?;
+        assert_eq!(encoder.encoded(), &[0x63, 0xe6, 0xb0, 0xb4]);
     }
     Ok(())
 }
 
 #[test]
-fn rfc8949_encode_bstr() -> Result<(), CBORError> {
+fn rfc8949_encode_bstr() -> Result<(), EncodeError> {
     println!("<======================= rfc8949_encode_tstr =====================>");
     let mut bytes = [0u8; 32];
 
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
         let val: &[u8] = &[];
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0x40]);
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), &[0x40]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
         let val: &[u8] = &[1, 2, 3, 4];
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0x44, 0x01, 0x02, 0x03, 0x04]);
-    }
-    {
-        // Test using the insert API
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val: &[u8] = &[1, 2, 3, 4];
-
-        buf.insert(&val)?;
-        assert_eq!(buf.encoded()?, &[0x44, 0x01, 0x02, 0x03, 0x04]);
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), &[0x44, 0x01, 0x02, 0x03, 0x04]);
     }
     Ok(())
 }
 
 #[test]
-fn rfc8949_encode_simple() -> Result<(), CBORError> {
+fn rfc8949_encode_simple() -> Result<(), EncodeError> {
     println!("<======================= rfc8949_encode_simple =====================>");
     let mut bytes = [0u8; 32];
 
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(CBOR::False);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0xf4]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert(false)?;
+        assert_eq!(encoder.encoded(), &[0xf4]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(CBOR::True);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0xf5]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert(true)?;
+        assert_eq!(encoder.encoded(), &[0xf5]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(CBOR::Null);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0xf6]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert(())?;
+        assert_eq!(encoder.encoded(), &[0xf6]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(CBOR::Undefined);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0xf7]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert(Undefined)?;
+        assert_eq!(encoder.encoded(), &[0xf7]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(CBOR::Simple(16));
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0xf0]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert(Simple::new(16)?)?;
+        assert_eq!(encoder.encoded(), &[0xf0]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(CBOR::Simple(255));
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0xf8, 0xff]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert(Simple::new(255)?)?;
+        assert_eq!(encoder.encoded(), &[0xf8, 0xff]);
     }
     Ok(())
 }
 
 #[test]
 #[cfg(feature = "float")]
-fn rfc8949_encode_float() -> Result<(), CBORError> {
+fn rfc8949_encode_float() -> Result<(), EncodeError> {
     println!("<======================= rfc8949_encode_float ======================>");
     let mut bytes = [0u8; 32];
 
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(0.0);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0xf9, 0x00, 0x00]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let val = 0.0;
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), &[0xf9, 0x00, 0x00]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(-0.0);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0xf9, 0x80, 0x00]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let val = -0.0;
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), &[0xf9, 0x80, 0x00]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(1.0);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0xf9, 0x3c, 0x00]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let val = 1.0;
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), &[0xf9, 0x3c, 0x00]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(1.1);
-        val.encode(&mut buf)?;
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let val = 1.1;
+        encoder.insert(val)?;
         assert_eq!(
-            buf.encoded()?,
+            encoder.encoded(),
             &[0xfb, 0x3f, 0xf1, 0x99, 0x99, 0x99, 0x99, 0x99, 0x9a]
         );
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(1.5);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0xf9, 0x3e, 0x00]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let val = 1.5;
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), &[0xf9, 0x3e, 0x00]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(65504.0);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0xf9, 0x7b, 0xff]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let val = 65504.0;
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), &[0xf9, 0x7b, 0xff]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(100000.0);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0xfa, 0x47, 0xc3, 0x50, 0x00]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let val = 100000.0;
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), &[0xfa, 0x47, 0xc3, 0x50, 0x00]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(3.4028234663852886e+38);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0xfa, 0x7f, 0x7f, 0xff, 0xff]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let val = 3.4028234663852886e+38;
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), &[0xfa, 0x7f, 0x7f, 0xff, 0xff]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(1.0e+300);
-        val.encode(&mut buf)?;
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let val = 1.0e+300;
+        encoder.insert(val)?;
         assert_eq!(
-            buf.encoded()?,
+            encoder.encoded(),
             &[0xfb, 0x7e, 0x37, 0xe4, 0x3c, 0x88, 0x00, 0x75, 0x9c]
         );
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(5.960464477539063e-8);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0xf9, 0x00, 0x01]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let val = 5.960464477539063e-8;
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), &[0xf9, 0x00, 0x01]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(0.00006103515625);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0xf9, 0x04, 0x00]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let val = 0.00006103515625;
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), &[0xf9, 0x04, 0x00]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(-4.0);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0xf9, 0xc4, 0x00]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let val = -4.0;
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), &[0xf9, 0xc4, 0x00]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(-4.1);
-        val.encode(&mut buf)?;
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let val = -4.1;
+        encoder.insert(val)?;
         assert_eq!(
-            buf.encoded()?,
+            encoder.encoded(),
             &[0xfb, 0xc0, 0x10, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66]
         );
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(f16::INFINITY);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0xf9, 0x7c, 0x00]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let val = half::f16::INFINITY;
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), &[0xf9, 0x7c, 0x00]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(f16::NAN);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0xf9, 0x7e, 0x00]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let val = half::f16::NAN;
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), &[0xf9, 0x7e, 0x00]);
     }
     {
-        let mut buf = EncodeBuffer::new(&mut bytes);
-        let val = &(f16::NEG_INFINITY);
-        val.encode(&mut buf)?;
-        assert_eq!(buf.encoded()?, &[0xf9, 0xfc, 0x00]);
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let val = half::f16::NEG_INFINITY;
+        encoder.insert(val)?;
+        assert_eq!(encoder.encoded(), &[0xf9, 0xfc, 0x00]);
     }
     Ok(())
 }
 
 #[test]
+fn rfc8949_encode_arrays() -> Result<(), EncodeError> {
+    let mut bytes = [0u8; 128];
+
+    {
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.array()?.end()?;
+        assert_eq!(encoder.encoded(), &[0x80]);
+    }
+    {
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let mut array = encoder.array()?;
+        array.insert(1u8)?;
+        array.insert(2u8)?;
+        array.insert(3u8)?;
+        array.end()?;
+        assert_eq!(encoder.encoded(), &[0x83, 0x01, 0x02, 0x03]);
+    }
+    {
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let mut array = encoder.array()?;
+        array.insert(1u8)?;
+        let mut nested = array.array()?;
+        nested.insert(2u8)?;
+        nested.insert(3u8)?;
+        nested.end()?;
+        let mut nested = array.array()?;
+        nested.insert(4u8)?;
+        nested.insert(5u8)?;
+        nested.end()?;
+        array.end()?;
+        assert_eq!(
+            encoder.encoded(),
+            &[0x83, 0x01, 0x82, 0x02, 0x03, 0x82, 0x04, 0x05]
+        );
+    }
+    {
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let mut arr = encoder.array()?;
+        for value in 1u8..=25 {
+            arr.insert(value)?;
+        }
+        arr.end()?;
+        let expected = [
+            0x98, 0x19, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c,
+            0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x18, 0x18,
+            0x19,
+        ];
+        assert_eq!(encoder.encoded(), expected);
+    }
+    {
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let mut array = encoder.array()?;
+        array.insert("a")?;
+        let mut map = array.map()?;
+        map.insert_key_value("b", "c")?;
+        map.end()?;
+        array.end()?;
+        assert_eq!(
+            encoder.encoded(),
+            &[0x82, 0x61, 0x61, 0xa1, 0x61, 0x62, 0x61, 0x63]
+        );
+    }
+
+    Ok(())
+}
+
+#[test]
+fn rfc8949_encode_maps() -> Result<(), EncodeError> {
+    let mut bytes = [0u8; 128];
+
+    {
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.map()?.end()?;
+        assert_eq!(encoder.encoded(), &[0xa0]);
+    }
+    {
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let mut map = encoder.map()?;
+        map.insert_key_value(1u8, 2u8)?;
+        map.insert_key_value(3u8, 4u8)?;
+        map.end()?;
+        assert_eq!(encoder.encoded(), &[0xa2, 0x01, 0x02, 0x03, 0x04]);
+    }
+    {
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let mut map = encoder.map()?;
+        map.insert_key_value("a", 1u8)?;
+        let mut array = map.key("b")?.array()?;
+        array.insert(2u8)?;
+        array.insert(3u8)?;
+        array.end()?;
+        map.end()?;
+        assert_eq!(
+            encoder.encoded(),
+            &[0xa2, 0x61, 0x61, 0x01, 0x61, 0x62, 0x82, 0x02, 0x03]
+        );
+    }
+    {
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        let mut map = encoder.map()?;
+        map.insert_key_value("a", "A")?;
+        map.insert_key_value("b", "B")?;
+        map.insert_key_value("c", "C")?;
+        map.insert_key_value("d", "D")?;
+        map.insert_key_value("e", "E")?;
+        map.end()?;
+        let expected = [
+            0xa5, 0x61, 0x61, 0x61, 0x41, 0x61, 0x62, 0x61, 0x42, 0x61, 0x63, 0x61, 0x43, 0x61,
+            0x64, 0x61, 0x44, 0x61, 0x65, 0x61, 0x45,
+        ];
+        assert_eq!(encoder.encoded(), expected);
+    }
+    Ok(())
+}
+
+#[test]
+fn rfc8949_encode_tags() -> Result<(), EncodeError> {
+    let mut bytes = [0u8; 128];
+
+    {
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.tag(1)?.item(1_363_896_240u64)?;
+        assert_eq!(encoder.encoded(), &[0xc1, 0x1a, 0x51, 0x4b, 0x67, 0xb0]);
+    }
+    {
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.tag(23)?.item(&[1u8, 2u8, 3u8, 4u8][..])?;
+        assert_eq!(encoder.encoded(), &[0xd7, 0x44, 0x01, 0x02, 0x03, 0x04]);
+    }
+    {
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert(Tag {
+            tag: 24,
+            value: &b"dIETF"[..],
+        })?;
+        assert_eq!(
+            encoder.encoded(),
+            &[0xd8, 0x18, 0x45, 0x64, 0x49, 0x45, 0x54, 0x46]
+        );
+    }
+    {
+        let mut encoder = Encoder::<4>::new(&mut bytes);
+        encoder.insert(Tag {
+            tag: 32,
+            value: "http://www.example.com",
+        })?;
+        let expected = [
+            0xd8, 0x20, 0x76, 0x68, 0x74, 0x74, 0x70, 0x3a, 0x2f, 0x2f, 0x77, 0x77, 0x77, 0x2e,
+            0x65, 0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x2e, 0x63, 0x6f, 0x6d,
+        ];
+        assert_eq!(encoder.encoded(), expected);
+    }
+
+    Ok(())
+}
+
+#[test]
 #[cfg(feature = "float")]
+fn rfc8949_encode_tags_float() -> Result<(), EncodeError> {
+    let mut bytes = [0u8; 64];
+    let mut encoder = Encoder::<4>::new(&mut bytes);
+    encoder.tag(1)?.item(1_363_896_240.5f64)?;
+    assert_eq!(
+        encoder.encoded(),
+        &[0xc1, 0xfb, 0x41, 0xd4, 0x52, 0xd9, 0xec, 0x20, 0x00, 0x00]
+    );
+    Ok(())
+}
+
+/*
+#[test]
 fn rfc8949_encode_tag() -> Result<(), CBORError> {
     println!("<==================== rfc8949_encode_empty_array ===================>");
     let mut buffer = [0u8; 64];
@@ -751,4 +879,4 @@ fn rfc8949_encode_map_long() -> Result<(), CBORError> {
     Ok(())
 }
 
-
+*/

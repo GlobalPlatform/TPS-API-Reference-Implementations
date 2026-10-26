@@ -1,0 +1,20 @@
+#***************************************************************************************************
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+# SPDX-License-Identifier: MIT
+#**************************************************************************************************/
+[package]
+name = "tock_connector"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "tps_connector::Connector implementation backed by Tock IPC (tock_ipc)"
+
+[dependencies]
+tock_ipc = { path = "../tock_ipc" }
+libtock_platform = { path = "../third_party/libtock-rs/platform" }
+libtock_runtime = { path = "../third_party/libtock-rs/runtime" }
+tps_connector = { path = "../../tps_connector" }
+tps_client_common = { path = "../../tps_client_common" }
+tps_error = { path = "../../tps_error" }
+tps_minicbor = { path = "../../tps_minicbor" }
+rot13_service = { path = "../../rot13_service" }

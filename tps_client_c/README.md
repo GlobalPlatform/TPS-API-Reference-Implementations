@@ -19,7 +19,7 @@ a standard library.
 
 ## Operation
 
-The crate exports C language wrappers over exch of the exported functions
+The crate exports C language wrappers over each of the exported functions
 in the `tps_client_api` crate, with some basic sanitization of the inputs
 (checking for NULL pointers and the like).
 

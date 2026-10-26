@@ -1,0 +1,20 @@
+{
+  "grammars": [
+    {
+      "name": "edn",
+      "camelcase": "Edn",
+      "scope": "source.edn",
+      "path": ".",
+      "file-types": ["edn", "diag"],
+      "highlights": "queries/highlights.scm"
+    }
+  ],
+  "metadata": {
+    "version": "0.10.0",
+    "license": "MIT",
+    "description": "CBOR Extended Diagnostic Notation (EDN, RFC 8610 Appendix G) grammar for tree-sitter",
+    "links": {
+      "repository": "https://github.com/GlobalPlatform/TPS-API-Reference-Implementations"
+    }
+  }
+}

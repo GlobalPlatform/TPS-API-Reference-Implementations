@@ -1,25 +1,11 @@
-# Copyright © 2021-2022, Qualcomm Innovation Center, Inc. All rights reserved.
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-# documentation files (the “Software”), to deal in the Software without restriction, including without limitation
-# the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
-# to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice (including the next
-# paragraph) shall be included in all copies or substantial portions of the
-# Software.
-#
-# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+# SPDX-License-Identifier: MIT
 
 [package]
 name = "tps_client_api"
-version = "0.1.0"
-edition = "2021"
-authors = ["Jeremy O'Donoghue<quic_jodonogh@quicinc.com"]
+version = "0.10.0"
+edition = "2024"
+authors = ["Jeremy O'Donoghue <quic_jodonogh@quicinc.com>", "Jeremy O'Donoghue <jodonogh@qti.qualcomm.com>"]
 license = "MIT"
 description = "Reference implementation of the GlobalPlatform Trusted Platform Services API"
 homepage = "https://globalplatform.org"
@@ -27,22 +13,36 @@ repository = "https://github.com/GlobalPlatform/TPS-API-Reference-Implementation
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+rust-version = "1.85"
+readme = "README.md"
+keywords = ["tps", "globalplatform", "no-std", "embedded", "api"]
+categories = ["no-std", "embedded", "api-bindings"]
+
 # TPS Client API is normally built `no_std` and does not require an allocator.
 # Exception is when it is built for testing
 [features]
 trace = ["std"]
-std = []
+std = ["thiserror/std", "tps_client_common/std", "tps_error/std", "tps_connector/std", "critical-section/std"]
 
 [dependencies]
-thiserror = "^1.0.31"
-once_cell = "1.14.0"
+thiserror = { version = "2", default-features = false }
 func_trace = "1.0.3"
-spin = { version = "0.9.4", features = ["rwlock"] }
-state = "0.5.3"
-tps_client_common = { path = "../tps_client_common" }
-tps_error = { path = "../tps_error" }
-tps_connector = { path = "../tps_connector"}
+critical-section = "1.2.0"
+tps_client_common = { path = "../tps_client_common", version = "0.10.0" }
+tps_error = { path = "../tps_error", version = "0.10.0" }
+tps_connector = { path = "../tps_connector", version = "0.10.0"}
 
-[profile.release]
-opt-level = 'z'
-lto = true
+[dev-dependencies]
+# Deliberately path-only, with no `version`: both rot13 crates are `publish = false`, and cargo
+# keeps a *versioned* path dev-dependency in the published manifest (where it would then fail to
+# resolve from the registry) but strips a version-less one entirely. Do not add a version here.
+rot13_connector = { path = "../rot13_connector", features = ["std"] }
+rot13_service = { path = "../rot13_service", features = ["std"] }
+tps_minicbor = { path = "../tps_minicbor", version = "0.10.0", features = ["std"] }
+# `critical-section`'s `std` feature provides the `Impl` (backed by `std::sync::Mutex`) that
+# `crate::sync` needs at link time. It's requested here rather than unconditionally, so a plain
+# `no_std` build of this crate (its normal mode) doesn't pull in an unregistered `Impl` — a
+# real no_std consumer (e.g. a Tock app) registers its own via `critical_section::set_impl!`.
+# Cargo's resolver-2 feature unification applies dev-dependency features to test/bench builds of
+# this same package, so `cargo test` (no explicit `--features`) picks this up automatically.
+critical-section = { version = "1.2.0", features = ["std"] }

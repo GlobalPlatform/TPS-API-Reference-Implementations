@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
+  <component name="CargoProjects">
+    <cargoProject FILE="$PROJECT_DIR$/Cargo.toml">
+      <package file="$PROJECT_DIR$/rot13_connector">
+        <feature name="default" enabled="true" />
+      </package>
+      <package file="$PROJECT_DIR$/rot13_service">
+        <feature name="default" enabled="true" />
+      </package>
+      <package file="$PROJECT_DIR$/tps_client_api">
+        <feature name="default" enabled="true" />
+      </package>
+      <package file="$PROJECT_DIR$/tps_client_c">
+        <feature name="default" enabled="true" />
+      </package>
+      <package file="$PROJECT_DIR$/tps_client_common">
+        <feature name="default" enabled="true" />
+      </package>
+      <package file="$PROJECT_DIR$/tps_connector">
+        <feature name="default" enabled="true" />
+      </package>
+      <package file="$PROJECT_DIR$/tps_error">
+        <feature name="default" enabled="true" />
+      </package>
+      <package file="$PROJECT_DIR$/tps_minicbor">
+        <feature name="default" enabled="true" />
+      </package>
+    </cargoProject>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="95b3143c-3c61-4bcc-be08-6964f9dbffd9" name="Changes" comment="tps_client_c, tps_client_api, tps_connector, rot13_connector, rot13_service bump to v0.10.&#10;- Extensive code review (AI assisted). Several safety fixes.&#10;- Expanded documentation including safety findings.&#10;- Missing files from previous check-ins.">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cddl/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/LICENSE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cddl/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/src/bin/astdump/main.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/src/bin/cddlgen/error.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/src/bin/cddlgen/ir.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/src/bin/cddlgen/main.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/src/cddl.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/src/cddl/ast.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/src/cddl/hexfloat.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/src/cddl/parse.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cddl/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/test/cbor_token.cddl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/test/claim_set.cddl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/test/cose_key.cddl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/test/generic_test.cddl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/test/prelude.cddl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/test/reputon1.cddl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/test/reputon2.cddl" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="RsBuildProfile:test" />
+  <component name="Git.Settings">
+    <option name="PREVIOUS_COMMIT_AUTHORS">
+      <list>
+        <option value="Jeremy O'Donoghue &lt;jodonogh@qti.qualcomm.com&gt;" />
+      </list>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="SIGN_OFF_COMMIT" value="true" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;jodonogh_QCOM&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/quic-jodonogh/TPS-API-Reference-Implementations.git&quot;,
+    &quot;accountId&quot;: &quot;9f08168a-a656-423b-adb8-6488741b7b80&quot;
+  }
+}</component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="Sf2d8UJQ" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 5
+}</component>
+  <component name="ProjectId" id="3L6TniIqCYj1DBcmZPK5EwF6KHm" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Cargo.Test TPS-API-Reference-Implementations.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.rust.reset.selective.auto.import": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
+    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
+    "org.rust.first.attach.projects": "true",
+    "org.rust.hideNoCargoProjectNotificationsC:/Users/jodonogh/Code/OpenSource/TPS-API-Reference-Implementations/Cargo.toml": "true",
+    "settings.editor.selected.configurable": "language.rust.build.tool.cargo",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RunManager" selected="Cargo.Test TPS-API-Reference-Implementations">
+    <configuration name="Run astdump" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+      <option name="command" value="run --package tps_cddl --bin astdump" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Test TPS-API-Reference-Implementations" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+      <option name="buildProfileId" value="test" />
+      <option name="command" value="test --workspace" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+      <option name="command" value="run" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="RustProjectSettings">
+    <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="95b3143c-3c61-4bcc-be08-6964f9dbffd9" name="Changes" comment="" />
+      <created>1792773688218</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1792773688218</updated>
+      <workItem from="1792773689837" duration="8348000" />
+      <workItem from="1793034282445" duration="1170000" />
+      <workItem from="1793035469161" duration="2405000" />
+      <workItem from="1793037971812" duration="323000" />
+    </task>
+    <task id="LOCAL-00001" summary="Update tps_client_common and tps_error to version 0.10&#10;- Prelude to extensive (breaking) changes.&#10;- Updated dependencies and to Rust 2024.&#10;- Added README.md for tps_client_common&#10;- Added test cases&#10;- Added safety invariants to tps_client_common documentation.&#10;- Code review and tests generated with AI assistance.">
+      <option name="closed" value="true" />
+      <created>1792774320474</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1792774320474</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Update tps_client_c, tps_client_api and tps_connector to version 0.10&#10;- Prelude to extensive (breaking) changes.&#10;- Updated dependencies and to Rust 2024.&#10;- Added README.md for tps_client_c and tps_connector&#10;- Updated other README.md&#10;- Added test cases&#10;- Added safety invariants to documentation.&#10;- Code review and tests generated with AI assistance.&#10;&#10;NB: Does not build as other dependencies not yet merged.">
+      <option name="closed" value="true" />
+      <created>1792775974626</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1792775974626</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Update tps_minicbor to version 0.10: *API breaking changes*.&#10;- Extensive rewrite to remove nom parser dependency and simplify&#10;  binary parser for smaller implementation.&#10;- Defaults to preferred encoding with deterministic encoding an&#10;  option with the std feature and an allocator.&#10;- Supports non-trivial NaN.&#10;- Can output EDN with feature std&#10;- Extensive test suite including all RFC8949 examples, adversarial&#10;  examples, deterministic and preferred encoding. &#10;- Code review, some bugfixes and tests generated with AI assistance.">
+      <option name="closed" value="true" />
+      <created>1792776753718</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1792776753718</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Update rot13_connector and rot13_service to version 0.10.&#10;- Fixed missed lib.rs update in tps_client_c.&#10;- tpsc_client_api.h and tpsc_connector_api.h updated due&#10;  to tps_client_c update.&#10;- Additional test cases&#10;- Code review, some bugfixes and tests generated with AI assistance.&#10;&#10;Compiles cleanly. 197 of 198 unit tests and doc tests pass. 1 expected&#10;failure as I have no C compiler configured on the test machine.">
+      <option name="closed" value="true" />
+      <created>1792777929953</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1792777929953</updated>
+    </task>
+    <task id="LOCAL-00005" summary="New crate, tps_cose, implements COSE_Sign1, COSE_Sign and COSE_Encrypt0&#10;- ES256 and EdDSA signing&#10;- AES-GCM and AES-CCM encryption&#10;- COSE_Key support&#10;- Cryptography provided by Ring crate in this implementation&#10;- Extensive test suite - all COSE WG test cases plus additional semantic tests.&#10;- AI assistance for test case design , bugfix and security audit.">
+      <option name="closed" value="true" />
+      <created>1792778479920</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1792778479920</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Add back c_example from tps_client_c, missed earlier.">
+      <option name="closed" value="true" />
+      <created>1792778656766</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1792778656766</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Huge breaking update of tps_cddl.&#10;- Command line tool and library.&#10;- Complete parser for RFC 8610 CDDL.&#10;- Optional support for RFC 9165 and RFC 9682 extensions.&#10;- Support for CBOR modules based on draft-ietf-cddl-modules-06.&#10;- CBOR and JSON validators.&#10;- Code generation for tps_minicbor.&#10;- Span-accurate error reporting.&#10;- Extensive test suite&#10;- Extensive testing and validation against normative RFC text.&#10;&#10;707 tests pass. 1 expected failure (no compatible C compiler on test machine, known to pass on a different machine).">
+      <option name="closed" value="true" />
+      <created>1792779448619</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1792779448619</updated>
+    </task>
+    <task id="LOCAL-00008" summary="CBOR ecosystem tooling&#10;- tps_cose_tool: command line tool for manipulating COSE objects&#10;- tps_edn_tool: command line tool for manipulating EDN objects&#10;- tps_cbor_tui: console tool for quickly manipulating and visualising&#10;  CBOR, COSE and EDN artifacts.&#10;- AI assistance used to develop tps_cbor_tui and to review and build&#10;  test suites elsewhere.">
+      <option name="closed" value="true" />
+      <created>1792779866774</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1792779866774</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Tree sitter grammars for EDN and CDDL. Workspace updates.&#10;- Tree-sitter grammar for CDDL for editors that support it&#10;- Tree-sitter grammar for END for editors that support it&#10;- Updates to the workspace including Miri support and rules on&#10;  licensing and contribution.">
+      <option name="closed" value="true" />
+      <created>1792780774463</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1792780774463</updated>
+    </task>
+    <task id="LOCAL-00010" summary="tps_minicbor v0.10. *API Breaking*.&#10;- Significant refactor of tps_minicbor with breaking API changes.&#10;- No longer parsed using nom. Faster, smaller, fewer dependencies.&#10;- no_std support. No allocator required for preferred encoding.&#10;- Support preferred encoding by default.&#10;- Deterministic decoding is an option for std targets. &#10;- Automatic calculation of array/map sized with configurable depth.&#10;- Optional float support.&#10;- No support for indefinite length objects.&#10;- No support for non-trivial NaN.&#10;- Extensive test suite includes all for RFC8949 tests&#10;&#10;55/55 unit tests pass.">
+      <option name="closed" value="true" />
+      <created>1793035546050</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1793035546050</updated>
+    </task>
+    <task id="LOCAL-00011" summary="tps_error, tps_client_common v0.10.&#10;- Added test suite.&#10;- Added README.&#10;Claude code used in development of test suites.&#10;55/55 tests passed.">
+      <option name="closed" value="true" />
+      <created>1793035836863</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1793035836863</updated>
+    </task>
+    <task id="LOCAL-00012" summary="tps_client_c, tps_client_api, tps_connector, rot13_connector, rot13_service bump to v0.10.&#10;- Extensive code review (AI assisted). Several safety fixes.&#10;- Expanded documentation including safety findings.&#10;- Missing files from previous check-ins.">
+      <option name="closed" value="true" />
+      <created>1793037896955</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1793037896955</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="HEAD" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Update tps_client_common and tps_error to version 0.10&#10;- Prelude to extensive (breaking) changes.&#10;- Updated dependencies and to Rust 2024.&#10;- Added README.md for tps_client_common&#10;- Added test cases&#10;- Added safety invariants to tps_client_common documentation.&#10;- Code review and tests generated with AI assistance." />
+    <MESSAGE value="Update tps_client_c, tps_client_api and tps_connector to version 0.10&#10;- Prelude to extensive (breaking) changes.&#10;- Updated dependencies and to Rust 2024.&#10;- Added README.md for tps_client_c and tps_connector&#10;- Updated other README.md&#10;- Added test cases&#10;- Added safety invariants to documentation.&#10;- Code review and tests generated with AI assistance.&#10;&#10;NB: Does not build as other dependencies not yet merged." />
+    <MESSAGE value="Update tps_minicbor to version 0.10: *API breaking changes*.&#10;- Extensive rewrite to remove nom parser dependency and simplify&#10;  binary parser for smaller implementation.&#10;- Defaults to preferred encoding with deterministic encoding an&#10;  option with the std feature and an allocator.&#10;- Supports non-trivial NaN.&#10;- Can output EDN with feature std&#10;- Extensive test suite including all RFC8949 examples, adversarial&#10;  examples, deterministic and preferred encoding. &#10;- Code review, some bugfixes and tests generated with AI assistance." />
+    <MESSAGE value="Update rot13_connector and rot13_service to version 0.10.&#10;- Code review, some bugfixes and tests generated with AI assistance." />
+    <MESSAGE value="Update rot13_connector and rot13_service to version 0.10.&#10;- Fixed missed lib.rs update in tps_client_c.&#10;- tpsc_client_api.h and tpsc_connector_api.h updated due&#10;  to tps_client_c update.&#10;- Additional test cases&#10;- Code review, some bugfixes and tests generated with AI assistance.&#10;&#10;Compiles cleanly. 197 of 198 unit tests and doc tests pass. 1 expected&#10;failure as I have no C compiler configured on the test machine." />
+    <MESSAGE value="New crate, tps_cose, implements COSE_Sign1, COSE_Sign and COSE_Encrypt0&#10;- ES256 and EdDSA signing&#10;- AES-GCM and AES-CCM encryption&#10;- COSE_Key support&#10;- Cryptography provided by Ring crate in this implementation&#10;- Extensive test suite - all COSE WG test cases plus additional semantic tests.&#10;- AI assistance for test case design , bugfix and security audit." />
+    <MESSAGE value="Add back c_example from tps_client_c, missed earlier." />
+    <MESSAGE value="Huge breaking update of tps_cddl.&#10;- Command line tool and library.&#10;- Complete parser for RFC 8610 CDDL.&#10;- Optional support for RFC 9165 and RFC 9682 extensions.&#10;- Support for CBOR modules based on draft-ietf-cddl-modules-06.&#10;- CBOR and JSON validators.&#10;- Code generation for tps_minicbor.&#10;- Span-accurate error reporting.&#10;- Extensive test suite&#10;- Extensive testing and validation against normative RFC text.&#10;&#10;707 tests pass. 1 expected failure (no compatible C compiler on test machine, known to pass on a different machine)." />
+    <MESSAGE value="CBOR ecosystem tooling&#10;- tps_cose_tool: command line tool for manipulating COSE objects&#10;- tps_edn_tool: command line tool for manipulating EDN objects&#10;- tps_cbor_tui: console tool for quickly manipulating and visualising&#10;  CBOR, COSE and EDN artifacts.&#10;- AI assistance used to develop tps_cbor_tui and to review and build&#10;  test suites elsewhere." />
+    <MESSAGE value="Tree sitter grammars for EDN and CDDL. Workspace updates.&#10;- Tree-sitter grammar for CDDL for editors that support it&#10;- Tree-sitter grammar for END for editors that support it&#10;- Updates to the workspace including Miri support and rules on&#10;  licensing and contribution." />
+    <MESSAGE value="tps_minicbor v0.10. *API Breaking*.&#10;- Significant refactor of tps_minicbor with breaking API changes.&#10;- No longer parsed using nom. Faster, smaller, fewer dependencies.&#10;- no_std support. No allocator required for preferred encoding.&#10;- Support preferred encoding by default.&#10;- Deterministic decoding is an option for std targets. &#10;- Automatic calculation of array/map sized with configurable depth.&#10;- Optional float support.&#10;- No support for indefinite length objects.&#10;- No support for non-trivial NaN.&#10;- Extensive test suite includes all for RFC8949 tests" />
+    <MESSAGE value="tps_minicbor v0.10. *API Breaking*.&#10;- Significant refactor of tps_minicbor with breaking API changes.&#10;- No longer parsed using nom. Faster, smaller, fewer dependencies.&#10;- no_std support. No allocator required for preferred encoding.&#10;- Support preferred encoding by default.&#10;- Deterministic decoding is an option for std targets. &#10;- Automatic calculation of array/map sized with configurable depth.&#10;- Optional float support.&#10;- No support for indefinite length objects.&#10;- No support for non-trivial NaN.&#10;- Extensive test suite includes all for RFC8949 tests&#10;&#10;55/55 unit tests pass." />
+    <MESSAGE value="tps_error, tps_client_common v0.10.&#10;- Added test suite.&#10;- Added README.&#10;Claude code used in development of test suites.&#10;55/55 tests passed." />
+    <MESSAGE value="tps_client_c, tps_client_api, tps_connector, rot13_connector, rot13_service bump to v0.10.&#10;- Extensive code review (AI assisted). Several safety fixes.&#10;- Expanded documentation including safety findings.&#10;- Missing files from previous check-ins." />
+    <option name="LAST_COMMIT_MESSAGE" value="tps_client_c, tps_client_api, tps_connector, rot13_connector, rot13_service bump to v0.10.&#10;- Extensive code review (AI assisted). Several safety fixes.&#10;- Expanded documentation including safety findings.&#10;- Missing files from previous check-ins." />
+  </component>
+</project>

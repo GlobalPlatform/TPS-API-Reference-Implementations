@@ -1,0 +1,7 @@
+;***************************************************************************************************
+; Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+; SPDX-License-Identifier: MIT
+;**************************************************************************************************/
+start = p.Foo
+Foo = tstr
+;# import Foo from mod_a as p
