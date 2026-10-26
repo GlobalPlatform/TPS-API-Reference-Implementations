@@ -13,4 +13,10 @@ members = [
     "rot13_connector",
     "rot13_service",
     "tps_cddl",
+    "tps_cose",
+    "tps_cose_tool",
+    "tps_edn_tool",
+    "tree-sitter-cddl",
+    "tree-sitter-edn",
+    "tps_ts_highlight_tool"
 ]

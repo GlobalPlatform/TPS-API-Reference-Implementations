@@ -1,0 +1,409 @@
+==================
+Unsigned integer
+==================
+
+42
+
+---
+
+(source_file
+  (value
+    (number
+      (uint))))
+
+==================
+Negative integer
+==================
+
+-1000
+
+---
+
+(source_file
+  (value
+    (number)))
+
+==================
+Hex, octal, binary prefixes
+==================
+
+0x1a
+
+---
+
+(source_file
+  (value
+    (number
+      (uint))))
+
+==================
+Float
+==================
+
+1.5
+
+---
+
+(source_file
+  (value
+    (number)))
+
+==================
+Hexfloat
+==================
+
+0x1.8p0
+
+---
+
+(source_file
+  (value
+    (number)))
+
+==================
+Keywords true false null undefined
+==================
+
+true
+
+---
+
+(source_file
+  (value))
+
+==================
+NaN and Infinity
+==================
+
+-Infinity
+
+---
+
+(source_file
+  (value))
+
+==================
+Simple value
+==================
+
+simple(16)
+
+---
+
+(source_file
+  (value
+    (simple_value
+      (uint))))
+
+==================
+Text string
+==================
+
+"hello world"
+
+---
+
+(source_file
+  (value
+    (concatenated_string
+      (text))))
+
+==================
+Concatenated text strings
+==================
+
+"Hello " "world"
+
+---
+
+(source_file
+  (value
+    (concatenated_string
+      (text)
+      (text))))
+
+==================
+Hex byte string
+==================
+
+h'01020304'
+
+---
+
+(source_file
+  (value
+    (concatenated_string
+      (bytes
+        (hex_bytes)))))
+
+==================
+Hex byte string with whitespace and comment
+==================
+
+h'68 65 6c /doubled l!/ 6c 6f'
+
+---
+
+(source_file
+  (value
+    (concatenated_string
+      (bytes
+        (hex_bytes
+          (comment))))))
+
+==================
+Base64 byte string
+==================
+
+b64'aGVsbG8='
+
+---
+
+(source_file
+  (value
+    (concatenated_string
+      (bytes
+        (b64_bytes)))))
+
+==================
+Raw UTF-8 byte string
+==================
+
+'hello'
+
+---
+
+(source_file
+  (value
+    (concatenated_string
+      (bytes
+        (raw_bytes)))))
+
+==================
+Mixed concatenated string and byte-string
+==================
+
+"Hello" h'20' "world"
+
+---
+
+(source_file
+  (value
+    (concatenated_string
+      (text)
+      (bytes
+        (hex_bytes))
+      (text))))
+
+==================
+Array
+==================
+
+[1, 2, 3]
+
+---
+
+(source_file
+  (value
+    (array
+      (value_list
+        (value
+          (number
+            (uint)))
+        (value
+          (number
+            (uint)))
+        (value
+          (number
+            (uint)))))))
+
+==================
+Empty array
+==================
+
+[]
+
+---
+
+(source_file
+  (value
+    (array)))
+
+==================
+Nested array
+==================
+
+[[1], [2, 3]]
+
+---
+
+(source_file
+  (value
+    (array
+      (value_list
+        (value
+          (array
+            (value_list
+              (value
+                (number
+                  (uint))))))
+        (value
+          (array
+            (value_list
+              (value
+                (number
+                  (uint)))
+              (value
+                (number
+                  (uint))))))))))
+
+==================
+Map
+==================
+
+{1: 2}
+
+---
+
+(source_file
+  (value
+    (map
+      (pair_list
+        (pair
+          key: (value
+            (number
+              (uint)))
+          val: (value
+            (number
+              (uint))))))))
+
+==================
+Empty map
+==================
+
+{}
+
+---
+
+(source_file
+  (value
+    (map)))
+
+==================
+Map with string keys
+==================
+
+{"a": 1, "b": [2, 3]}
+
+---
+
+(source_file
+  (value
+    (map
+      (pair_list
+        (pair
+          key: (value
+            (concatenated_string
+              (text)))
+          val: (value
+            (number
+              (uint))))
+        (pair
+          key: (value
+            (concatenated_string
+              (text)))
+          val: (value
+            (array
+              (value_list
+                (value
+                  (number
+                    (uint)))
+                (value
+                  (number
+                    (uint)))))))))))
+
+==================
+Tag
+==================
+
+0("2013-03-21T20:04:00Z")
+
+---
+
+(source_file
+  (value
+    (tag
+      number: (uint)
+      value: (value
+        (concatenated_string
+          (text))))))
+
+==================
+Tag wrapping byte string
+==================
+
+24(h'6449455446')
+
+---
+
+(source_file
+  (value
+    (tag
+      number: (uint)
+      value: (value
+        (concatenated_string
+          (bytes
+            (hex_bytes)))))))
+
+==================
+Embedded CBOR notation
+==================
+
+<<1, 2>>
+
+---
+
+(source_file
+  (value
+    (embedded_cbor
+      (value_list
+        (value
+          (number
+            (uint)))
+        (value
+          (number
+            (uint)))))))
+
+==================
+Empty embedded CBOR notation
+==================
+
+<<>>
+
+---
+
+(source_file
+  (value
+    (embedded_cbor)))
+
+==================
+Leading and trailing comments
+==================
+
+/grasp-message/ [/M_DISCOVERY/ 1, /session-id/ 10584416]
+
+---
+
+(source_file
+  (comment)
+  (value
+    (array
+      (comment)
+      (value_list
+        (value
+          (number
+            (uint)))
+        (comment)
+        (value
+          (number
+            (uint)))))))

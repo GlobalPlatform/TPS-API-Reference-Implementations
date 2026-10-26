@@ -1,0 +1,47 @@
+#***************************************************************************************************
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+# SPDX-License-Identifier: MIT
+#*************************************************************************************************/
+
+[package]
+name = "tree-sitter-edn"
+version = "0.10.0"
+authors = ["Jeremy O'Donoghue <jodonogh@qti.qualcomm.com>"]
+edition = "2024"
+license = "MIT"
+description = "tree-sitter grammar for CBOR Extended Diagnostic Notation (EDN, RFC 8610 Appendix G)"
+homepage = "https://globalplatform.org"
+repository = "https://github.com/GlobalPlatform/TPS-API-Reference-Implementations"
+build = "bindings/rust/build.rs"
+autobins = false
+autoexamples = false
+autotests = false
+autobenches = false
+include = [
+  "bindings/rust/*",
+  "grammar.js",
+  "queries/*",
+  "src/*",
+  "tree-sitter.json",
+]
+rust-version = "1.85"
+readme = "README.md"
+keywords = ["tree-sitter", "edn", "cbor", "parser", "grammar"]
+categories = ["parser-implementations", "development-tools"]
+
+[lib]
+name = "tree_sitter_edn"
+path = "bindings/rust/lib.rs"
+
+[[test]]
+name = "fixtures"
+path = "tests/fixtures.rs"
+
+[dependencies]
+tree-sitter-language = "0.1"
+
+[build-dependencies]
+cc = "1"
+
+[dev-dependencies]
+tree-sitter = "0.27"

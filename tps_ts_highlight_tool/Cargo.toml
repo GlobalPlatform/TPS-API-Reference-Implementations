@@ -1,0 +1,29 @@
+#***************************************************************************************************
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+# SPDX-License-Identifier: MIT
+#*************************************************************************************************/
+
+[package]
+name = "tps_ts_highlight_tool"
+version = "0.10.0"
+authors = ["Jeremy O'Donoghue <jodonogh@qti.qualcomm.com>"]
+edition = "2024"
+license = "MIT"
+description = "Terminal syntax-highlighting preview for the tree-sitter-cddl/tree-sitter-edn grammars"
+homepage = "https://globalplatform.org"
+repository = "https://github.com/GlobalPlatform/TPS-API-Reference-Implementations"
+rust-version = "1.85"
+readme = "README.md"
+keywords = ["tree-sitter", "cddl", "edn", "highlighting", "cli"]
+categories = ["command-line-utilities", "development-tools"]
+
+[[bin]]
+name = "ts-highlight"
+path = "src/main.rs"
+
+[dependencies]
+tree-sitter = "0.27"
+tree-sitter-highlight = "0.27"
+tree-sitter-cddl = { path = "../tree-sitter-cddl", version = "0.10.0" }
+tree-sitter-edn = { path = "../tree-sitter-edn", version = "0.10.0" }
+clap = { version = "4", features = ["derive"] }

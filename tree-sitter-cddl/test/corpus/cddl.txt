@@ -1,0 +1,859 @@
+================================================================================
+basic rule
+================================================================================
+
+x = int
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                name: (identifier)))))))))
+
+================================================================================
+type choice
+================================================================================
+
+x = int / tstr / bstr
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                name: (identifier)))
+            (type1
+              (type2
+                name: (identifier)))
+            (type1
+              (type2
+                name: (identifier)))))))))
+
+================================================================================
+map group with optional member
+================================================================================
+
+person = {
+  name: tstr,
+  age: uint,
+  ? employer: tstr,
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (group
+                  (grpchoice
+                    (grpent
+                      (memberkey
+                        key: (identifier))
+                      type: (type
+                        (type1
+                          (type2
+                            name: (identifier)))))
+                    (grpent
+                      (memberkey
+                        key: (identifier))
+                      type: (type
+                        (type1
+                          (type2
+                            name: (identifier)))))
+                    (grpent
+                      (occur)
+                      (memberkey
+                        key: (identifier))
+                      type: (type
+                        (type1
+                          (type2
+                            name: (identifier)))))))))))))))
+
+================================================================================
+array group with occurrence
+================================================================================
+
+list = [+ tstr]
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (group
+                  (grpchoice
+                    (grpent
+                      (occur)
+                      type: (type
+                        (type1
+                          (type2
+                            name: (identifier)))))))))))))))
+
+================================================================================
+n*m occurrence
+================================================================================
+
+x = [1*3 tstr]
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (group
+                  (grpchoice
+                    (grpent
+                      (occur
+                        (uint))
+                      type: (type
+                        (type1
+                          (type2
+                            (value
+                              (number
+                                (uint)))))))
+                    (grpent
+                      type: (type
+                        (type1
+                          (type2
+                            name: (identifier)))))))))))))))
+
+================================================================================
+generic parameters and arguments
+================================================================================
+
+pair<K, V> = [K, V]
+x = pair<tstr, int>
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (rule
+    name: (identifier)
+    (genericparm
+      (identifier)
+      (identifier))
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (group
+                  (grpchoice
+                    (grpent
+                      type: (type
+                        (type1
+                          (type2
+                            name: (identifier)))))
+                    (grpent
+                      type: (type
+                        (type1
+                          (type2
+                            name: (identifier))))))))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                name: (identifier)
+                (genericarg
+                  (type
+                    (type1
+                      (type2
+                        name: (identifier))))
+                  (type
+                    (type1
+                      (type2
+                        name: (identifier)))))))))))))
+
+================================================================================
+numeric member keys
+================================================================================
+
+x = {
+  1 => tstr,
+  ? 2 => bstr,
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (group
+                  (grpchoice
+                    (grpent
+                      (memberkey
+                        key: (type1
+                          (type2
+                            (value
+                              (number
+                                (uint))))))
+                      type: (type
+                        (type1
+                          (type2
+                            name: (identifier)))))
+                    (grpent
+                      (occur)
+                      (memberkey
+                        key: (type1
+                          (type2
+                            (value
+                              (number
+                                (uint))))))
+                      type: (type
+                        (type1
+                          (type2
+                            name: (identifier)))))))))))))))
+
+================================================================================
+range operator and control operator
+================================================================================
+
+x = 1..10
+y = tstr .regexp "a+"
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (value
+                  (number
+                    (uint))))
+              (rangeop)
+              (type2
+                (value
+                  (number
+                    (uint))))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                name: (identifier))
+              (ctlop
+                (identifier))
+              (type2
+                (value
+                  (text))))))))))
+
+================================================================================
+RFC 9165 control operators
+================================================================================
+
+a = int .plus 1
+b = tstr .cat "x"
+c = tstr .det "y"
+d = tstr .abnf "z"
+e = tstr .abnfb "w"
+f = int .feature "flag"
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                name: (identifier))
+              (ctlop
+                (identifier))
+              (type2
+                (value
+                  (number
+                    (uint))))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                name: (identifier))
+              (ctlop
+                (identifier))
+              (type2
+                (value
+                  (text)))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                name: (identifier))
+              (ctlop
+                (identifier))
+              (type2
+                (value
+                  (text)))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                name: (identifier))
+              (ctlop
+                (identifier))
+              (type2
+                (value
+                  (text)))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                name: (identifier))
+              (ctlop
+                (identifier))
+              (type2
+                (value
+                  (text)))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                name: (identifier))
+              (ctlop
+                (identifier))
+              (type2
+                (value
+                  (text))))))))))
+
+================================================================================
+RFC 9682 tag head-number forms
+================================================================================
+
+a = #6.2(tstr)
+b = #7.<uint>
+c = #7
+d = #6.<int>(tstr)
+e = #3.1
+f = #
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (tag
+                  (head_number
+                    (uint))
+                  (type
+                    (type1
+                      (type2
+                        name: (identifier))))))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (tag
+                  (head_number
+                    (type
+                      (type1
+                        (type2
+                          name: (identifier)))))))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (tag))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (tag
+                  (head_number
+                    (type
+                      (type1
+                        (type2
+                          name: (identifier)))))
+                  (type
+                    (type1
+                      (type2
+                        name: (identifier))))))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (tag)))))
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (value
+                  (number)))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (tag)))))))))
+
+================================================================================
+parenthesized group choice inside a map
+================================================================================
+
+x = {
+  ? (5 => bstr // 6 => bstr),
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (group
+                  (grpchoice
+                    (grpent
+                      (occur)
+                      (group
+                        (grpchoice
+                          (grpent
+                            (memberkey
+                              key: (type1
+                                (type2
+                                  (value
+                                    (number
+                                      (uint))))))
+                            type: (type
+                              (type1
+                                (type2
+                                  name: (identifier))))))
+                        (grpchoice
+                          (grpent
+                            (memberkey
+                              key: (type1
+                                (type2
+                                  (value
+                                    (number
+                                      (uint))))))
+                            type: (type
+                              (type1
+                                (type2
+                                  name: (identifier))))))))))))))))))
+
+================================================================================
+groupname reference and definition
+================================================================================
+
+Generic_Headers = (
+  ? 1 => int,
+)
+x = {
+  Generic_Headers,
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          (group
+            (grpchoice
+              (grpent
+                (occur)
+                (memberkey
+                  key: (type1
+                    (type2
+                      (value
+                        (number
+                          (uint))))))
+                type: (type
+                  (type1
+                    (type2
+                      name: (identifier)))))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (group
+                  (grpchoice
+                    (grpent
+                      type: (type
+                        (type1
+                          (type2
+                            name: (identifier)))))))))))))))
+
+================================================================================
+unwrap and enum-group operators
+================================================================================
+
+x = ~mytype
+y = &enumgroup
+z = &(a: 1, b: 2)
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                name: (identifier))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                name: (identifier))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (group
+                  (grpchoice
+                    (grpent
+                      (memberkey
+                        key: (identifier))
+                      type: (type
+                        (type1
+                          (type2
+                            (value
+                              (number
+                                (uint)))))))
+                    (grpent
+                      (memberkey
+                        key: (identifier))
+                      type: (type
+                        (type1
+                          (type2
+                            (value
+                              (number
+                                (uint)))))))))))))))))
+
+================================================================================
+value literals
+================================================================================
+
+a = 1
+b = -1
+c = 1.5
+d = 1e10
+e = 0x1.8p0
+f = "hello"
+g = h'deadbeef'
+h = b64'AAAA'
+i = 'raw bytes'
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (value
+                  (number
+                    (uint))))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (value
+                  (number)))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (value
+                  (number)))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (value
+                  (number)))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (value
+                  (number)))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (value
+                  (text)))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (value
+                  (bytes)))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (value
+                  (bytes)))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                (value
+                  (bytes))))))))))
+
+================================================================================
+comments and directive comments
+================================================================================
+
+; plain comment
+;# import foo from "bar" as baz
+x = int ; trailing comment
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (comment)
+  (directive_comment)
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                name: (identifier))))))))
+  (comment))
+
+================================================================================
+assignment operator variants
+================================================================================
+
+x = int
+x /= tstr
+y //= (a: 1)
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                name: (identifier))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          type: (type
+            (type1
+              (type2
+                name: (identifier))))))))
+  (rule
+    name: (identifier)
+    assign: (assign_op)
+    value: (group
+      (grpchoice
+        (grpent
+          (group
+            (grpchoice
+              (grpent
+                (memberkey
+                  key: (identifier))
+                type: (type
+                  (type1
+                    (type2
+                      (value
+                        (number
+                          (uint))))))))))))))
