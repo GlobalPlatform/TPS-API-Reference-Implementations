@@ -1,206 +1,257 @@
-# TPS-MINICBOR
+# tps_minicbor
 
-An implementation of CBOR in Rust which is aimed at relatively constrained embedded
-systems where the Serde implementation is not necessarily well suited.
+CBOR encoder/decoder optimized for no_std targets with minimal dependencies.
 
-## License
+## Overview
 
-`tps_minicbor` is MIT licensed. See LICENSE.
+- `no_std` core with optional features for floats, deterministic encoding, and standard tags.
+  - Deterministic encoding requires a `std` environment
+- Supports most CBOR constructions (see limitations).
+  - All primitive types (positive and negative integers, tstr, bstr, simple types, tags, floats including 16 bit floats)
+  - Supports most tags in RFC8949 (values unchecked): Date/Time, Epoch, Bignums, Decimal Fractions, Base16 and 64, embedded CBOR, URI, Regex, MIMEtype)
+- Configurable nesting depth for encoding arrays and maps with automatic calculation of the correct number of items.
+  - `EncoderStd` is a convenience wrapper with the nesting depth set to 4.
+- Defaults to CBOR preferred encoding.
+  - Deterministic encoding is an optional feature (requires `std`)
+  - Numeric types, including floats, are always encoded at minimal size.
+  - Non-trivial `NaN` is not supported. `NaN` is always encoded as `0x7e00`.
+- Extensive test cases implemented including all RFC8949 tests.
+- COSE and basic CDDL support available in related `tps_cose` and `tps_cddl` crates.
+
+## Encoding
+
+### Basic usage
+
+```rust
+use tps_minicbor::{EncoderStd, Encoder};
+
+let mut buf = [0u8; 16];
+let mut enc = EncoderStd::new(&mut buf);
+enc.insert(1u8).unwrap();
+assert_eq!(enc.encoded(), &[0x01]);
+
+let mut buf = [0u8; 16];
+let mut enc = Encoder::<8>::new(&mut buf);
+enc.insert(2u8).unwrap();
+assert_eq!(enc.encoded(), &[0x02]);
+```
+
+### Arrays and maps
+
+```rust
+use tps_minicbor::Encoder;
+
+let mut buf = [0u8; 16];
+let mut enc = Encoder::<2>::new(&mut buf);
+let mut array = enc.array().unwrap();
+array.insert(1u8).unwrap();
+array.insert(2u8).unwrap();
+array.insert(3u8).unwrap();
+array.end().unwrap();
+assert_eq!(enc.encoded(), &[0x83, 0x01, 0x02, 0x03]);
+```
+
+### Deterministic encoding
+
+When `deterministic_encoding` is enabled, map entries are sorted into pure
+bytewise-lexicographic order of their encoded key bytes (RFC 8949 §4.2.1)
+before the map is finalized. This requires a scratch buffer supplied by the
+caller so that the encoder can reorder entries without allocations.
+
+The scratch buffer must not alias the output buffer and should be at least as
+large as the output buffer to handle worst-case maps that fill the buffer and
+require complete reordering.
+
+```rust
+use tps_minicbor::Encoder;
+
+let mut buf = [0u8; 32];
+let mut enc = Encoder::<4>::new(&mut buf);
+let mut map = enc.map().unwrap();
+map.insert_key_value("b", 2u8).unwrap();
+map.insert_key_value("aa", 3u8).unwrap();
+map.insert_key_value("a", 1u8).unwrap();
+map.end().unwrap();
+assert_eq!(
+    enc.encoded(),
+    &[0xa3, 0x61, 0x62, 0x02, 0x62, 0x61, 0x61, 0x03, 0x61, 0x61, 0x01]
+);
+```
+
+```rust
+# #[cfg(feature = "deterministic_encoding")]
+# {
+use tps_minicbor::EncoderStd;
+
+let mut buf = [0u8; 32];
+let mut scratch = [0u8; 32];
+let mut enc = EncoderStd::new_deterministic(&mut buf, &mut scratch).unwrap();
+let mut map = enc.map().unwrap();
+map.insert_key_value("b", 2u8).unwrap();
+map.insert_key_value("aa", 3u8).unwrap();
+map.insert_key_value("a", 1u8).unwrap();
+map.end().unwrap();
+assert_eq!(
+    enc.encoded(),
+    &[0xa3, 0x61, 0x61, 0x01, 0x61, 0x62, 0x02, 0x62, 0x61, 0x61, 0x03]
+);
+# }
+```
+
+### Floating point
+
+When `float` is enabled, CBOR support for encoding and decoding `f64`, `f32` and `f16`
+types is present. These do not depend on the allocator, so are suitable for `no_std`
+targets, but there will be additional code, which may be an issue.
+
+Where a value is `NaN`, the encoding is always equivalent to `f16::NAN`, which
+corresponds to an encoded value of `0x7e00`. This value was selected as the shortest
+encoding of `NaN`. If you require more sophisticated `NaN` handling along with
+interoperability, you will likely need to handle this at the application level with
+additional tags. Handling of non-trivial `NaN` values has been
+[discussed extensively on the CBOR mailing list](https://mailarchive.ietf.org/arch/browse/cbor/?gbt=1&q=NaN),
+and anyone needing this support is advised to read these discussions first.
+
+## Decoding
+
+`Decoder` provides two API families:
+
+- **Typed direct methods** — `uint()`, `neg_int()`, `bytes()`, `text()`, `bool()`,
+  `null()`, `array_len()`, `map_len()`: decode a single item directly into a Rust type.
+  These are the preferred methods for use inside `Decode` implementations where the
+  expected type is known.
+
+- **`next_*` convenience methods** — `next()`, `next_uint()`, `next_bytes()`, etc.:
+  decode the next item into the `Item` enum (or an extracted field thereof). Use these
+  when the item type must be determined at runtime, for example when iterating a
+  heterogeneous array.
+
+### Basic decoding
+
+```rust
+use tps_minicbor::{Decoder, Item};
+
+let data = [0x01];
+let mut dec = Decoder::new(&data);
+let item = dec.decode().unwrap();
+assert!(matches!(item, Item::Unsigned(1)));
+```
+
+### Implementing `Decode` for custom types
+
+```rust
+use tps_minicbor::{Decode, Decoder, DecodeError};
+
+struct Point { x: i32, y: i32 }
+
+impl<'a> Decode<'a> for Point {
+    fn decode(d: &mut Decoder<'a>) -> Result<Self, DecodeError> {
+        let len = d.array_len()?;
+        if len != 2 { return Err(DecodeError::InvalidAdditionalInfo); }
+        let x = i32::decode(d)?;
+        let y = i32::decode(d)?;
+        Ok(Point { x, y })
+    }
+}
+```
+
+### Decoding arrays and maps
+
+```rust
+use tps_minicbor::{Decoder, Item};
+
+let data = [0x82, 0x01, 0x02];
+let mut dec = Decoder::new(&data);
+let array = dec.next_array().unwrap();
+let items: Vec<u64> = array.iter()
+    .map(|r| match r.unwrap() { Item::Unsigned(v) => v, _ => 0 })
+    .collect();
+assert_eq!(items, vec![1, 2]);
+```
 
 ## Features
 
-- Designed to constrained embedded environments requiring `#[no_std]` support.
-- High-level encoding and decoding APIs make serialization and deserialization
-  flows easier to write correctly.
-- Supports most CBOR constructions (see limitations)
-  - All primitive types (positive and negative integers, tstr, bstr, simple types, tags,
-    floats (including 16 bit floats).
-- Arbitrary nesting of arrays and maps with automatic calculation of the correct
-  number of items.
-- Supports a subset of standard tags (Date/Time and Unix Epoch). Note that these require
-  an allocator to be available.
-- Conversions to/from Rust primitive types.
-- Automatic preferred serialization for integers and floats.
-- Iterators and indexing over arrays and maps when deserializing
-- Extensive test cases, including test cases for all supported features from RFC8949
-  - Note that floating point +Infinity, NaN and -Infinity are always serialized as f16 
-    format because this is the preferred representation. Deserialisation works for all
-    cases.
-- Deserialization of non-preferred representations is supported.
+- `float`: encode/decode floating-point values with smallest-width encoding and canonical NaN.
+- `deterministic_encoding`: canonical map ordering using a caller-provided scratch buffer.
+- `standard_tags`: support for RFC 8949 standard tags.
+- `std`: enables `std::error::Error` impls and I/O sink support for diagnostic output. Not required for string or byte-string map keys, which are supported on `no_std`.
+- `diagnostic`: CBOR diagnostic notation output (requires `std`).
 
-## Current Limitations
+## Interoperability
 
-- Does not support Canonical CBOR
-- Does not support preferred serialization for arrays and maps
-- Does not support indefinite length encoding
-- Does not directly support Bignum, DecFrac or BigFloat
+> No configuration of tps_minicbor supports indefinite length encoding. This is a design
+> decision based on the intended use in constrained embedded devices.
 
-## Testing
+When compiled with default features:
 
-You can run the test cases as follows:
+- Encoding and decoding of Rust integer types is supported for values, `v` in the range `i64::MIN` <= v <= `u64::MAX`.
+  - Traits provide conversion to and from all Rust builtin integer types in the value range above.
+  - Outside of this range, an error is generated.
+  - Integers are always encoded using the smallest binary representation, regardless of the original Rust type.
+- Map items are encoded in the order of insertion. There are no checks for
+  duplicate keys unless `deterministic_encoding` is enabled. Integer, text
+  string (`tstr`), and byte string (`bstr`) keys are all supported, on `no_std`
+  as well as `std` targets. It is possible to access all instances of values
+  where keys are duplicated, although some handling by the caller may be required.
+- Float values cannot be encoded or decoded.
+- Simple values can be encoded and decoded. On decode, simple integer values are
+  distinguished from the main integer type.
+- Arrays and maps can be encoded to a maximum nesting level determined when the
+  encoder is constructed. This design has chosen (rather than arbitrary nesting)
+  to allow an implementation without an allocator.
 
-`cargo test --features=full`
+When compiled with `float` support, the following additional interoperability
+guarantees are made:
 
-> Note that a current limitation is that tests cannot be executed by cargo test
-> alone as the featurization does not allow this.
+- Encoding and decoding of Rust `f64`, `f32` and `f16` floating point values in the
+  smallest CBOR float encoding that accurately preserves the value (f16, f32, f64),
+  regardless of the original Rust type.
+- `NaN` always encoded as `0x7e00`.
+- Infinities may not be minimized. Infinities and subnormal values are handled per
+  the implementation of Rust floating point on the target architecture (Rust makes
+  no guarantees on such points as underlying platform hardware behaviour can differ).
+  - Interoperability of encoded and decoded infinities is thus only guaranteed
+    between Rust implementations on platforms known to behave identically.
+- Floating point values which have accurate integer representations are encoded as
+  floats. In other words, float and integer values are kept entirely separate and
+  there is no _unified_ numeric stack. This behaviour is most compatible with the
+  expectations of constrained embedded targets which generally separate integer and
+  float types.
+  - This behaviour is not compatible with dCBOR.
 
-## A flavour of the APIs
+When compiled with `std` support, the following additional interoperability guarantees
+are made:
 
-### CBOR Encoding
+- `std::error::Error` is implemented for [`EncodeError`] and [`DecodeError`].
+  (Integer, text string, and byte string map keys are supported without this
+  feature; see [Interoperability](#interoperability) above.)
 
-Despite the small memory footprint, the CBOR serialization API is quite high-level,
-supporting arbitrary nesting of arrays and maps. 
+When compiled with `deterministic_encoding` support, the following additional
+interoperability guarantees are made:
 
-The example below is an implementation of [Simple TEE Attestation](https://www.ietf.org/archive/id/draft-ietf-rats-eat-14.html#name-eat-produced-by-attestation)
-from draft 14 of the Entity Attestation Token specification under development at the IETF.
+- Map items are ordered by pure bytewise-lexicographic comparison of the
+  encoded key bytes, per the core deterministic encoding requirements of
+  RFC 8949 section 4.2.1 (not RFC 7049 "Canonical CBOR"'s length-first
+  ordering).
+- Duplicate map keys are detected on encoding. The behaviour of decoding in the
+  presence of duplicate map keys is undefined and may change between versions of this crate.
+- This encoding is not compatible with RFC 7049 "Canonical CBOR" encoding.
 
-In CBOR diagnostic format, this is displayed as:
+When compiled with `standard_tags` support, the following additional interoperability guarantees are made:
 
-```
-{
-    / nonce /           10: h'948f8860d13a463e',
-    / UEID /           256: h'0198f50a4ff6c05861c8860d13a638ea',
-    / OEMID /          258: 64242, / Private Enterprise Number /
-    / security-level / 261: 3, / hardware level security /
-    / secure-boot /    262: true,
-    / debug-status /   263: 3, / disabled-permanently /
-    / HW version /     260: [ "3.1", 1 ] / Type is multipartnumeric /
-}
-```
+- Epoch time (Tag 1) is encoded in shortest representation of its underlying type (i.e. integers as integers and floats as floats).
+- Epoch time float values are only encoded and decoded when `float` support is enabled.
 
-This is encoded in tps_minicbor as:
+### Further interoperability considerations
 
-```rust
-fn encode_tee_eat() -> Result<(), CBORError> {
-    // Encode-decode round trip test
-    println!("<========================== encode_tee_eat =========================>");
-    let mut bytes = [0u8; 1024];
-    let nonce: &[u8] = &[0x94, 0x8f, 0x88, 0x60, 0xd1, 0x3a, 0x46, 0x3e];
-    let ueid: &[u8] = &[
-        0x01, 0x98, 0xf5, 0x0a, 0x4f, 0xf6, 0xc0, 0x58, 0x61, 0xc8, 0x86, 0x0d, 0x13,
-        0xa6, 0x38, 0xea,
-    ];
+- Map keys are not restricted by CBOR major type: anything implementing
+  [`EncodeItem`] can be used as a key on encoding, and decoding returns the raw
+  key `Item` with no filtering. Integer, text string (`tstr`), and byte string
+  (`bstr`) keys are the practical common case and the ones exercised by this
+  crate's test suite; other `EncodeItem` types (e.g. `bool`, tagged items) are
+  accepted but not a primary design target.
+- There is no support for equivalence models for the standard tags defined in RFC 8949. Values are not validated on encode or decode; upper layers are expected to manage this.
 
-    let mut encoded_cbor = CBORBuilder::new(&mut bytes);
-    encoded_cbor.insert(&map(|buff| {
-        buff.insert_key_value(&10, &nonce)?
-            .insert_key_value(&256, &ueid)?
-            .insert_key_value(&258, &64242)?
-            .insert_key_value(&261, &3)?
-            .insert_key_value(&262, &true)?
-            .insert_key_value(&263, &3)?
-            .insert_key_value(&260, &array(|buf| buf.insert(&"3.1")?.insert(&1)))
-    }))?;
+## Design
 
-    // do_something_with(encoded_cbor.encoded()?);
-    Ok(())
-}
-```
-
-The only work to do 'by hand' is turning the `bstr` values into suitable references.
-
-### CBOR Decoding
-
-The example below shows one way to decode the payload generated above.
-
-```rust
-fn decode_tee_eat() -> Result<(), CBORError> {
-    let mut input: &[u8] = &[
-        167, 10, 72, 148, 143, 136, 96, 209, 58, 70, 62, 25, 1, 0, 80, 1, 152, 245,
-        10, 79, 246, 192, 88, 97, 200, 134, 13, 19, 166, 56, 234, 25, 1, 2, 25, 250,
-        242, 25, 1, 5, 3, 25, 1, 6,  245, 25, 1, 7, 3, 25, 1, 4, 130, 99, 51, 46,
-        49, 1,
-    ];
-    let mut nonce = None;
-    let mut ueid = None;
-    let mut oemid = None;
-    let mut sec_level = None;
-    let mut sec_boot = None;
-    let mut debug_state = None;
-    let mut hw_ver_int = None;
-
-    let mut decoder = CBORDecoder::from_slice(&mut input);
-    decoder.decode_with(is_map(), |cbor| {
-        if let CBOR::Map(map) = cbor {
-            nonce = map.get_int(10);
-            ueid = map.get_int(256);
-            oemid = map.get_int(258);
-            sec_level = map.get_int(261);
-            sec_boot = map.get_int(262);
-            debug_state = map.get_int(263);
-            if let Some(CBOR::Array(ab)) = map.get_int(260) {
-                hw_ver_int = match ab.index(1) {
-                    None => None,
-                    Some(CBOR::UInt(vi)) => Some(vi.clone()),
-                    _ => None
-                };
-            }
-        }
-        Ok(())
-    })?;
- Ok(())
-}
-```
-
-### Examples
-
-#### decode
-
-The `decode` example is a very short sample of the use of the low-level decode API.
-
-To run the example, from the top directory of the `tps_minicbor` crate:
-
-```shell
-cargo run --example decode --features=full
-```
-
-The expected output is:
-
-```shell
-v1 = Ok(1000), v2 = Ok(1000), v3 = Ok(1000), v4 = Err(OutOfRange)
-r1 = UInt(1000), e = Some(Eof)
-Value: UInt(1000)
-```
-
-#### trivial_cose
-
-The `trivial_cose` example is an implementation of the `COSE_Sign1` single signer example in RFC9052
-Appendix C.2.1. Keys, the message to be signed and other aspects of the cryptographic configuration
-are hard-coded to the values in the Appendix.
-
-While the example is called `trivial_cose` as it implements only the very simplest COSE example, it does
-stand as a good example of how to encode and decode moderately complex CBOR structures. All of the inputs
-and outputs are bit-exact against the example, thanks to the use of deterministic ECDSA in the signature.
-
-The code also serves as a simplistic example of how to do ECDSA using the Rust crypto traits - something
-for which there is a dearth of realistic examples.
-
-> Note: The p256 crate used for ECDSA has not been audited. Please see the warning on the 
-> [p256 crate](https://github.com/RustCrypto/elliptic-curves/tree/master/p256), and perform your own
-> due diligence before use in production.
-
-To run the example, from the top directory of the `tps_minicbor` crate:
-
-```shell
-cargo run --example trivial_cose --features=full
-```
-
-The expected output is:
-
-```shell
-To be signed 846a5369676e61747572653143a101264054546869732069732074686520636f6e74656e742e
-Signature 8eb33e4ca31d1c465ab05aac34cc6b23d58fef5c083106c4d25a91aef0b0117e2af9a291aa32e14ab834dc56ed2a223444547e01f11d3b0916e5a4c345cacb36
-Output d28443a10126a10242313154546869732069732074686520636f6e74656e742e58408eb33e4ca31d1c465ab05aac34cc6b23d58fef5c083106c4d25a91aef0b0117e2af9a291aa32e14ab834dc56ed2a223444547e01f11d3b0916e5a4c345cacb36
- 18(     [
-   h'a10126' ,
-   {
-      2 :  h'3131' ,
-   }
-,
-   h'546869732069732074686520636f6e74656e742e' ,
-   h'8eb33e4ca31d1c465ab05aac34cc6b23d58fef5c083106c4d25a91aef0b0117e2af9a291aa32e14ab834dc56ed2a223444547e01f11d3b0916e5a4c345cacb36' ,
- ],
- )
-To be verified 846a5369676e61747572653143a101264054546869732069732074686520636f6e74656e742e
-Verification succeeded: message content [84, 104, 105, 115, 32, 105, 115, 32, 116, 104, 101, 32, 99, 111, 110, 116, 101, 110, 116, 46]
-```
+There are some brief [notes on the design](DESIGN.md).
