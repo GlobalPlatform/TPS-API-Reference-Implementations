@@ -1,0 +1,32 @@
+diff --git a/boards/hifive1/src/main.rs b/boards/hifive1/src/main.rs
+index b1d0f61d1..961a454f5 100644
+--- a/boards/hifive1/src/main.rs
++++ b/boards/hifive1/src/main.rs
+@@ -71,6 +71,7 @@ struct HiFive1 {
+     scheduler_timer: &'static VirtualSchedulerTimer<
+         VirtualMuxAlarm<'static, e310_g002::chip::E310xClint<'static>>,
+     >,
++    ipc: kernel::ipc::IPC<{ NUM_PROCS as u8 }>,
+ }
+ 
+ /// Mapping of integer syscalls to objects that implement syscalls.
+@@ -84,6 +85,7 @@ impl SyscallDriverLookup for HiFive1 {
+             capsules_core::console::DRIVER_NUM => f(Some(self.console)),
+             capsules_core::alarm::DRIVER_NUM => f(Some(self.alarm)),
+             capsules_core::low_level_debug::DRIVER_NUM => f(Some(self.lldb)),
++            kernel::ipc::DRIVER_NUM => f(Some(&self.ipc)),
+             _ => f(None),
+         }
+     }
+@@ -352,9 +354,10 @@ pub unsafe fn main() {
+         led,
+         scheduler,
+         scheduler_timer,
++        ipc: kernel::ipc::IPC::new(board_kernel, kernel::ipc::DRIVER_NUM, &memory_allocation_cap),
+     };
+ 
+     load_processes_not_inlined(board_kernel, chip);
+ 
+-    board_kernel.kernel_loop(&hifive1, chip, None::<&kernel::ipc::IPC<0>>, &main_loop_cap);
++    board_kernel.kernel_loop(&hifive1, chip, Some(&hifive1.ipc), &main_loop_cap);
+ }

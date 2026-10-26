@@ -1,0 +1,29 @@
+#***************************************************************************************************
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+# SPDX-License-Identifier: MIT
+#**************************************************************************************************/
+[package]
+name = "tock_rot13_client"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Tock userspace client app: drives tps_client_api against tock_rot13_service over Tock IPC"
+
+[dependencies]
+libtock_platform = { path = "../third_party/libtock-rs/platform" }
+libtock_runtime = { path = "../third_party/libtock-rs/runtime" }
+libtock_console = { path = "../third_party/libtock-rs/apis/console" }
+libtock_debug_panic = { path = "../third_party/libtock-rs/panic_handlers/debug_panic" }
+critical-section = "1.2.0"
+tock_connector = { path = "../tock_connector" }
+tps_client_api = { path = "../../tps_client_api" }
+tps_client_common = { path = "../../tps_client_common" }
+tps_minicbor = { path = "../../tps_minicbor" }
+rot13_service = { path = "../../rot13_service" }
+
+[build-dependencies]
+libtock_build_scripts = { path = "../third_party/libtock-rs/build_scripts" }
+
+[[bin]]
+name = "tock_rot13_client"
+path = "src/main.rs"

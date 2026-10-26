@@ -1,0 +1,37 @@
+diff --git a/boards/opentitan/src/main.rs b/boards/opentitan/src/main.rs
+index 88bb1fee1..47539ba83 100644
+--- a/boards/opentitan/src/main.rs
++++ b/boards/opentitan/src/main.rs
+@@ -175,6 +175,7 @@ struct EarlGrey {
+             virtual_aes_ccm::VirtualAES128CCM<'static, earlgrey::aes::Aes<'static>>,
+         >,
+     >,
++    ipc: kernel::ipc::IPC<{ NUM_PROCS as u8 }>,
+     kv_driver: &'static capsules_extra::kv_driver::KVStoreDriver<
+         'static,
+         capsules_extra::virtual_kv::VirtualKVPermissions<
+@@ -223,6 +224,7 @@ impl SyscallDriverLookup for EarlGrey {
+             capsules_core::rng::DRIVER_NUM => f(Some(self.rng)),
+             capsules_extra::symmetric_encryption::aes::DRIVER_NUM => f(Some(self.aes)),
+             capsules_extra::kv_driver::DRIVER_NUM => f(Some(self.kv_driver)),
++            kernel::ipc::DRIVER_NUM => f(Some(&self.ipc)),
+             _ => f(None),
+         }
+     }
+@@ -787,6 +789,7 @@ unsafe fn setup() -> (
+             spi_controller,
+             aes,
+             kv_driver,
++            ipc: kernel::ipc::IPC::new(board_kernel, kernel::ipc::DRIVER_NUM, &memory_allocation_cap),
+             syscall_filter,
+             scheduler,
+             scheduler_timer,
+@@ -879,7 +882,7 @@ pub unsafe fn main() {
+ 
+         let main_loop_cap = create_capability!(capabilities::MainLoopCapability);
+ 
+-        board_kernel.kernel_loop(earlgrey, chip, None::<&kernel::ipc::IPC<0>>, &main_loop_cap);
++        board_kernel.kernel_loop(earlgrey, chip, Some(&earlgrey.ipc), &main_loop_cap);
+     }
+ }
+ 

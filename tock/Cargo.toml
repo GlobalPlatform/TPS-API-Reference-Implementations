@@ -1,0 +1,23 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+# SPDX-License-Identifier: MIT
+
+[workspace]
+resolver = "2"
+members = ["tock_ipc", "tock_connector", "tock_rot13_client", "tock_rot13_service"]
+exclude = ["third_party"]
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+# Matches third_party/libtock-rs's own MSRV (see tock/rust-toolchain.toml) so
+# that `rust-version.workspace = true` in vendored libtock-rs manifests
+# resolves cleanly when reached as a path dependency from this workspace.
+rust-version = "1.70"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+opt-level = "z"
+lto = true

@@ -1,0 +1,16 @@
+#***************************************************************************************************
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+# SPDX-License-Identifier: MIT
+#**************************************************************************************************/
+# Governs the tock_ipc / tock_connector / tock_rot13_client / tock_rot13_service
+# sub-workspace only. libtock-rs's own MSRV is 1.70 (see
+# third_party/libtock-rs/rust-toolchain.toml), but tock_connector also path-depends
+# on tps_minicbor, which requires edition 2024 and uses let-chains (needs rustc
+# 1.88+). Pinned to 1.90.0 specifically (not "stable"): rustc 1.96's stable
+# promotes libtock-rs's vendored console driver's never-type-fallback reliance
+# from a warning to a hard error (`dependency_on_unit_never_type_fallback` under
+# rust_2024_compatibility), which we can't fix without patching the submodule.
+# 1.90.0 is the newest tried toolchain where that's still only a warning.
+[toolchain]
+channel = "1.90.0"
+targets = ["thumbv6m-none-eabi", "riscv32imc-unknown-none-elf", "riscv32imac-unknown-none-elf"]
