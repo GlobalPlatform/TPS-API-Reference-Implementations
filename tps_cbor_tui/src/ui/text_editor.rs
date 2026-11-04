@@ -35,9 +35,16 @@ impl TextEditor {
     }
 
     /// 0-based `(row, col)` of the cursor, counting characters (not bytes)
-    /// since the last newline. Used to place the terminal's visible cursor
-    /// over a rendered `Paragraph`, which lays out one character per column
-    /// since none of this app's panes wrap text.
+    /// since the last newline — a *logical* position, in the text's own lines.
+    ///
+    /// **Correction.** This used to say the pair could be used as-is to place
+    /// the terminal's visible cursor over a rendered `Paragraph`, "since none
+    /// of this app's panes wrap text". That is false, and was false for
+    /// several phases: the CDDL and EDN panes word-wrap, which is why `draw()`
+    /// refreshes `App::cddl_pane_width` and `App::edn_pane_width` every frame,
+    /// and both of those call sites put this pair through
+    /// `ui::wrap::visual_position` first. Only the hex editor, whose rows are
+    /// a fixed 16 bytes wide and cannot wrap, uses it directly.
     pub fn cursor_row_col(&self) -> (u16, u16) {
         let mut row = 0u16;
         let mut col = 0u16;

@@ -1,0 +1,133 @@
+#***************************************************************************************************
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+# SPDX-License-Identifier: MIT
+#*************************************************************************************************/
+
+# This crate is its own Cargo workspace, excluded from the root one. The reason is the
+# `links = "tree-sitter"` key on the tree-sitter crate, which permits exactly one version of it per
+# resolution: gpui-kit requires ^0.26.13 while four crates in the root workspace require ^0.27.
+# See the `exclude` comment in the root Cargo.toml for the full account and for the condition under
+# which this separation should be undone.
+#
+# Build and test this crate with `cargo <cmd> --manifest-path tps_cbor_ide/Cargo.toml`, or from
+# inside this directory. A root-level `cargo build` does not include it.
+[workspace]
+
+[package]
+name = "tps_cbor_ide"
+version = "0.10.0"
+authors = ["Jeremy O'Donoghue <jodonogh@qti.qualcomm.com>"]
+edition = "2024"
+license = "MIT"
+description = "Native GPUI workbench for CBOR, EDN, CDDL and COSE artifacts"
+homepage = "https://globalplatform.org"
+repository = "https://github.com/GlobalPlatform/TPS-API-Reference-Implementations"
+rust-version = "1.85"
+readme = "README.md"
+keywords = ["cbor", "cddl", "cose", "gui", "edn"]
+categories = ["development-tools", "encoding"]
+# Not published: this is a developer application, distributed as a built binary rather than as a
+# library, and it is the only crate here that needs the MPL-2.0 exceptions in deny.toml.
+publish = false
+
+[[bin]]
+name = "cbor-ide"
+path = "src/main.rs"
+
+[dependencies]
+# The domain layer: document model, conversion, span mapping, CDDL validation and tracing, COSE
+# and the key store. Everything this crate adds on top is GPUI contact; see ../tps_cbor_core.
+#
+# It reaches the two grammars itself, and -- critically -- names no `tree-sitter` version, so it
+# composes with gpui-kit's 0.26 here and with tps_cbor_tui's 0.27 in the root workspace.
+tps_cbor_core = { path = "../tps_cbor_core", version = "0.10.0" }
+
+# The COSE library, for the three types the key pane handles directly: `CoseKey` (decoded from the
+# bytes `KeyStore::load` returns), `EncryptAlgorithm` (the `Encrypt` dropdown's value, so that
+# `ops::encrypt` takes the choice without a lookup in between), and the key structs the tests build
+# public-only keys out of.
+#
+# Declared rather than reached through tps_cbor_core, which deliberately re-exports neither this nor
+# `zeroize` (`tps_cbor_core/src/lib.rs:40-43`): depending on a transitive dependency without naming
+# it is how a build breaks on someone else's upgrade -- the same rule serde_json is declared under
+# below. It is already in the lockfile via tps_cbor_core, so it costs no build time, and it names no
+# `tree-sitter` version, so it cannot disturb the resolution this crate's own workspace exists for.
+#
+# No feature list, deliberately: which algorithms exist is tps_cbor_core's decision ("one tested
+# copy of each algorithm", `tps_cbor_core/CLAUDE.md`), and Cargo unifies features across the graph,
+# so this crate sees exactly the COSE the core crate built. Repeating its four features here would
+# be a second place for that decision to be made, and the two would drift.
+tps_cose = { path = "../tps_cose", version = "0.10.0" }
+
+# Pinned exactly because gpui-kit is pre-1.0 and went 0.6.0 -> 0.8.1 in under two months. It is an
+# umbrella crate: `use gpui_kit::*` *is* GPUI, and it pins its own matching GPUI snapshot
+# (gpui-pre 0.3.10), so this one line is the whole UI stack and upstream Zed churn cannot reach us.
+#
+# "tree-sitter" is NOT a default feature (default = ["component", "assets"]) and it gates the
+# entire native highlighter module, and with it code folding and syntax-aware editing. Without it
+# the editor falls back to syntect or to no highlighting at all. It pulls in only tree-sitter and
+# tree-sitter-json.
+#
+# "tree-sitter-languages" is deliberately NOT enabled. It is only a bundle of ~35 built-in grammar
+# crates for Markdown and the built-in CodeEditor; LanguageRegistry::register and LanguageConfig
+# are not gated behind it. Leaving it off is what lets us register just cddl and edn and keeps
+# those 35 grammar crates out of the dependency graph.
+gpui-kit = { version = "=0.8.1", features = ["tree-sitter"] }
+
+# Not a dependency we want, and not used in any source file here.
+#
+# gpui-kit 0.8.1's optional "gpui-fast" feature depends on gpui-fast 0.1.12, which requires
+# taffy "=0.15.0", while gpui-pre 0.3.10 requires taffy "^0.15.0" and resolves it to 0.15.1. Any
+# resolution that considers optional dependencies is therefore unsatisfiable -- and that includes
+# `cargo metadata`, so `cargo deny`, `cargo tree --all-features` and `cargo audit` all fail
+# outright, as does declaring gpui-kit under [dev-dependencies] to get its "test-support" feature.
+# A plain `cargo build` is unaffected, because the lockfile never contains gpui-fast.
+#
+# 0.15.0 satisfies both constraints, so pinning it here is what makes the resolver, the hygiene
+# gates and the headless UI tests work at all. Remove this line once gpui-kit fixes the conflict
+# upstream, and re-check that `cargo metadata` still resolves without it.
+taffy = "=0.15.0"
+
+# The two grammars the IDE registers at startup. Neither pulls tree-sitter in as a normal
+# dependency -- they depend only on tree-sitter-language, the deliberately ABI-stable handoff crate
+# -- so from here they add no tree-sitter version constraint. They do each *dev*-depend on
+# tree-sitter ^0.27, which is exactly why this crate must be its own workspace: a workspace
+# member's dev-dependencies are resolved whether or not anything is testing it, whereas a path
+# dependency's are not. See the [workspace] comment above.
+tree-sitter-cddl = { path = "../tree-sitter-cddl", version = "0.10.0" }
+tree-sitter-edn = { path = "../tree-sitter-edn", version = "0.10.0" }
+
+# Used only by src/theme.rs, and only because gpui-component leaves no other way in: `ThemeStyle`,
+# the per-capture syntax style, has private fields, no constructor and no `From` impl
+# (gpui-component/src/highlighter/registry.rs:226), so deserializing is the sole public route to
+# one. The theme JSON format it expects is gpui-component's own, which is Zed's.
+#
+# Already in the graph via gpui-kit, so this costs no build time; it is declared here because
+# depending on a transitive dependency without naming it is how a build breaks on someone else's
+# upgrade.
+serde_json = "1.0"
+
+[profile.release]
+# A developer application shipped as a binary, so size and start-up matter and compile time does
+# not: one codegen unit and full optimisation, with the symbols stripped.
+opt-level = 3
+codegen-units = 1
+strip = "symbols"
+# `panic = "abort"`, which is safe here for a reason worth stating: nothing in this crate catches a
+# panic, and GPUI's own event loop does not unwind across the platform boundary either -- a panic in
+# a render closure takes the window down whichever setting is used. Aborting makes that honest and
+# removes the landing pads.
+panic = "abort"
+# LTO is **off**, on purpose, and this is the one line here that is a decision rather than a
+# default. `ring` fails to link under LTO on this toolchain -- the `CFLAGS=-fno-lto` workaround
+# every build of this workspace carries exists for exactly that -- and `ring` is in the graph
+# through tps_cose. A release profile that is 10% larger is better than one that may not link at
+# all. Turning it on is a one-line experiment for whoever has a toolchain where `ring` cooperates.
+lto = false
+
+[dev-dependencies]
+# gpui-kit's headless UI harness: renders real components in windowless windows, dispatches
+# pointer and keyboard events, and queries them by id and accessibility role. Needs no display and
+# no GPU. Note that gpui-kit's own `[[test]] rendering` is `test = false` because it requires real
+# Metal or WGPU; only this harness is usable in CI.
+gpui-kit = { version = "=0.8.1", features = ["tree-sitter", "test-support"] }

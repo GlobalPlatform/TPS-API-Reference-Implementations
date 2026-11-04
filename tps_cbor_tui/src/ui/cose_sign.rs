@@ -7,7 +7,11 @@
 use ratatui::text::Line;
 
 /// Render the sign/verify screen body: active key summary + last status.
-pub fn render_sign_screen(active_alias: Option<&str>, artifact_len: usize, status: Option<&str>) -> Vec<Line<'static>> {
+pub fn render_sign_screen(
+    active_alias: Option<&str>,
+    artifact_len: usize,
+    status: Option<&str>,
+) -> Vec<Line<'static>> {
     let mut lines = vec![
         Line::from(format!(
             "active key: {}",

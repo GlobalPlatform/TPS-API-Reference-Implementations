@@ -19,11 +19,32 @@ members = [
     "tree-sitter-cddl",
     "tree-sitter-edn",
     "tps_ts_highlight_tool",
-    "tps_cbor_tui"
+    "tps_cbor_tui",
+    "tps_cbor_core",
 ]
 # tock/ is its own, isolated Cargo workspace (see tock/Cargo.toml). Its apps path-depend
 # back into this root workspace's crates (tps_client_api, tps_client_common, ...), and
 # without this exclude, Cargo unifies the whole invocation under this root workspace when
 # resolving those escaping path deps, breaking `workspace.package.*` inheritance for
 # tock/third_party/libtock-rs's own nested workspace.
-exclude = ["tock"]
+#
+# tps_cbor_ide/ is likewise its own workspace, for a different reason: the `tree-sitter` crate
+# declares `links = "tree-sitter"`, so a single Cargo resolution may contain exactly one version
+# of it. gpui-kit requires ^0.26.13 (via gpui-component), while tree-sitter-cddl and
+# tree-sitter-edn dev-depend on ^0.27 and tps_cbor_tui and tps_ts_highlight_tool depend on it
+# directly. Those are irreconcilable in one graph, and a workspace member's dev-dependencies
+# count towards resolution even when nothing is testing it. Isolating the IDE lets each side keep
+# the version it needs; the grammars are shared as path dependencies, which is safe because they
+# expose only `tree_sitter_language::LanguageFn`, the ABI-stable handoff type, and a path
+# dependency's own dev-dependencies are not resolved from outside its workspace.
+#
+# Reverse this -- move tps_cbor_ide back into `members` -- once gpui-component requires
+# tree-sitter 0.27 or later. Until then the IDE is built and tested with its own cargo
+# invocation: `cargo test --manifest-path tps_cbor_ide/Cargo.toml`.
+#
+# tps_cbor_gui/src-tauri is excluded because the crate is retired, not because it conflicts:
+# tps_cbor_ide replaces it feature for feature (see tps_cbor_gui/RETIRED.md). It is excluded
+# rather than deleted so the React panels and PLAN.md stay readable as the record of what the
+# replacement had to match, and so `cargo` inside that directory says it is outside the
+# workspace rather than trying to resolve Tauri 1.x.
+exclude = ["tock", "tps_cbor_ide"]

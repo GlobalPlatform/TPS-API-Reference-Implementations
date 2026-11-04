@@ -7,6 +7,14 @@
 use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span};
 
+/// Bytes per row in every hex dump this crate renders.
+///
+/// Named because it is also the divisor that turns a diagnostic's byte offset
+/// into the row to scroll to — see `App::jump_to_selected_check_diagnostic`.
+/// Three copies of `16`, one of them a division, is a jump that lands on the
+/// wrong row the day the dump gets wider.
+pub const DUMP_WIDTH: usize = 16;
+
 /// Render `bytes` as a classic offset/hex/ASCII dump, `width` bytes per row.
 pub fn render_hex_dump(bytes: &[u8], width: usize) -> Vec<Line<'static>> {
     let width = width.max(1);
@@ -36,7 +44,13 @@ pub fn render_hex_dump(bytes: &[u8], width: usize) -> Vec<Line<'static>> {
         spans.push(Span::raw(" "));
         let ascii: String = chunk
             .iter()
-            .map(|&b| if (0x20..0x7f).contains(&b) { b as char } else { '.' })
+            .map(|&b| {
+                if (0x20..0x7f).contains(&b) {
+                    b as char
+                } else {
+                    '.'
+                }
+            })
             .collect();
         spans.push(Span::styled(ascii, Style::default().fg(Color::White)));
 
@@ -59,11 +73,7 @@ mod tests {
     fn single_row_contains_offset_and_ascii() {
         let lines = render_hex_dump(b"Hi!", 16);
         assert_eq!(lines.len(), 1);
-        let rendered: String = lines[0]
-            .spans
-            .iter()
-            .map(|s| s.content.as_ref())
-            .collect();
+        let rendered: String = lines[0].spans.iter().map(|s| s.content.as_ref()).collect();
         assert!(rendered.starts_with("00000000"));
         assert!(rendered.contains("48 69 21"));
         assert!(rendered.contains("Hi!"));
@@ -74,11 +84,7 @@ mod tests {
         let bytes: Vec<u8> = (0..20).collect();
         let lines = render_hex_dump(&bytes, 16);
         assert_eq!(lines.len(), 2);
-        let second: String = lines[1]
-            .spans
-            .iter()
-            .map(|s| s.content.as_ref())
-            .collect();
+        let second: String = lines[1].spans.iter().map(|s| s.content.as_ref()).collect();
         assert!(second.starts_with("00000010"));
     }
 }

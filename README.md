@@ -270,3 +270,8 @@ checked in, and this path is not covered by CI. Prefer the Cargo instructions ab
 Credit to the team at [Devolutions](https://devolutions.net) for CMakeRust, which is dual
 MIT/Apache-2.0 licensed.
 
+### Bare-metal (TockOS) builds
+
+`tock/` is a separate Cargo workspace with its own toolchain pinning, git submodules and build
+scripts. See `tock/README.md` for setup and for the `build_opentitan.sh` /
+`run_opentitan_test.sh` / `build_pico.sh` / `flash_pico.sh` workflows.

@@ -1,0 +1,219 @@
+; RFC9711 CDDL
+;
+
+; This is an extension to CWT, so
+; #start rfc8392.Claims-Set
+; #include rfc8392
+;
+; Common data types - Section 7.2.1
+;
+time-int = #6.1(int)
+binary-data = JC< base64-url-text, bstr>
+base64-url-text = tstr .regexp "[A-Za-z0-9_-]+"
+general-oid = JC< json-oid, ~oid >
+json-oid = tstr .regexp "([0-2])((\\.0)|(\\.[1-9][0-9]*))*"
+general-uri = JC< text, ~uri >
+coap-content-format = uint .le 65535
+
+;
+; Payload CDDL - Section 7.3.1
+;
+$$Claims-Set-Claims //=
+    (nonce-label => nonce-type / [ 2* nonce-type ])
+nonce-type = JC< tstr .size (8..88), bstr .size (8..64)>
+$$Claims-Set-Claims //= (ueid-label => ueid-type)
+ueid-type = JC<base64-url-text .size (10..44) , bstr .size (7..33)>
+$$Claims-Set-Claims //= (sueids-label => sueids-type)
+sueids-type = {
+    + tstr => ueid-type
+}
+$$Claims-Set-Claims //= (
+    oemid-label => oemid-pen / oemid-ieee / oemid-random
+)
+oemid-pen = int
+oemid-ieee = JC<oemid-ieee-json, oemid-ieee-cbor>
+oemid-ieee-cbor = bstr .size 3
+oemid-ieee-json = base64-url-text .size 4
+oemid-random = JC<oemid-random-json, oemid-random-cbor>
+oemid-random-cbor = bstr .size 16
+oemid-random-json = base64-url-text .size 24
+$$Claims-Set-Claims //=  (
+    hardware-version-label => hardware-version-type
+)
+hardware-version-type = [
+    version:  tstr,
+    ? scheme:  $version-scheme
+]
+$$Claims-Set-Claims //= (
+    hardware-model-label => hardware-model-type
+)
+hardware-model-type = JC<base64-url-text .size (4..44),
+                         bytes .size (1..32)>
+$$Claims-Set-Claims //= ( sw-name-label => tstr )
+$$Claims-Set-Claims //= (sw-version-label => sw-version-type)
+sw-version-type = [
+    version:  tstr
+    ? scheme:  $version-scheme
+]
+$$Claims-Set-Claims //= (oem-boot-label => bool)
+$$Claims-Set-Claims //= ( debug-status-label => debug-status-type )
+debug-status-type = ds-enabled /
+                    disabled /
+                    disabled-since-boot /
+                    disabled-permanently /
+                    disabled-fully-and-permanently
+ds-enabled                     = JC< "enabled", 0 >
+disabled                       = JC< "disabled", 1 >
+disabled-since-boot            = JC< "disabled-since-boot", 2 >
+disabled-permanently           = JC< "disabled-permanently", 3 >
+disabled-fully-and-permanently =
+                       JC< "disabled-fully-and-permanently", 4 >
+$$Claims-Set-Claims //= (location-label => location-type)
+location-type = {
+    latitude => number,
+    longitude => number,
+    ? altitude => number,
+    ? accuracy => number,
+    ? altitude-accuracy => number,
+    ? heading => number,
+    ? speed => number,
+    ? timestamp => ~time-int,
+    ? age => uint
+}
+latitude          = JC< "latitude",          1 >
+longitude         = JC< "longitude",         2 >
+altitude          = JC< "altitude",          3 >
+accuracy          = JC< "accuracy",          4 >
+altitude-accuracy = JC< "altitude-accuracy", 5 >
+heading           = JC< "heading",           6 >
+speed             = JC< "speed",             7 >
+timestamp         = JC< "timestamp",         8 >
+age               = JC< "age",               9 >
+$$Claims-Set-Claims //= (uptime-label => uint)
+$$Claims-Set-Claims //=  (boot-seed-label => binary-data)
+$$Claims-Set-Claims //= (boot-count-label => uint)
+$$Claims-Set-Claims //= ( intended-use-label => intended-use-type )
+intended-use-type = JC< text, int>
+$$Claims-Set-Claims //= (
+    dloas-label => [ + dloa-type ]
+)
+dloa-type = [
+    dloa_registrar: general-uri
+    dloa_platform_label: text
+    ? dloa_application_label: text
+]
+$$Claims-Set-Claims //= (profile-label => general-uri / general-oid)
+$$Claims-Set-Claims //= (
+    manifests-label => manifests-type
+)
+manifests-type = [+ manifest-format]
+manifest-format = [
+    content-type:   coap-content-format,
+    content-format: JC< $manifest-body-json,
+                        $manifest-body-cbor >
+]
+$manifest-body-cbor /= bytes .cbor untagged-coswid
+$manifest-body-json /= base64-url-text
+$$Claims-Set-Claims //= (
+    measurements-label => measurements-type
+)
+measurements-type = [+ measurements-format]
+measurements-format = [
+    content-type:   coap-content-format,
+    content-format: JC< $measurements-body-json,
+                        $measurements-body-cbor >
+]
+$measurements-body-cbor /= bytes .cbor untagged-coswid
+$measurements-body-json /= base64-url-text
+$$Claims-Set-Claims //= (
+    measurement-results-label =>
+        [ + measurement-results-group ] )
+measurement-results-group = [
+    measurement-system: tstr,
+    measurement-results: [ + individual-result ]
+]
+individual-result = [
+    result-id:  tstr / binary-data,
+    result:     result-type,
+]
+result-type = comparison-success /
+              comparison-fail /
+              comparison-not-run /
+              measurement-absent
+comparison-success       = JC< "success",       1 >
+comparison-fail          = JC< "fail",          2 >
+comparison-not-run       = JC< "not-run",       3 >
+measurement-absent       = JC< "absent",        4 >
+Detached-Submodule-Digest = [
+   hash-algorithm : text / int,
+   digest         : binary-data
+]
+BUNDLE-Messages = BUNDLE-Tagged-Message / BUNDLE-Untagged-Message
+BUNDLE-Tagged-Message   = #6.602(BUNDLE-Untagged-Message)
+BUNDLE-Untagged-Message = Detached-EAT-Bundle
+Detached-EAT-Bundle = [
+    main-token : Nested-Token,
+    detached-claims-sets: {
+        + tstr => JC<json-wrapped-claims-set,
+                     cbor-wrapped-claims-set>
+    }
+]
+json-wrapped-claims-set = base64-url-text
+cbor-wrapped-claims-set = bstr .cbor Claims-Set
+nonce-label                = JC< "eat_nonce",    10 >
+ueid-label                 = JC< "ueid",         256 >
+sueids-label               = JC< "sueids",       257 >
+oemid-label                = JC< "oemid",        258 >
+hardware-model-label       = JC< "hwmodel",      259 >
+hardware-version-label     = JC< "hwversion",    260 >
+uptime-label               = JC< "uptime",       261 >
+oem-boot-label             = JC< "oemboot",      262 >
+debug-status-label         = JC< "dbgstat",      263 >
+location-label             = JC< "location",     264 >
+profile-label              = JC< "eat_profile",  265 >
+submods-label              = JC< "submods",      266 >
+boot-count-label           = JC< "bootcount",    267 >
+boot-seed-label            = JC< "bootseed",     268 >
+dloas-label                = JC< "dloas",        269 >
+sw-name-label              = JC< "swname",       270 >
+sw-version-label           = JC< "swversion",    271 >
+manifests-label            = JC< "manifests",    272 >
+measurements-label         = JC< "measurements", 273 >
+measurement-results-label  = JC< "measres" ,     274 >
+intended-use-label         = JC< "intuse",       275 >
+
+;
+; CBOR-specific - Section 7.3.2
+;
+EAT-CBOR-Token = $CBOR-Tagged-Token / $EAT-CBOR-Untagged-Token
+$CBOR-Tagged-Token /= CWT-Tagged-Message
+$CBOR-Tagged-Token /= BUNDLE-Tagged-Message
+$EAT-CBOR-Untagged-Token /= CWT-Untagged-Message
+$EAT-CBOR-Untagged-Token /= BUNDLE-Untagged-Message
+Nested-Token = CBOR-Nested-Token
+CBOR-Nested-Token =
+    JSON-Token-Inside-CBOR-Token /
+    CBOR-Token-Inside-CBOR-Token
+CBOR-Token-Inside-CBOR-Token = bstr .cbor $CBOR-Tagged-Token
+JSON-Token-Inside-CBOR-Token = tstr
+$$Claims-Set-Claims //= (submods-label => { + text => Submodule })
+Submodule = Claims-Set / CBOR-Nested-Token /
+            Detached-Submodule-Digest
+
+;
+; JSON-specific - Section 7.3.3
+;
+EAT-JSON-Token = $EAT-JSON-Token-Formats
+$EAT-JSON-Token-Formats /= JWT-Message
+$EAT-JSON-Token-Formats /= BUNDLE-Untagged-Message
+Nested-Token = JSON-Selector
+JSON-Selector = $JSON-Selector
+$JSON-Selector /= [type: "JWT", nested-token: JWT-Message]
+$JSON-Selector /= [type: "CBOR", nested-token:
+  CBOR-Token-Inside-JSON-Token]
+$JSON-Selector /= [type: "BUNDLE", nested-token: Detached-EAT-Bundle]
+$JSON-Selector /= [type: "DIGEST", nested-token:
+  Detached-Submodule-Digest]
+CBOR-Token-Inside-JSON-Token = base64-url-text
+$$Claims-Set-Claims //= (submods-label => { + text => Submodule })
+Submodule = Claims-Set / JSON-Selector

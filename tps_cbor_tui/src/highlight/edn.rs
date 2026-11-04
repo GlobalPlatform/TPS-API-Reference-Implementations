@@ -117,11 +117,7 @@ mod tests {
     fn highlights_a_simple_map() {
         let lines = highlight_edn(r#"{1: "a", 2: [true, false, null]}"#);
         assert_eq!(lines.len(), 1);
-        let rendered: String = lines[0]
-            .spans
-            .iter()
-            .map(|s| s.content.as_ref())
-            .collect();
+        let rendered: String = lines[0].spans.iter().map(|s| s.content.as_ref()).collect();
         assert_eq!(rendered, r#"{1: "a", 2: [true, false, null]}"#);
     }
 

@@ -1,0 +1,27 @@
+; A deliberately small schema for exercising the validation tracer.
+;
+; `flat_tee_claims_good.cbor` and `flat_tee_claims_bad.cbor` do *not* form a positive/negative
+; pair: `Claims-Set` ends with `* Claim-Label .feature "extended-claims-label" => any`, and that
+; arm absorbs any unrecognised label without descending into it, so both documents are accepted.
+; This schema has no catch-all, so `trace_demo_good.cbor` matches and `trace_demo_bad.cbor` does
+; not.
+;
+; The failure is deliberately *three levels down* -- map, array, map, member -- so that a trace
+; over it shows depth indentation, a sticky fail on an enclosing rule, matched siblings beside a
+; failed one, and a CDDL/CBOR/EDN span triple that all point somewhere a human can check.
+
+;# start Report
+
+Report = {
+  1 => tstr,            ; name
+  2 => [+ Measurement], ; one or more measurements
+  ? 3 => bool           ; whether the report was verified
+}
+
+Measurement = {
+  1 => tstr,  ; label
+  2 => Digest,
+  3 => uint   ; sequence number -- the member `trace_demo_bad.cbor` gets wrong
+}
+
+Digest = bstr .size 4

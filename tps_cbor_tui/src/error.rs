@@ -15,8 +15,15 @@ pub enum AppError {
     #[error("EDN parse error: {0}")]
     Edn(#[from] tps_minicbor::EdnError),
 
+    /// A key store operation `tps_cbor_core` refused.
+    ///
+    /// Named after `tps_cbor_core::keystore::KeyStoreError` rather than the broader `CoreError`
+    /// the migration plan called for: `?` applies exactly one `From`, and `CoreError` reaches
+    /// `KeyStoreError` only through its own `#[from]`, so a `Core(CoreError)` variant would not
+    /// have converted `KeyStore::open(..)?` at all. The COSE operations need no variant — every
+    /// one of them is `match`ed and formatted into the status line, never propagated.
     #[error("key store error: {0}")]
-    KeyStore(#[from] crate::keystore::KeyStoreError),
+    KeyStore(#[from] tps_cbor_core::keystore::KeyStoreError),
 
     #[error("{0}")]
     Other(String),

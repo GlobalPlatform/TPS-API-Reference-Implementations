@@ -6,19 +6,29 @@
 
 use ratatui::text::Line;
 
-use crate::keystore::KeyMeta;
+use tps_cbor_core::keystore::KeyMeta;
 
 /// Render the key list, marking the cursor row and the active key (if any).
-pub fn render_key_list(keys: &[KeyMeta], selected: usize, active_alias: Option<&str>) -> Vec<Line<'static>> {
+pub fn render_key_list(
+    keys: &[KeyMeta],
+    selected: usize,
+    active_alias: Option<&str>,
+) -> Vec<Line<'static>> {
     if keys.is_empty() {
-        return vec![Line::from("(no keys — press 'g' to generate or 'i' to import)")];
+        return vec![Line::from(
+            "(no keys — press 'g' to generate or 'i' to import)",
+        )];
     }
 
     keys.iter()
         .enumerate()
         .map(|(i, k)| {
             let cursor = if i == selected { ">" } else { " " };
-            let active = if active_alias == Some(k.alias.as_str()) { "*" } else { " " };
+            let active = if active_alias == Some(k.alias.as_str()) {
+                "*"
+            } else {
+                " "
+            };
             let alg = k
                 .algorithm
                 .map(|a| a.to_string())

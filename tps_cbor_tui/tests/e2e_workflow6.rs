@@ -11,7 +11,10 @@
 //! directly.
 
 use tps_cddl::{Config, build_cddl, check_cbor, lex};
-use tps_cose::{Algorithm, Es256PrivateKey, Es256PublicKey, Payload, Sign1Builder, decode_sign1, verify_sign1_es256};
+use tps_cose::{
+    Algorithm, Es256PrivateKey, Es256PublicKey, Payload, Sign1Builder, decode_sign1,
+    verify_sign1_es256,
+};
 use tps_minicbor::Decoder;
 
 // Same fixed P-256 test vector used by `tps_cbor_tui/src/cose_ops.rs`'s own
@@ -64,7 +67,8 @@ fn workflow6_load_validate_sign_verify_round_trip() {
     // 2. Decode to EDN (as the CBOR<->EDN viewer would).
     let dec = Decoder::new(&original);
     let mut edn = String::new();
-    dec.write_diagnostic_all_fmt(&mut edn).expect("decode to EDN");
+    dec.write_diagnostic_all_fmt(&mut edn)
+        .expect("decode to EDN");
     assert!(edn.contains("Bern"));
 
     // 3. Validate against a CDDL schema (RFC 8610 Appendix H, §3.3 Geography).
@@ -73,7 +77,10 @@ fn workflow6_load_validate_sign_verify_round_trip() {
     let cddl = build_cddl(pairs).expect("build CDDL");
     let mismatches =
         check_cbor(&original, &cddl, Some("Geography"), &Config::default()).expect("check_cbor");
-    assert!(mismatches.is_empty(), "expected no mismatches, got {mismatches:?}");
+    assert!(
+        mismatches.is_empty(),
+        "expected no mismatches, got {mismatches:?}"
+    );
 
     // 4. Sign the validated artifact with an ES256 key.
     let d = decode_base64url("V8kgd2ZBRuh2dgyVINBUqpPDr7BOMGcF22CQMIUHtNM");
@@ -86,7 +93,11 @@ fn workflow6_load_validate_sign_verify_round_trip() {
     let mut signature_buf = vec![0u8; 128];
     let mut out = vec![0u8; payload_len + 1024];
 
-    let priv_key = Es256PrivateKey { d: &d, x: &x, y: &y };
+    let priv_key = Es256PrivateKey {
+        d: &d,
+        x: &x,
+        y: &y,
+    };
     let n = Sign1Builder::new(&[], &[])
         .algorithm(Algorithm::Es256)
         .payload(Payload::Attached(&original))

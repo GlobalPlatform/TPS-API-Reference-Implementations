@@ -5,7 +5,7 @@
 
 [package]
 name = "tps_cbor_tui"
-version = "0.10.0"
+version = "0.10.1"
 authors = ["Jeremy O'Donoghue <jodonogh@qti.qualcomm.com>"]
 edition = "2024"
 license = "MIT"
@@ -23,18 +23,26 @@ path = "src/main.rs"
 
 [dependencies]
 ratatui = "0.30"
+# Deliberately the same major version ratatui measures its own cells with, so
+# `ui::wrap` breaks lines on the column the renderer will actually draw them
+# in. A wrap that counted differently from the renderer would put the cursor
+# on the wrong cell for every line holding a wide character.
+unicode-width = "0.2"
 crossterm = "0.29"
+# The shared domain layer: the COSE operations and the key store live there, so this crate does
+# not have a second copy of either. It brings `ring`, `serde` and `serde_json` transitively, which
+# is why they are no longer listed here.
+tps_cbor_core = { path = "../tps_cbor_core", version = "0.10.0" }
 tps_minicbor = { path = "../tps_minicbor", version = "0.10.0", features = ["std", "edn", "diagnostic", "float"] }
 tps_cddl = { path = "../tps_cddl", version = "0.10.0", features = ["modules"] }
-pest = "2"
 tps_cose = { path = "../tps_cose", version = "0.10.0", features = ["ring", "std", "cose_sign", "float"] }
 tree-sitter = "0.27"
 tree-sitter-highlight = "0.27"
 tree-sitter-edn = { path = "../tree-sitter-edn", version = "0.10.0" }
 hex = "0.4"
 thiserror = "2"
-serde = { version = "1", features = ["derive"] }
-serde_json = { version = "1", default-features = false, features = ["std"] }
 clap = { version = "4", features = ["derive"] }
-ring = "0.17"
+# Named directly because `App::active_key_bytes` and `bytes_to_copy` are annotated `Zeroizing`;
+# `tps_cbor_core` does not re-export it.
+zeroize = "1"
 arboard = "3"

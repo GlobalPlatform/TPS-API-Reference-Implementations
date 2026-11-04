@@ -1,0 +1,304 @@
+;***************************************************************************************************
+; Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+; SPDX-License-Identifier: MIT
+;**************************************************************************************************/
+;==================================================================================================
+; GlobalPlatform Entity Attestation Protocol.
+; Normative CDDL
+; Copyright (C) GlobalPlatform 2026. All rights reserved.
+;==================================================================================================
+
+;==================================================================================================
+;; Claims from CWT (RFC8392) and EAT (RFC9711) (Section 7.3, 7.4)
+;==================================================================================================
+; Include all claims from RFC9711 and RFC8392
+;# include rfc9711
+; This is an extension to CWT, so
+;# start rfc8392.Claims-Set
+
+;; Plug-in to the top-level EAT claims set = Section 7.5.1
+$$Claims-Set-Claims //= (globalplatform_component => gp_component_claims)
+globalplatform_component = -261
+gp_component_claims = { * $$GP-Claims }
+
+;==================================================================================================
+;; Data Types (Section 7.1)
+;==================================================================================================
+gp_bcd_type = bstr                                                                 ; Section 7.1.1
+uuid = bstr .size 16                                                               ; Section 7.1.2
+gp_security_rating_type = &(
+    unknown: 0
+    basic: 5
+    substantial: 10
+    high: 15
+)                                                                                  ; Section 7.1.3
+gp_se_secure_element_type_type = &(
+    se : 0
+    ese : 5
+    ise : 10
+)                                                                                  ; Section 7.1.4
+gp_se_card_lifecycle_state_type = &(
+    op_ready: 0
+    initialized: 5
+    secured: 10
+    card_locked: 15
+    terminated: 20
+)                                                                                  ; Section 7.1.5
+gp_se_supplementary_security_domains_type = {
+  * gp_se_supplementary_security_domain_id => {
+      ? &( issuer_number: 1 ) => gp_bcd_type
+      ? &( image_number: 2 ) => bstr
+      ? &( key_derivation_data: 3  ) => bstr
+      ? &( key_information_data: 4  ) => bstr
+      ? &( default_kvn: 5  ) => uint
+      ? &( default_kvn_sequence_ctr: 6  ) => bstr
+  }
+}                                                                                  ; Section 7.1.6
+gp_se_supplementary_security_domain_id = bstr
+gp_tee_lifecycle_state_type = &(
+    tee_locked: 0
+    tee_secured: 1
+)                                                                                  ; Section 7.1.7
+gp_tee_trusted_os_architectures_type = {
+  * &(arch_name: tstr) => {
+      ? &( isa_processor_type: 0) => tstr
+      ? &( isa_instruction_set: 1) => tstr
+      ? &( isa_address_size: 2) => uint
+      ? &( isa_abi_information: 3) => uint
+      ? &( isa_endianness: 4) => gp_endianness_type
+  }
+}                                                                                  ; Section 7.1.8
+gp_endianness_type = &(
+    little_endian: 0
+    big_endian: 1
+    reserved: 2..127
+    implementation_defined: 128..255
+)                                                                                  ; Section 7.1.9
+gp_tee_options_type = {
+	* tstr => uint
+}                                                                                  ; Section 7.1.10
+gp_tee_implementation_properties_type = {
+  ? &( gpd_tee_apiversion: 0  ) => tstr
+  ? &( gpd_tee_internalCore_version: 1  ) => int
+  ? &( gpd_tee_description: 2  ) => tstr
+  ? &( gpd_tee_deviceID: 3  ) => uuid
+  ? &( gpd_tee_name: 4  ) => tstr
+  ? &( gpd_tee_implementationStackHash: 5  ) => bstr
+  ? &( gpd_tee_implementationStack: 6  ) => bstr .cbor gp_tee_pathList
+  ? &( gpd_tee_systemTime_protectionLevel: 7  ) => int
+  ? &( gpd_tee_TAPersistentTime_protectionLevel: 8  ) => int
+  ? &( gpd_tee_arith_maxBigIntSize: 9  ) => int
+  ? &( gpd_tee_cryptography_ecc: 10  ) => bool
+  ? &( gpd_tee_cryptography_nist: 11  ) => bool
+  ? &( gpd_tee_cryptography_bsi_r: 12  ) => bool
+  ? &( gpd_tee_cryptography_bsi_t: 13  ) => bool
+  ? &( gpd_tee_cryptography_ietf: 14  ) => bool
+  ? &( gpd_tee_cryptography_octa: 15  ) => bool
+  ? &( gpd_tee_cryptography_sec: 16  ) => bool
+  ? &( gpd_tee_cryptography_falcon: 17  ) => bool
+  ? &( gpd_tee_cryptography_NISTpqc_crystals: 18  ) => bool
+  ? &( gpd_tee_cryptography_NISTpqc_SLHDSA: 19  ) => bool
+  ? &( gpd_tee_cryptography_statefulVerification: 20  ) => bool
+  ? &( gpd_tee_cryptography_statefulSignatures: 21  ) => bool
+  ? &( gpd_tee_cryptography_FrodoKEM: 22  ) => bool
+  ? &( gpd_tee_cryptography_NTRU: 23  ) => bool
+  ? &( gpd_tee_cryptography_maxRetainedData: 25  ) => int
+  ? &( gpd_tee_trustedStorage_private_rollbackProtection: 26  ) => int
+  ? &( gpd_tee_trustedStorage_perso_rollbackProtection: 27  ) => int
+  ? &( gpd_tee_trustedStorage_protected_rollbackProtection: 28  ) => int
+  ? &( gpd_tee_trustedStorage_antiRollback_protectionLevel: 29  ) => int
+  ? &( gpd_tee_trustedStorage_rollbackDetection_protectionLevel: 30  ) => int
+  ? &( gpd_tee_trustedos_implementation_version: 31  ) => tstr
+  ? &( gpd_tee_trustedos_implementation_binaryversion: 32  ) => bstr
+  ? &( gpd_tee_trustedos_manufacturer: 33  ) => tstr
+  ? &( gpd_tee_firmware_implementation_version: 34  ) => tstr
+  ? &( gpd_tee_firmware_implementation_binaryversion: 35  ) => bstr
+  ? &( gpd_tee_firmware_manufacturer: 36  ) => tstr
+  ? &( gpd_tee_event_maxSources: 37  ) => int
+  ? &( gpd_tee_maskState: 38  ) => bool
+  ; Positive keys reserved for future GlobalPlatform use
+  * uint .gt 38 => any
+  ; Implementation specific properties must have negative keys
+  * nint => gp_tee_properties_value
+}                                                                                  ; Section 7.1.11
+gp_tee_properties_value = (bool / uint / tstr / bstr / gp_tee_identity)            ; Section 7.1.12
+gp_tee_identity = {
+  &( loginMethod: 0  ) => uint
+  &( uuid: 1  ) => uuid
+}                                                                                  ; Section 7.1.13
+gp_tee_trusted_applications_type = { * &(application_id: bstr) => {
+    ? &( parent: 0)            => uuid
+    ? &( lifecycle_state: 1 )  => gp_tee_ta_lifecycle_state_type
+    ? &( version: 2 )          => tstr
+    ? &( measurement: 3 )      => bstr
+    ? &( description: 4 )      => tstr
+    ? &( properties: 5 )       => { * tstr => gp_tee_properties_value }
+    ? &( extra_data: 6 )       => bstr
+  }
+}                                                                                  ; Section 7.1.14
+gp_tee_ta_lifecycle_state_type = &(
+    ta_inactive: 0
+    ta_executable: 1
+    ta_locked: 2
+)                                                                                  ; Section 7.1.15
+gp_tee_security_domains_type = {
+    * gp_tee_security_domain_id => {
+        ? &( sd_parent: 0 )          => uuid
+        ? &( sd_lifecycle_state: 1 ) => gp_tee_sd_lifecycle_state_type
+        ? &( sd_authority: 2 )       => gp_tee_sd_authority_type
+        ? &( sd_privileges: 3 )      => gp_tee_sd_privileges_type
+        ? &( sd_protocols: 4 )       => gp_tee_sd_protocols_type
+    }
+}                                                                                  ; Section 7.1.16
+gp_tee_security_domain_id = bstr
+gp_tee_sd_lifecycle_state_type = &(
+    sd_blocked: 0
+    sd_active: 1
+    sd_restricted: 2
+)                                                                                  ; Section 7.1.17
+gp_tee_sd_authority_type = {
+    &( name: 0  )    => tstr
+  ? &( urlInfo: 1  ) => tstr
+}                                                                                  ; Section 7.1.18
+gp_tee_sd_privileges_type = {
+    &( listOfPrivileges: 0  ) => [
+      * {
+          &( privilegeID: 0  ) => uint
+        ? &( privilegeParams: 1  ) => bstr
+      }
+    ]
+  ? &( isRootSD: 1  ) => true
+}                                                                                  ; Section 7.1.19
+gp_tee_sd_protocols_type = [
+  * {
+      &( protocols: 0  )    => uuid
+    ? &( protocolInfo: 1  ) => bstr
+  }
+]                                                                                  ; Section 7.1.20
+gp_tee_client_properties_type = {
+	  &( gpd_client_identity: 0  ) => gp_tee_identity
+	? &( gpd_client_endian: 1  )   => gp_endianness_type
+	? &( gpd_client_path: 2  )     => bstr .cbor gp_tee_pathList
+     ; Positive keys are reserved for future GlobalPlatform use
+       uint .gt 2 => any
+     ; Implementation specific properties must have negative keys
+       nint => gp_tee_properties_value
+}                                                                                  ; Section 7.1.21
+;==================================================================================================
+;; Claims applicable to all components (100..149)
+;==================================================================================================
+$$GP-Claims //= ( &(gp_security_rating: 100) => gp_security_rating_type )          ; Section 7.5.2
+$$GP-Claims //= ( &(gp_mud_file_url: 101) => tstr )                                ; Section 7.5.3
+$$GP-Claims //= ( &(gp_legacy_material: 102) => bstr )                             ; Section 7.5.4
+$$GP-Claims //= ( &(gp_justification: 103) => bstr )                               ; Section 7.5.5
+$$GP-Claims //= ( &(gp_context: 104) => bstr )                                     ; Section 7.5.6
+$$GP-Claims //= ( &(gp_eat_version: 107) => [ 2*4 uint ] )                         ; Section 7.5.7
+
+;==================================================================================================
+;; Claims applicable to Secure Elements (150..199)
+;==================================================================================================
+$$GP-Claims //= ( &(gp_se_isd_issuer_id_number: 150) => gp_bcd_type )              ; Section 7.6.1
+$$GP-Claims //= ( &(gp_se_isd_card_image_number: 151) => bstr )                    ; Section 7.6.2
+$$GP-Claims //= ( &(gp_se_isd_crd_runtime_type: 152) => uint )                     ; Section 7.6.3
+$$GP-Claims //= ( &(gp_se_isd_crd_runtime_version: 153) => bstr .size (3))         ; Section 7.6.4
+$$GP-Claims //= ( &(gp_se_isd_crd_gp_configuration_id: 154) => uint )              ; Section 7.6.5
+$$GP-Claims //= (
+  &(gp_se_isd_crd_gp_configuration_version: 155) => bstr .size (3)
+)                                                                                  ; Section 7.6.6
+$$GP-Claims //= (
+  &(gp_se_isd_cci_secure_channel_protocols: 156) => {
+    * gp_se_isd_cci_secure_channel_protocol_number => {
+      ? &(gp_se_isd_cci_scp_options: 1) => bstr                                  ; Section 7.6.7.1
+      ? &(gp_se_isd_cci_scp_scp03_keys: 2) => bstr                               ; Section 7.6.7.2
+      ? &(gp_se_isd_cci_scp_scp81_tls_suites: 3) => bstr                         ; Section 7.6.7.3
+      ? &(gp_se_isd_cci_scp_scp81_max_length: 4) => uint                         ; Section 7.6.7.4
+      }
+  }
+)                                                                                  ; Section 7.6.7
+gp_se_isd_cci_secure_channel_protocol_number = uint
+$$GP-Claims //= ( &(gp_se_isd_cci_ssd_privileges: 157) => bstr .size (3))          ; Section 7.6.8
+$$GP-Claims //= ( &(gp_se_isd_cci_application_privileges: 158) => bstr .size (3))  ; Section 7.6.9
+$$GP-Claims //= ( &(gp_se_isd_cci_lfdb_hash_algorithms: 159) => bstr )             ; Section 7.6.10
+$$GP-Claims //= ( &(gp_se_isd_cci_lfdb_encryption_cipher_suites: 160) => bstr)     ; Section 7.6.11
+$$GP-Claims //= ( &(gp_se_isd_cci_token_cipher_suites: 161) => bstr )              ; Section 7.6.12
+$$GP-Claims //= ( &(gp_se_isd_cci_receipt_cipher_suites: 162) => bstr )            ; Section 7.6.13
+$$GP-Claims //= ( &(gp_se_isd_cci_dap_cipher_suites: 163) => bstr )                ; Section 7.6.14
+$$GP-Claims //= ( &(gp_se_isd_cci_key_parameters: 164) => bstr )                   ; Section 7.6.15
+$$GP-Claims //= (
+  &(gp_se_secure_element_type: 165) => gp_se_secure_element_type_type
+)                                                                                  ; Section 7.6.16
+$$GP-Claims //= ( &(gp_se_operating_system_vendor: 166) => tstr )                  ; Section 7.6.17
+$$GP-Claims //= ( &(gp_se_operating_system_version: 167) => tstr )                 ; Section 7.6.18
+$$GP-Claims //= ( &(gp_se_chip_manufacturer: 168) => tstr )                        ; Section 7.6.19
+$$GP-Claims //= ( &(gp_se_chip_serial_number: 169) => bstr )                       ; Section 7.6.20
+$$GP-Claims //= ( &(gp_se_chip_version: 170) => tstr )                             ; Section 7.6.21
+$$GP-Claims //= (
+    &(gp_se_card_lifecycle_state: 171) => gp_se_card_lifecycle_state_type
+)                                                                                  ; Section 7.6.22
+$$GP-Claims //= ( &(gp_se_ccm_restriction_parameters: 172) => bstr )               ; Section 7.6.23
+$$GP-Claims //= (
+  &( gp_se_supplementary_security_domains: 173  ) => gp_se_supplementary_security_domains_type
+)                                                                                  ; Section 7.6.24
+$$GP-Claims //= ( &(gp_se_casd_certificate_store: 174) => bstr )                   ; Section 7.6.25
+
+;==================================================================================================
+;; Claims applicable to TEEs (200..250)
+;==================================================================================================
+$$GP-Claims //= ( &(gp_tee_platform_label: 200) => tstr )                          ; Section 7.7.1
+$$GP-Claims //= ( &(gp_tee_root_security_domains: 201) => [* bstr] )               ; Section 7.7.2
+$$GP-Claims //= ( &(gp_tee_lifecycle_state: 202) => gp_tee_lifecycle_state_type)   ; Section 7.7.3
+$$GP-Claims //= ( &(gp_tee_device_name: 203) => tstr )                             ; Section 7.7.4
+$$GP-Claims //= ( &(gp_tee_device_manufacturer: 204) => tstr )                     ; Section 7.7.5
+$$GP-Claims //= ( &(gp_tee_device_type: 205) => tstr )                             ; Section 7.7.6
+$$GP-Claims //= ( &(gp_tee_trusted_os_name: 206) => tstr )                         ; Section 7.7.7
+$$GP-Claims //= (
+      &(gp_tee_trusted_os_architectures: 207) =>
+        gp_tee_trusted_os_architectures_type
+)                                                                                  ; Section 7.7.8
+$$GP-Claims //= ( &(gp_tee_trusted_os_options: 208) => gp_tee_options_type )       ; Section 7.7.9
+$$GP-Claims //= ( &(gp_tee_optional_apis: 209) => gp_tee_options_type )            ; Section 7.7.10
+$$GP-Claims //= (
+  &(gp_tee_implementation_properties: 210) => gp_tee_implementation_properties_type
+)                                                                                  ; Section 7.7.11
+$$GP-Claims //= (
+  &(gp_tee_trusted_applications: 211) => gp_tee_trusted_applications_type
+)                                                                                  ; Section 7.7.12
+$$GP-Claims //= (
+  &(gp_tee_security_domains: 212) => gp_tee_security_domains_type
+)                                                                                  ; Section 7.7.13
+$$GP-Claims //= (
+  &(gp_tee_client_properties: 213)=> gp_tee_client_properties_type
+)                                                                                  ; Section 7.7.14
+
+;==================================================================================================
+;; TEE PathList - from Internal Core API >= 1.4.0
+;==================================================================================================
+; Used for gpd.tee.implementationStack and gpd.client.path
+gp_tee_pathList = [ ( gp_tee_pathItem / gp_tee_trustedChannel /
+gp_tee_pathExtension ) ]
+
+gp_tee_pathItem = {
+    &(type:0) => & ( path:0 ),
+    ? &(itemName:1) => tstr,
+    ? &(parentName:2) => tstr,
+    ? &(layerhash:3) => [ type:uint, value:bstr ],
+    ? &(cert:4) => bstr,
+    ; Negative mapkey values are available for implementation specific values
+    ; Zero/Positive values are reserved for GlobalPlatform
+    * int => any
+}
+
+gp_tee_trustedChannel = {
+    &(type:0) => & ( channel:1 ),
+    ? &(initiatorName:5) => tstr,
+    ? &(targetName:6) => tstr,
+    ; Negative mapkey values are available for implementation specific values
+    ; Zero/Positive values are reserved for GlobalPlatform
+    * int => any
+}
+
+gp_tee_pathExtension = {
+    ; Types must be negative. Positive types are reserved for GlobalPlatform
+    &(type:0) => int .lt 0,
+    * nint => any
+}

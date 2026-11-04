@@ -5,7 +5,7 @@
 
 [package]
 name = "tps_ts_highlight_tool"
-version = "0.10.0"
+version = "0.10.1"
 authors = ["Jeremy O'Donoghue <jodonogh@qti.qualcomm.com>"]
 edition = "2024"
 license = "MIT"

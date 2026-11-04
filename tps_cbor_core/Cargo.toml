@@ -1,0 +1,84 @@
+#***************************************************************************************************
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+# SPDX-License-Identifier: MIT
+#*************************************************************************************************/
+
+[package]
+name = "tps_cbor_core"
+version = "0.10.0"
+authors = ["Jeremy O'Donoghue <jodonogh@qti.qualcomm.com>"]
+edition = "2024"
+license = "MIT"
+description = "Frontend-agnostic document model and operations for CBOR, EDN, CDDL and COSE workbenches"
+homepage = "https://globalplatform.org"
+repository = "https://github.com/GlobalPlatform/TPS-API-Reference-Implementations"
+rust-version = "1.85"
+readme = "README.md"
+keywords = ["cbor", "cddl", "cose", "edn"]
+categories = ["development-tools", "encoding"]
+# Not published: this exists to be shared between tps_cbor_ide and tps_cbor_tui, and its API is
+# shaped by those two consumers rather than by a general audience.
+publish = false
+
+[dependencies]
+# "spans" is what makes the CBOR-to-EDN span table available, and the tracer's
+# jump-to-matching-span behaviour is built entirely on it. "float" is required by "edn" anyway.
+tps_minicbor = { path = "../tps_minicbor", version = "0.10.0", features = [
+    "std",
+    "diagnostic",
+    "edn",
+    "spans",
+    "float",
+] }
+# "modules" provides the ;# import / ;# include directives the CDDL tab's inner tabs follow.
+# rfc9165 and rfc9682 are compiled in so that Config can switch them on at runtime; without the
+# features, Config's flags have nothing to enable.
+tps_cddl = { path = "../tps_cddl", version = "0.10.0", features = [
+    "modules",
+    "rfc9165",
+    "rfc9682",
+] }
+tps_cose = { path = "../tps_cose", version = "0.10.0", features = [
+    "ring",
+    "std",
+    "cose_sign",
+    "float",
+] }
+
+thiserror = "2"
+hex = "0.4"
+# index.json for the key store. The settings file is TOML, not JSON, so both are needed.
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", default-features = false, features = ["std"] }
+toml = "0.9"
+# Private key scalars are wiped when dropped. Nothing in the old GUI did this.
+zeroize = { version = "1", features = ["derive"] }
+# SystemRandom, for nonces and symmetric key material. tps_cose already depends on ring for the
+# crypto itself, so this adds nothing to the graph.
+ring = "0.17"
+
+# The grammars and highlight queries `highlight.rs` re-exports. These three crates are what let
+# that module name a language without naming a `tree-sitter` version: the grammars expose only
+# `tree_sitter_language::LanguageFn`, an ABI-stable function-pointer newtype, and `tree-sitter`
+# itself appears in neither their dependencies nor ours. That is what allows tps_cbor_ide
+# (tree-sitter 0.26, via gpui-component) and tps_cbor_tui (0.27) to share this crate even though
+# `links = "tree-sitter"` forbids both versions in one resolution.
+tree-sitter-language = "0.1"
+tree-sitter-cddl = { path = "../tree-sitter-cddl", version = "0.10.0" }
+tree-sitter-edn = { path = "../tree-sitter-edn", version = "0.10.0" }
+
+# Key generation only. ring's generate APIs never hand back the raw private scalar, and it has no
+# P-521 or extractable X25519, so minting keys uses the RustCrypto curve crates, which return the
+# scalar and affine coordinates directly. All actual crypto still goes through tps_cose + ring.
+# Pinned to the 0.13 / dalek-2 lines so they share one rand_core 0.6.
+p256 = { version = "0.13", features = ["arithmetic"] }
+p384 = { version = "0.13", features = ["arithmetic"] }
+p521 = { version = "0.13", features = ["arithmetic"] }
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+x25519-dalek = { version = "2", features = ["static_secrets"] }
+rand_core = { version = "0.6", features = ["getrandom"] }
+
+# Deliberately NOT depending on `dirs`: it reaches option-ext, which is MPL-2.0 and needs an
+# exception in deny.toml. `settings::default_config_dir` reads the same environment variables
+# directly, in a dozen lines, and keeps this crate free of that obligation. tps_cbor_ide gets
+# option-ext through GPUI regardless, but tps_cbor_tui should not have to.

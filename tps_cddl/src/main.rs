@@ -919,7 +919,10 @@ fn decode_hex(input: &[u8]) -> Result<Vec<u8>, String> {
         .copied()
         .filter(|b| !b.is_ascii_whitespace())
         .collect();
-    if !digits.len().is_multiple_of(2) {
+    // `% 2 != 0` rather than `!digits.len().is_multiple_of(2)`: the latter is stable
+    // only since Rust 1.87 and this crate declares `rust-version = "1.85"`, so the
+    // crate did not build on its own declared MSRV.
+    if digits.len() % 2 != 0 {
         return Err(format!("odd number of hex digits ({})", digits.len()));
     }
     let mut out = Vec::with_capacity(digits.len() / 2);

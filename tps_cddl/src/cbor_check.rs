@@ -137,14 +137,29 @@ fn run(
     let root_name = match resolve_root(cddl, root) {
         Some(n) => n,
         None => {
-            return Ok((
-                vec![CborMismatch {
+            // `resolve_root` returns None for two quite different reasons: the schema defines no
+            // rules at all, or it defines plenty but none by the requested name. Reporting both as
+            // "empty schema" sent callers hunting for a problem in a schema that was perfectly
+            // fine -- the message is at its most misleading exactly when the schema is largest.
+            let mismatch = match root {
+                Some(name) if !cddl.rules.is_empty() => CborMismatch {
+                    path: String::new(),
+                    expected: format!("a rule named `{name}`"),
+                    got: format!(
+                        "a schema defining {} rule{}, none of them `{name}`",
+                        cddl.rules.len(),
+                        if cddl.rules.len() == 1 { "" } else { "s" }
+                    ),
+                },
+                // Either no root was requested and there is no first rule to fall back to, or one
+                // was requested and the schema is genuinely empty. Both really are empty schemas.
+                _ => CborMismatch {
                     path: String::new(),
                     expected: "a non-empty CDDL schema".into(),
                     got: "empty schema".into(),
-                }],
-                Vec::new(),
-            ));
+                },
+            };
+            return Ok((vec![mismatch], Vec::new()));
         }
     };
 
@@ -2568,5 +2583,49 @@ mod tests {
         fail(&bytes_val(&[0u8; 3]), SCHEMA);
         ok(&bytes_val(&[0u8; 7]), SCHEMA);
         fail(&bytes_val(&[0u8; 12]), SCHEMA);
+    }
+
+    /// A start rule naming a rule the schema does not define used to be
+    /// reported as `expected: "a non-empty CDDL schema", got: "empty
+    /// schema"` — the same message an actually-empty schema gets, because
+    /// `resolve_root` returns `None` for both and the caller could not tell
+    /// them apart. The message is at its most misleading when the schema is
+    /// largest: a mistyped start rule against a 254-rule merged module set
+    /// reads as though nothing parsed at all. Both cases must now name what
+    /// they actually found.
+    #[test]
+    fn an_unknown_start_rule_is_not_reported_as_an_empty_schema() {
+        let cddl = schema("x = uint\ny = tstr");
+        let m = check_cbor(&uint(1), &cddl, Some("z"), &Config::strict())
+            .unwrap_or_else(|e| panic!("CBOR decode error: {e}"));
+        assert_eq!(m.len(), 1, "expected exactly one mismatch, got {m:#?}");
+        assert_eq!(m[0].expected, "a rule named `z`");
+        assert_eq!(m[0].got, "a schema defining 2 rules, none of them `z`");
+    }
+
+    /// The pluralisation and count are part of the message's value: it tells
+    /// the user the schema did load, and how much of it, which is the fact
+    /// that distinguishes a typo from a failed include.
+    #[test]
+    fn an_unknown_start_rule_against_a_single_rule_schema_reads_correctly() {
+        let cddl = schema("x = uint");
+        let m = check_cbor(&uint(1), &cddl, Some("nope"), &Config::strict())
+            .unwrap_or_else(|e| panic!("CBOR decode error: {e}"));
+        assert_eq!(m.len(), 1, "expected exactly one mismatch, got {m:#?}");
+        assert_eq!(m[0].got, "a schema defining 1 rule, none of them `nope`");
+    }
+
+    /// A genuinely empty schema keeps the original message, whether or not a
+    /// start rule was named — there is nothing more specific to say.
+    #[test]
+    fn an_empty_schema_is_still_reported_as_an_empty_schema() {
+        let cddl = schema("");
+        for root in [None, Some("x")] {
+            let m = check_cbor(&uint(1), &cddl, root, &Config::strict())
+                .unwrap_or_else(|e| panic!("CBOR decode error: {e}"));
+            assert_eq!(m.len(), 1, "expected exactly one mismatch, got {m:#?}");
+            assert_eq!(m[0].expected, "a non-empty CDDL schema");
+            assert_eq!(m[0].got, "empty schema");
+        }
     }
 }

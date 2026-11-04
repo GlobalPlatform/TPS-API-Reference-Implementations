@@ -1,0 +1,51 @@
+#***************************************************************************************************
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
+# SPDX-License-Identifier: MIT
+#*************************************************************************************************/
+#
+# tps_cbor_ide is its own Cargo workspace (see the [workspace] comment in Cargo.toml), so the root
+# deny.toml never sees its dependency graph and this file is needed to check it. Run:
+#
+#     cargo deny --manifest-path tps_cbor_ide/Cargo.toml check licenses
+#
+# The [advisories] and [licenses] allow-list below is kept identical to the root deny.toml on
+# purpose: the licence policy is the project's, not this crate's. Only the MPL-2.0 exceptions
+# differ, and they differ only because the graphs differ. If the allow-list is changed at the root,
+# change it here too; if tps_cbor_ide ever rejoins the root workspace, delete this file and move
+# the two exceptions back.
+
+[advisories]
+version = 2
+unmaintained = "workspace"
+yanked = "warn"
+
+[licenses]
+# Identical to the root deny.toml; see that file for the reasoning behind each entry.
+allow = [
+    "MIT",
+    "Unicode-3.0",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "BSL-1.0",
+    "0BSD",
+    "CC0-1.0",
+    "ISC",
+    "Zlib",
+]
+
+
+[[licenses.exceptions]]
+allow = ["MPL-2.0"]
+name = "cbindgen"
+
+# option-ext is unavoidable for any GPUI application. 
+[[licenses.exceptions]]
+allow = ["MPL-2.0"]
+name = "option-ext"
+
+# dwrote is GPUI's DirectWrite backend, reached only on Windows. 
+[[licenses.exceptions]]
+allow = ["MPL-2.0"]
+name = "dwrote"

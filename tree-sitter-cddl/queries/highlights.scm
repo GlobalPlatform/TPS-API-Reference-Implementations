@@ -54,4 +54,12 @@
 "*" @operator
 
 (comment) @comment
-(directive_comment) @comment.documentation
+; Both names for one node, and the order is load-bearing. `comment.documentation` is the
+; nvim-treesitter name and `comment.doc` is the one gpui-component's 41-capture list recognises
+; (`highlighter/registry.rs:22`); with only the former, `comment.doc` is never reached and the
+; reduction falls back to plain `comment`, so `;#` lines look like ordinary comments in the IDE.
+; The two consumers disagree about which capture wins: tree-sitter-highlight — nvim, Zed and
+; `tps_ts_highlight_tool` — takes the *last*, while gpui-component keeps the *first* of two
+; captures on an identical range (`highlighter/highlighter.rs:1105-1118`). Listing `comment.doc`
+; first therefore gives each consumer the name it understands.
+(directive_comment) @comment.doc @comment.documentation
