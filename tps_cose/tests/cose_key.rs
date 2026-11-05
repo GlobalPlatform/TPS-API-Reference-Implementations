@@ -2,9 +2,9 @@
  * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
  * SPDX-License-Identifier: MIT
  **************************************************************************************************/
+use tps_cose::{CoseKey, Curve, Ec2Key, Ec2Y, KeyCommon, OkpKey, SymmetricKey, decode_cose_key};
 #[cfg(feature = "std")]
 use tps_minicbor::Encoder;
-use tps_cose::{CoseKey, Curve, Ec2Key, Ec2Y, KeyCommon, OkpKey, SymmetricKey, decode_cose_key};
 
 #[test]
 fn ec2_encode_decode_round_trip() {

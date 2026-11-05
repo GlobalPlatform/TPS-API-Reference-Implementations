@@ -63,11 +63,17 @@ impl core::fmt::Display for EdnError {
             EdnError::InvalidBase64 => write!(f, "invalid base64 sequence in byte string"),
             EdnError::IntOverflow => write!(f, "integer value out of CBOR range"),
             EdnError::FloatDisabled => {
-                write!(f, "float values require the 'float' feature of tps_minicbor")
+                write!(
+                    f,
+                    "float values require the 'float' feature of tps_minicbor"
+                )
             }
             EdnError::TrailingInput => write!(f, "extra input after top-level value"),
             EdnError::ReservedSimpleValue(n) => {
-                write!(f, "simple({n}) is reserved (RFC 8949 §3.3) and cannot be well-formed CBOR")
+                write!(
+                    f,
+                    "simple({n}) is reserved (RFC 8949 §3.3) and cannot be well-formed CBOR"
+                )
             }
         }
     }

@@ -8,10 +8,10 @@
 //! `TPSCC_Connector`) that every TPS Connector implementation exposes to the TPS Client API, and
 //! `TPSC_GetConnectorAPI`, the sole entry point used to retrieve it.
 
-#[cfg(any(feature = "std", test))]
-extern crate std;
 #[cfg(all(not(feature = "std"), not(test)))]
 extern crate core as std;
+#[cfg(any(feature = "std", test))]
+extern crate std;
 
 extern crate tps_client_common;
 extern crate tps_error;
@@ -221,7 +221,10 @@ mod tests {
         let exec_off = offset_of!(Connector, execute_transaction);
         let cancel_off = offset_of!(Connector, cancel_transaction);
 
-        assert!(connect_off < disconnect_off, "connect must precede disconnect");
+        assert!(
+            connect_off < disconnect_off,
+            "connect must precede disconnect"
+        );
         assert!(
             disconnect_off < discover_off,
             "disconnect must precede discover_services"
@@ -230,7 +233,10 @@ mod tests {
             discover_off < open_off,
             "discover_services must precede open_session"
         );
-        assert!(open_off < close_off, "open_session must precede close_session");
+        assert!(
+            open_off < close_off,
+            "open_session must precede close_session"
+        );
         assert!(
             close_off < exec_off,
             "close_session must precede execute_transaction"
@@ -279,8 +285,7 @@ mod tests {
 
         let mut session_id: u32 = 0;
         let svc = UUID_NIL;
-        let rc =
-            unsafe { (connector.open_session.unwrap())(connection_id, &svc, &mut session_id) };
+        let rc = unsafe { (connector.open_session.unwrap())(connection_id, &svc, &mut session_id) };
         assert_eq!(rc, 0);
         assert_eq!(session_id, 7);
 

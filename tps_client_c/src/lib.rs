@@ -36,8 +36,8 @@ extern crate tps_client_common;
 extern crate rot13_connector;
 
 use tps_client_api::{
-    cancel_transaction, close_session, execute_transaction, open_session, service_discovery,
-    MessageBuf,
+    MessageBuf, cancel_transaction, close_session, execute_transaction, open_session,
+    service_discovery,
 };
 use tps_client_common::c_errors::{
     ERROR_BAD_STATE, ERROR_NO_DATA, ERROR_NOT_SUPPORTED, ERROR_NULL_POINTER, SUCCESS,
@@ -299,8 +299,7 @@ pub unsafe extern "C" fn TPSC_DiscoverServices(
                     // `&mut ServiceIdentifier` reborrow of it: a reference to the first element
                     // only carries provenance for that one element, so widening it to
                     // `*no_services` would be unsound even though the array is large enough.
-                    let array_as_slice =
-                        unsafe { from_raw_parts_mut(service_array, *no_services) };
+                    let array_as_slice = unsafe { from_raw_parts_mut(service_array, *no_services) };
                     // Everything checked as much as we can - call the Rust API
                     match service_discovery(svc_selector, array_as_slice) {
                         Ok(n_services) => {
@@ -334,10 +333,10 @@ mod tests {
     use std::format;
     use std::ptr;
     use std::string::String;
+    use std::vec::Vec;
     use tps_client_common::c_priv::SessionPriv;
     use tps_client_common::c_structs::{ServiceBound, ServiceRange, ServiceVersion};
     use tps_client_common::c_uuid::UUID_NIL;
-    use std::vec::Vec;
 
     fn nil_service_selector() -> ServiceSelector {
         ServiceSelector {
@@ -460,7 +459,10 @@ mod tests {
             let guard_ptr = &mut buf.imp as *mut _ as *mut u32;
             ptr::write(guard_ptr, 0xdead_beef);
         }
-        assert!(!buf.imp.check(), "sanity: guard corruption must be observable via check()");
+        assert!(
+            !buf.imp.check(),
+            "sanity: guard corruption must be observable via check()"
+        );
         let result = unsafe { TPSC_FinalizeTransaction(&mut buf as *mut MessageBuffer) };
         assert_eq!(
             result, ERROR_BAD_STATE,
@@ -533,9 +535,15 @@ mod tests {
             },
             SUCCESS
         );
-        assert_eq!(buf.maxsize, LEN, "maxsize must reflect the declared capacity");
+        assert_eq!(
+            buf.maxsize, LEN,
+            "maxsize must reflect the declared capacity"
+        );
         assert_eq!(buf.size, 0, "a freshly initialized buffer holds no payload");
-        assert!(buf.imp.check(), "initialization must leave a valid guard word");
+        assert!(
+            buf.imp.check(),
+            "initialization must leave a valid guard word"
+        );
 
         // Write the full declared length through the slice that `TPSC_InitializeTransaction`
         // built, so that every byte is touched with that slice's provenance, and read it back
@@ -545,7 +553,11 @@ mod tests {
             for (i, b) in msg.iter_mut().enumerate() {
                 *b = i as u8;
             }
-            assert_eq!(msg[LEN - 1], (LEN - 1) as u8, "the last byte must be writable");
+            assert_eq!(
+                msg[LEN - 1],
+                (LEN - 1) as u8,
+                "the last byte must be writable"
+            );
         }
 
         // Finalize zeroes the same region, again through the stored pointer and length.
@@ -555,7 +567,10 @@ mod tests {
         );
 
         // Safe to inspect `backing` directly now: nothing writes through `buf.message` again.
-        assert!(backing.iter().all(|&b| b == 0), "finalize must zero the whole buffer");
+        assert!(
+            backing.iter().all(|&b| b == 0),
+            "finalize must zero the whole buffer"
+        );
     }
 
     /// Confirms `TPSC_CloseSession(NULL)` returns `ERROR_NULL_POINTER`. Spec §4.5.3 says the
@@ -584,9 +599,7 @@ mod tests {
             imp: SessionPriv::new(0),
         };
         assert_eq!(
-            unsafe {
-                TPSC_OpenSession(ptr::null(), 0, ptr::null(), &mut session as *mut Session)
-            },
+            unsafe { TPSC_OpenSession(ptr::null(), 0, ptr::null(), &mut session as *mut Session) },
             ERROR_NULL_POINTER
         );
         assert_eq!(
@@ -664,9 +677,15 @@ mod tests {
                 arr.as_mut_ptr(),
             )
         };
-        assert_eq!(result, SUCCESS, "a wildcard selector must discover the ROT13 service");
+        assert_eq!(
+            result, SUCCESS,
+            "a wildcard selector must discover the ROT13 service"
+        );
         assert!(count >= 1, "at least one service must be reported");
-        assert!(count <= CAP, "the reported count must not exceed the supplied capacity");
+        assert!(
+            count <= CAP,
+            "the reported count must not exceed the supplied capacity"
+        );
 
         // Touch every entry the callee claims to have written, through the caller's array.
         for svc in &arr[..count] {
@@ -722,7 +741,10 @@ mod tests {
         let header = match std::fs::read_to_string(&header_path) {
             Ok(h) => h,
             Err(_) => {
-                eprintln!("skipping: {} not present (cbindgen did not run)", header_path.display());
+                eprintln!(
+                    "skipping: {} not present (cbindgen did not run)",
+                    header_path.display()
+                );
                 return;
             }
         };
@@ -740,8 +762,14 @@ mod tests {
                 search_from += found + needle.len();
             }
         }
-        assert_tags_in_order(&header, &["TPSC_NoConnectionData", "TPSC_GID", "TPSC_Proprietary"]);
-        assert_tags_in_order(&header, &["TPSC_Inclusive", "TPSC_Exclusive", "TPSC_NoBounds"]);
+        assert_tags_in_order(
+            &header,
+            &["TPSC_NoConnectionData", "TPSC_GID", "TPSC_Proprietary"],
+        );
+        assert_tags_in_order(
+            &header,
+            &["TPSC_Inclusive", "TPSC_Exclusive", "TPSC_NoBounds"],
+        );
     }
 
     /// Duplication-hygiene regression (Stage 3 note, tps_client_c). `cbindgen.toml`'s
@@ -759,14 +787,19 @@ mod tests {
         let header = match std::fs::read_to_string(&header_path) {
             Ok(h) => h,
             Err(_) => {
-                eprintln!("skipping: {} not present (cbindgen did not run)", header_path.display());
+                eprintln!(
+                    "skipping: {} not present (cbindgen did not run)",
+                    header_path.display()
+                );
                 return;
             }
         };
         let start = header
             .find("TPSC_UUID_NAMESPACE")
             .expect("TPSC_UUID_NAMESPACE macro not found in generated header");
-        let line_end = header[start..].find('\n').map_or(header.len(), |i| start + i);
+        let line_end = header[start..]
+            .find('\n')
+            .map_or(header.len(), |i| start + i);
         let macro_line = &header[start..line_end];
         let parsed_bytes: Vec<u8> = macro_line
             .split(',')
@@ -810,7 +843,10 @@ mod tests {
         let header_path =
             std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tpsc_client_api.h");
         if !header_path.exists() {
-            eprintln!("skipping: {} not present (cbindgen did not run)", header_path.display());
+            eprintln!(
+                "skipping: {} not present (cbindgen did not run)",
+                header_path.display()
+            );
             return;
         }
         let header = std::fs::read_to_string(&header_path).expect("failed to read header");
@@ -819,7 +855,11 @@ mod tests {
             "expected the TPSC_OptionU32 incomplete-type bug to be fixed - header still \
              references it:\n{header}"
         );
-        if std::process::Command::new("cc").arg("--version").output().is_err() {
+        if std::process::Command::new("cc")
+            .arg("--version")
+            .output()
+            .is_err()
+        {
             eprintln!("skipping compile check: no `cc` in PATH");
             return;
         }

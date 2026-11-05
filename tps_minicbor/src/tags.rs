@@ -52,10 +52,7 @@ pub mod standard_tags {
         value.size(s)
     }
 
-    fn decode_tagged_item(
-        tagged: TaggedItem,
-        expected_tag: u64,
-    ) -> Result<Item, DecodeError> {
+    fn decode_tagged_item(tagged: TaggedItem, expected_tag: u64) -> Result<Item, DecodeError> {
         if tagged.tag != expected_tag {
             return Err(DecodeError::InvalidAdditionalInfo);
         }

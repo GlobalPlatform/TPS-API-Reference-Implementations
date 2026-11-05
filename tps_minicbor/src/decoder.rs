@@ -917,7 +917,10 @@ impl<'a> Decoder<'a> {
             return Err(DecodeError::InvalidAdditionalInfo);
         }
         let len = len as usize;
-        let end = self.pos.checked_add(len).ok_or(DecodeError::UnexpectedEof)?;
+        let end = self
+            .pos
+            .checked_add(len)
+            .ok_or(DecodeError::UnexpectedEof)?;
         if end > self.buf.len() {
             return Err(DecodeError::UnexpectedEof);
         }
@@ -1000,7 +1003,10 @@ impl<'a> Decoder<'a> {
 
     fn take_bytes(&mut self, len: u64) -> Result<&'a [u8], DecodeError> {
         let len = usize::try_from(len).map_err(|_| DecodeError::InvalidAdditionalInfo)?;
-        let end = self.pos.checked_add(len).ok_or(DecodeError::UnexpectedEof)?;
+        let end = self
+            .pos
+            .checked_add(len)
+            .ok_or(DecodeError::UnexpectedEof)?;
         if end > self.buf.len() {
             return Err(DecodeError::UnexpectedEof);
         }
@@ -1011,7 +1017,10 @@ impl<'a> Decoder<'a> {
 
     fn skip_bytes(&mut self, len: u64) -> Result<(), DecodeError> {
         let len = usize::try_from(len).map_err(|_| DecodeError::InvalidAdditionalInfo)?;
-        let end = self.pos.checked_add(len).ok_or(DecodeError::UnexpectedEof)?;
+        let end = self
+            .pos
+            .checked_add(len)
+            .ok_or(DecodeError::UnexpectedEof)?;
         if end > self.buf.len() {
             return Err(DecodeError::UnexpectedEof);
         }
@@ -1890,7 +1899,10 @@ impl<'a> DiagnosticDecoder<'a> {
 
     fn take_bytes(&mut self, len: u64) -> Result<&'a [u8], DecodeError> {
         let len = usize::try_from(len).map_err(|_| DecodeError::InvalidAdditionalInfo)?;
-        let end = self.pos.checked_add(len).ok_or(DecodeError::UnexpectedEof)?;
+        let end = self
+            .pos
+            .checked_add(len)
+            .ok_or(DecodeError::UnexpectedEof)?;
         if end > self.buf.len() {
             return Err(DecodeError::UnexpectedEof);
         }
@@ -2144,12 +2156,7 @@ impl<'a> DiagnosticDecoder<'a> {
                         if i > 0 {
                             out.write_str(",")?;
                         }
-                        self.write_item_with_spans_at_depth(
-                            out,
-                            None,
-                            spans,
-                            recursion_depth + 1,
-                        )?;
+                        self.write_item_with_spans_at_depth(out, None, spans, recursion_depth + 1)?;
                     }
                     out.write_str("]")?;
                 }
@@ -2187,19 +2194,9 @@ impl<'a> DiagnosticDecoder<'a> {
                         if i > 0 {
                             out.write_str(",")?;
                         }
-                        self.write_item_with_spans_at_depth(
-                            out,
-                            None,
-                            spans,
-                            recursion_depth + 1,
-                        )?;
+                        self.write_item_with_spans_at_depth(out, None, spans, recursion_depth + 1)?;
                         out.write_str(":")?;
-                        self.write_item_with_spans_at_depth(
-                            out,
-                            None,
-                            spans,
-                            recursion_depth + 1,
-                        )?;
+                        self.write_item_with_spans_at_depth(out, None, spans, recursion_depth + 1)?;
                     }
                     out.write_str("}")?;
                 }

@@ -250,7 +250,9 @@ impl<'c> MatchCtx<'c> {
                     return None;
                 }
                 match &rule.body {
-                    RuleBody::Type(ty) if ty.choices.len() == 1 && ty.choices[0].constraint.is_none() => {
+                    RuleBody::Type(ty)
+                        if ty.choices.len() == 1 && ty.choices[0].constraint.is_none() =>
+                    {
                         self.resolve_type2_as_f64(&ty.choices[0].base, depth + 1)
                     }
                     _ => None,
@@ -874,7 +876,10 @@ impl<'c> MatchCtx<'c> {
                         if self.mismatches.len() == before {
                             self.mismatch(
                                 path,
-                                format!(".default {} (value must be omitted, not sent)", value_description(&v)),
+                                format!(
+                                    ".default {} (value must be omitted, not sent)",
+                                    value_description(&v)
+                                ),
                                 item_description(item),
                             );
                         } else {
@@ -1360,7 +1365,8 @@ impl<'c> MatchCtx<'c> {
         // but still parses as `MemberKey::Type`) covers exactly one literal
         // key and must not suppress detection of genuinely unexpected keys.
         let has_wildcard = flat.iter().any(|e| {
-            matches!(e.key, Some(MemberKey::Type { .. })) && occur_bounds(e.occur.as_ref()).1.is_none()
+            matches!(e.key, Some(MemberKey::Type { .. }))
+                && occur_bounds(e.occur.as_ref()).1.is_none()
         });
         for (idx, consumed) in consumed.iter().enumerate() {
             if *consumed {
@@ -2131,7 +2137,10 @@ mod tests {
         let cddl = schema("x = [uint, y]\ny = tstr");
         let (mismatches, trace) = check_cbor_traced(&cbor, &cddl, None, &Config::strict())
             .unwrap_or_else(|e| panic!("CBOR decode error: {e}"));
-        assert!(mismatches.is_empty(), "expected match, got: {mismatches:#?}");
+        assert!(
+            mismatches.is_empty(),
+            "expected match, got: {mismatches:#?}"
+        );
 
         let y_event = trace
             .iter()
@@ -2150,7 +2159,10 @@ mod tests {
         let cddl = schema("x = { a: y }\ny = tstr");
         let (mismatches, trace) = check_cbor_traced(&cbor, &cddl, None, &Config::strict())
             .unwrap_or_else(|e| panic!("CBOR decode error: {e}"));
-        assert!(mismatches.is_empty(), "expected match, got: {mismatches:#?}");
+        assert!(
+            mismatches.is_empty(),
+            "expected match, got: {mismatches:#?}"
+        );
 
         let y_event = trace
             .iter()
@@ -2169,7 +2181,10 @@ mod tests {
         let cddl = schema("x = #6.1(y)\ny = uint");
         let (mismatches, trace) = check_cbor_traced(&cbor, &cddl, None, &Config::strict())
             .unwrap_or_else(|e| panic!("CBOR decode error: {e}"));
-        assert!(mismatches.is_empty(), "expected match, got: {mismatches:#?}");
+        assert!(
+            mismatches.is_empty(),
+            "expected match, got: {mismatches:#?}"
+        );
 
         let y_event = trace
             .iter()
@@ -2244,7 +2259,10 @@ mod tests {
         // Regression: a key matching a repeating wildcard's key pattern
         // whose value failed the wildcard's value type used to have its
         // mismatch silently discarded (truncated) instead of reported.
-        fail(&map_val(&[(text("a"), text("wrong"))]), "x = { * tstr => uint }");
+        fail(
+            &map_val(&[(text("a"), text("wrong"))]),
+            "x = { * tstr => uint }",
+        );
     }
 
     #[test]
@@ -2415,7 +2433,8 @@ mod tests {
     /// two rejection cases (equal to default; present but failing `.gt 0`).
     #[test]
     fn default_control_rfc_worked_example_timer() {
-        const SCHEMA: &str = "x = timer\ntimer = { time: uint, ? displayed-step: (number .gt 0) .default 1 }";
+        const SCHEMA: &str =
+            "x = timer\ntimer = { time: uint, ? displayed-step: (number .gt 0) .default 1 }";
 
         // Key omitted entirely — the conformant, expected wire form.
         ok(&map_val(&[(text("time"), uint(5))]), SCHEMA);

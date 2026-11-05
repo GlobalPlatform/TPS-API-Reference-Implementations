@@ -235,7 +235,8 @@ fn constrain_cose_sign1_eat_check_cbor_valid_matches() {
         0x84, // array(4)
         0x40, // protected: bstr(0)
         0xa0, // unprotected: map(0)
-        0x48, 0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x18, 0x2a, // payload: bstr(8) = "hello" ++ uint(42)
+        0x48, 0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x18,
+        0x2a, // payload: bstr(8) = "hello" ++ uint(42)
         0x43, 0x01, 0x02, 0x03, // signature: bstr(3)
     ];
 
@@ -258,7 +259,8 @@ fn constrain_cose_sign1_eat_check_cbor_rejects_wrong_nested_shape() {
         0x84, // array(4)
         0x40, // protected: bstr(0)
         0xa0, // unprotected: map(0)
-        0x43, 0x01, 0x02, 0x03, // payload: bstr(3) = uint(1), uint(2), uint(3) — not [tstr, int]
+        0x43, 0x01, 0x02,
+        0x03, // payload: bstr(3) = uint(1), uint(2), uint(3) — not [tstr, int]
         0x43, 0x01, 0x02, 0x03, // signature: bstr(3)
     ];
 
@@ -266,4 +268,3 @@ fn constrain_cose_sign1_eat_check_cbor_rejects_wrong_nested_shape() {
         .expect("CBOR decode error");
     assert!(!mismatches.is_empty(), "expected at least one mismatch");
 }
-

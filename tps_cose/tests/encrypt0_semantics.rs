@@ -28,7 +28,8 @@ fn decode_accepts_zero_length_protected_bstr() {
         // unprotected bucket instead.
         array.insert(&[][..]).expect("zero-length protected bstr");
         let mut map = array.map_len(2).expect("unprotected");
-        map.insert_key_value(1i64, 1i64).expect("alg (A128GCM) in unprotected");
+        map.insert_key_value(1i64, 1i64)
+            .expect("alg (A128GCM) in unprotected");
         map.insert_key_value(5i64, [0x22u8; 12].as_slice())
             .expect("iv in unprotected");
         map.end().expect("unprotected end");
@@ -39,7 +40,10 @@ fn decode_accepts_zero_length_protected_bstr() {
     let result =
         decode_encrypt0(&enc0_buf[..enc0_len]).expect("zero-length protected bstr accepted");
     assert_eq!(result.protected, ParsedHeaders::default());
-    assert_eq!(result.unprotected.encrypt_algorithm, Some(EncryptAlgorithm::A128Gcm));
+    assert_eq!(
+        result.unprotected.encrypt_algorithm,
+        Some(EncryptAlgorithm::A128Gcm)
+    );
 }
 
 /// RFC 9052 sec. 3.1: describing IV (label 5) and Partial IV (label 6):

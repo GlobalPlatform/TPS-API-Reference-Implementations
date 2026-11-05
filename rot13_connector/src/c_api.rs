@@ -204,7 +204,10 @@ pub unsafe extern "C" fn c_execute_transaction(
     recv_len: *mut usize,
     transaction_id: *mut u32,
 ) -> u32 {
-    if !send_buf.is_null() && !recv_buf.is_null() && !recv_len.is_null() && !transaction_id.is_null()
+    if !send_buf.is_null()
+        && !recv_buf.is_null()
+        && !recv_len.is_null()
+        && !transaction_id.is_null()
     {
         let send_slice = unsafe { from_raw_parts(send_buf, send_len) };
         let recv_slice = unsafe { from_raw_parts_mut(recv_buf, *recv_len) };

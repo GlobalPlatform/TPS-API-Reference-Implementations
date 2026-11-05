@@ -7,10 +7,10 @@ mod common;
 #[cfg(feature = "ring")]
 use common::decode_base64url;
 use common::{HeaderMap, decode_hex, encode_tag, load_sign_vector, load_sign1_vector, split_tag};
-use tps_minicbor::Encoder;
 use tps_cose::{
     Algorithm, ContentType, CoseError, HeaderParam, Payload, Sign1Builder, decode_sign1,
 };
+use tps_minicbor::Encoder;
 
 struct ParamStorage {
     bytes: Vec<Vec<u8>>,

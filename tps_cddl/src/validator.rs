@@ -124,7 +124,10 @@ pub fn validate_with_config(cddl: &Cddl, config: &Config) -> Vec<Diagnostic> {
 /// let (_diags, features) = validate_with_config_ex(&schema, &Config::all());
 /// assert_eq!(features[0].name, "optional-support");
 /// ```
-pub fn validate_with_config_ex(cddl: &Cddl, config: &Config) -> (Vec<Diagnostic>, Vec<FeatureUsage>) {
+pub fn validate_with_config_ex(
+    cddl: &Cddl,
+    config: &Config,
+) -> (Vec<Diagnostic>, Vec<FeatureUsage>) {
     let mut ctx = ValidatorCtx::new(config.clone());
     ctx.load_prelude();
     ctx.collect_definitions(cddl);
@@ -194,16 +197,21 @@ pub(crate) fn extract_feature_usage(controller: &Type2, span: &Span) -> Option<F
         });
     }
     if let Type2::Array(group) = controller {
-        let entries: Vec<&GrpEnt> = group.choices.iter().flat_map(|c| c.entries.iter()).collect();
+        let entries: Vec<&GrpEnt> = group
+            .choices
+            .iter()
+            .flat_map(|c| c.entries.iter())
+            .collect();
         if let [name_ent, detail_ent] = entries.as_slice()
-            && let Some(name) = grpent_text(name_ent) {
-                let detail = grpent_text(detail_ent).map(|s| s.to_owned());
-                return Some(FeatureUsage {
-                    name: name.to_owned(),
-                    detail,
-                    span: span.clone(),
-                });
-            }
+            && let Some(name) = grpent_text(name_ent)
+        {
+            let detail = grpent_text(detail_ent).map(|s| s.to_owned());
+            return Some(FeatureUsage {
+                name: name.to_owned(),
+                detail,
+                span: span.clone(),
+            });
+        }
     }
     None
 }
@@ -271,7 +279,8 @@ impl ValidatorCtx {
         for rule in &cddl.rules {
             if let Some(parm) = &rule.generic_parm {
                 self.generic_names.insert(rule.name.clone());
-                self.generic_arity.insert(rule.name.clone(), parm.params.len());
+                self.generic_arity
+                    .insert(rule.name.clone(), parm.params.len());
             }
 
             match rule.assignment {
@@ -523,9 +532,10 @@ impl ValidatorCtx {
         const RFC9165_OPS: &[&str] = &["plus", "cat", "det", "abnf", "abnfb", "feature"];
 
         if op == "feature"
-            && let Some(usage) = extract_feature_usage(controller, span) {
-                self.features.push(usage);
-            }
+            && let Some(usage) = extract_feature_usage(controller, span)
+        {
+            self.features.push(usage);
+        }
 
         // `.size` (RFC 8610 §3.8.1) takes a non-negative integer (or range of
         // non-negative integers) controller — a byte/text string, array, or
@@ -899,7 +909,10 @@ mod tests {
                 rfc9682: true,
             },
         );
-        let errs: Vec<_> = diags.into_iter().filter(|d| d.level == Level::Error).collect();
+        let errs: Vec<_> = diags
+            .into_iter()
+            .filter(|d| d.level == Level::Error)
+            .collect();
         assert!(errs.is_empty(), "expected no errors: {errs:?}");
     }
 

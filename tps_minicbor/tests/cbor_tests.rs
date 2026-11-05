@@ -360,9 +360,7 @@ fn encode_map_builder_deterministic_order_int_bstr_tstr_collision() {
     map.insert_key_value(&b"a"[..], 3u8).expect("kv bstr a");
     map.end().expect("end map");
 
-    let expected = [
-        0xa3, 0x01, 0x02, 0x41, 0x61, 0x03, 0x61, 0x61, 0x01,
-    ];
+    let expected = [0xa3, 0x01, 0x02, 0x41, 0x61, 0x03, 0x61, 0x61, 0x01];
     assert_eq!(encoder.encoded(), expected);
 }
 
@@ -794,7 +792,10 @@ fn encode_decode_f64_subnormal_round_trip() {
     let value = f64::from_bits(1);
     let mut buf = [0u8; 16];
     let len = encode(&value, &mut buf).expect("encode");
-    assert_eq!(buf[0], 0xfb, "subnormal f64 should use the 8-byte float form");
+    assert_eq!(
+        buf[0], 0xfb,
+        "subnormal f64 should use the 8-byte float form"
+    );
     let decoded = decode_all::<f64>(&buf[..len]).expect("decode");
     assert_eq!(decoded.to_bits(), value.to_bits());
 }
@@ -861,10 +862,7 @@ fn encode_deterministic_bytewise_lex_ordering_rfc_example() {
     let Item::Map(map) = map else {
         panic!("expected map");
     };
-    let keys: std::vec::Vec<_> = map
-        .iter()
-        .map(|pair| pair.expect("pair").0)
-        .collect();
+    let keys: std::vec::Vec<_> = map.iter().map(|pair| pair.expect("pair").0).collect();
     assert!(matches!(keys[0], Item::Unsigned(10)));
     assert!(matches!(keys[1], Item::Unsigned(100)));
     assert!(matches!(keys[2], Item::Negative(-1)));

@@ -108,8 +108,8 @@ extern crate std;
 #[cfg(all(not(feature = "std"), not(test)))]
 extern crate core as std;
 
-extern crate tps_minicbor;
 extern crate tps_client_common;
+extern crate tps_minicbor;
 
 use std::mem::size_of;
 

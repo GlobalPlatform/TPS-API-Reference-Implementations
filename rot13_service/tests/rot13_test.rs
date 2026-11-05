@@ -6,9 +6,9 @@
 extern crate rot13_service;
 
 use rot13_service::{
-    message_handler, GPP_ROT13_CIPHERTEXT_KEY, GPP_ROT13_DECRYPT_REQ, GPP_ROT13_DECRYPT_RSP,
-    GPP_ROT13_ENCRYPT_REQ, GPP_ROT13_ENCRYPT_RSP, GPP_ROT13_ERROR_NUMERIC, GPP_ROT13_ERROR_OTHER,
-    GPP_ROT13_ERROR_SPACE, GPP_ROT13_PLAINTEXT_KEY,
+    GPP_ROT13_CIPHERTEXT_KEY, GPP_ROT13_DECRYPT_REQ, GPP_ROT13_DECRYPT_RSP, GPP_ROT13_ENCRYPT_REQ,
+    GPP_ROT13_ENCRYPT_RSP, GPP_ROT13_ERROR_NUMERIC, GPP_ROT13_ERROR_OTHER, GPP_ROT13_ERROR_SPACE,
+    GPP_ROT13_PLAINTEXT_KEY, message_handler,
 };
 use tps_minicbor::{DecodeError, Decoder, EncodeError, EncoderStd, Item, Map};
 
@@ -43,7 +43,10 @@ fn decode_rsp(buf: &[u8], expected_msg_id: u32) -> Result<Map<'_>, DecodeError> 
 /// Find the value for `key` in `map`, if present.
 fn map_get<'a>(map: &Map<'a>, key: u64) -> Option<Item<'a>> {
     map.iter()
-        .find_map(|pair| pair.ok().filter(|(k, _)| matches!(k, Item::Unsigned(v) if *v == key)))
+        .find_map(|pair| {
+            pair.ok()
+                .filter(|(k, _)| matches!(k, Item::Unsigned(v) if *v == key))
+        })
         .map(|(_, v)| v)
 }
 
@@ -103,8 +106,9 @@ fn test_encode_digit_failure() -> Result<(), DecodeError> {
 #[test]
 fn test_decode_digit_failure() -> Result<(), DecodeError> {
     let ciphertext = "GURDHVPXOEBJ4SBKWHZCFBIREGURYNMLQBT";
-    let (send_buf, send_len) = build_req(GPP_ROT13_DECRYPT_REQ, GPP_ROT13_CIPHERTEXT_KEY, ciphertext)
-        .expect("encode request");
+    let (send_buf, send_len) =
+        build_req(GPP_ROT13_DECRYPT_REQ, GPP_ROT13_CIPHERTEXT_KEY, ciphertext)
+            .expect("encode request");
     let mut receive_buf = [0u8; 100];
 
     message_handler(&send_buf[..send_len], &mut receive_buf).expect("message_handler");
@@ -137,8 +141,9 @@ fn test_encode_space_failure() -> Result<(), DecodeError> {
 #[test]
 fn test_decode_space_failure() -> Result<(), DecodeError> {
     let ciphertext = "GUR DHVPX OEBJA SBK WHZCF BIRE GUR YNML QBT";
-    let (send_buf, send_len) = build_req(GPP_ROT13_DECRYPT_REQ, GPP_ROT13_CIPHERTEXT_KEY, ciphertext)
-        .expect("encode request");
+    let (send_buf, send_len) =
+        build_req(GPP_ROT13_DECRYPT_REQ, GPP_ROT13_CIPHERTEXT_KEY, ciphertext)
+            .expect("encode request");
     let mut receive_buf = [0u8; 100];
 
     message_handler(&send_buf[..send_len], &mut receive_buf).expect("message_handler");
@@ -171,8 +176,9 @@ fn test_encode_other_failure() -> Result<(), DecodeError> {
 #[test]
 fn test_decode_other_failure() -> Result<(), DecodeError> {
     let ciphertext = "";
-    let (send_buf, send_len) = build_req(GPP_ROT13_DECRYPT_REQ, GPP_ROT13_CIPHERTEXT_KEY, ciphertext)
-        .expect("encode request");
+    let (send_buf, send_len) =
+        build_req(GPP_ROT13_DECRYPT_REQ, GPP_ROT13_CIPHERTEXT_KEY, ciphertext)
+            .expect("encode request");
     let mut receive_buf = [0u8; 100];
 
     message_handler(&send_buf[..send_len], &mut receive_buf).expect("message_handler");

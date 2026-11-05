@@ -162,7 +162,9 @@ impl<'c> MatchCtx<'c> {
                     return None;
                 }
                 match &rule.body {
-                    RuleBody::Type(ty) if ty.choices.len() == 1 && ty.choices[0].constraint.is_none() => {
+                    RuleBody::Type(ty)
+                        if ty.choices.len() == 1 && ty.choices[0].constraint.is_none() =>
+                    {
                         self.resolve_type2_as_f64(&ty.choices[0].base, depth + 1)
                     }
                     _ => None,
@@ -270,7 +272,13 @@ impl<'c> MatchCtx<'c> {
     /// or when the argument count doesn't match the parameter count — the
     /// latter is Finding 8's arity check, handled separately in the
     /// validator so this matcher doesn't need to double-report it.
-    fn match_generic_instantiation(&mut self, val: &Value, name: &str, args: &GenericArg, path: &str) {
+    fn match_generic_instantiation(
+        &mut self,
+        val: &Value,
+        name: &str,
+        args: &GenericArg,
+        path: &str,
+    ) {
         if self.depth >= MAX_MATCH_DEPTH {
             self.mismatch(
                 path,
@@ -919,7 +927,8 @@ impl<'c> MatchCtx<'c> {
         // but still parses as `MemberKey::Type`) covers exactly one literal
         // key and must not suppress detection of genuinely unexpected keys.
         let has_wildcard = flat.iter().any(|e| {
-            matches!(e.key, Some(MemberKey::Type { .. })) && occur_bounds(e.occur.as_ref()).1.is_none()
+            matches!(e.key, Some(MemberKey::Type { .. }))
+                && occur_bounds(e.occur.as_ref()).1.is_none()
         });
         for (idx, c) in consumed.iter().enumerate() {
             if *c {
@@ -1532,7 +1541,8 @@ mod tests {
     /// equal-to-default/fails-base-constraint cases together.
     #[test]
     fn default_control_rfc_worked_example_timer() {
-        const SCHEMA: &str = "x = timer\ntimer = { time: uint, ? displayed-step: (number .gt 0) .default 1 }";
+        const SCHEMA: &str =
+            "x = timer\ntimer = { time: uint, ? displayed-step: (number .gt 0) .default 1 }";
         ok(r#"{"time":5}"#, SCHEMA);
         ok(r#"{"time":5,"displayed-step":2}"#, SCHEMA);
         fail(r#"{"time":5,"displayed-step":1}"#, SCHEMA);

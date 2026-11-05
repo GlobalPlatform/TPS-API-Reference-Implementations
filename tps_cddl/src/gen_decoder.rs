@@ -22,7 +22,6 @@ use crate::{
     },
 };
 
-
 // ─── Public entry point ────────────────────────────────────────────────────────
 
 /// Generate a Rust decoder source string for the given CDDL schema.
@@ -72,7 +71,6 @@ pub fn gen_decoder(
 
     Ok(out)
 }
-
 
 // ─── Code emission ─────────────────────────────────────────────────────────────
 
@@ -140,7 +138,11 @@ fn emit_map_struct(out: &mut String, rust_name: &str, rule: &Rule, cddl: &Cddl) 
                 .and_then(map_key_repr)
                 .map(|k| k.field_name())
                 .unwrap_or_default();
-            emit_regexp_todo(out, &ty.choices[0], &format!("`{key_name}` in `{rust_name}`"));
+            emit_regexp_todo(
+                out,
+                &ty.choices[0],
+                &format!("`{key_name}` in `{rust_name}`"),
+            );
         }
     }
     let fields = map_fields(choice, cddl);
@@ -313,7 +315,11 @@ fn emit_fixed_array(out: &mut String, rust_name: &str, rule: &Rule, cddl: &Cddl)
         if let GrpEntBody::Type(ty) = &entry.entry
             && ty.choices.len() == 1
         {
-            emit_regexp_todo(out, &ty.choices[0], &format!("element {i} in `{rust_name}`"));
+            emit_regexp_todo(
+                out,
+                &ty.choices[0],
+                &format!("element {i} in `{rust_name}`"),
+            );
         }
         let (rt, de, nl) = match &entry.entry {
             GrpEntBody::Type(ty) => type_to_rust_field(ty, cddl, false),
@@ -897,7 +903,10 @@ mod tests {
             out.contains("tps_minicbor::Item::Bytes(b\"\\x01\\x02\")"),
             "got: {out}"
         );
-        assert!(out.contains("tps_minicbor::Item::Text(\"name\")"), "got: {out}");
+        assert!(
+            out.contains("tps_minicbor::Item::Text(\"name\")"),
+            "got: {out}"
+        );
     }
 
     #[test]

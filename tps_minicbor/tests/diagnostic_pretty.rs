@@ -44,7 +44,10 @@ fn flat_map_is_indented_one_pair_per_line() {
 #[test]
 fn nested_structure_indents_by_depth() {
     // [1, [2, 3]]
-    assert_eq!(pretty("0x8201820203"), "[\n  1,\n  [\n    2,\n    3\n  ]\n]");
+    assert_eq!(
+        pretty("0x8201820203"),
+        "[\n  1,\n  [\n    2,\n    3\n  ]\n]"
+    );
 }
 
 #[test]

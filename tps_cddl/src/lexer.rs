@@ -104,8 +104,9 @@ fn check_nesting_depth(source: &str) -> Result<(), ParseError> {
             b'(' | b'[' | b'{' | b'<' => {
                 depth += 1;
                 if depth > MAX_LEX_NESTING_DEPTH {
-                    let pos = pest::Position::new(source, i)
-                        .expect("i is a byte offset onto an ASCII delimiter, always a char boundary");
+                    let pos = pest::Position::new(source, i).expect(
+                        "i is a byte offset onto an ASCII delimiter, always a char boundary",
+                    );
                     return Err(nesting_error(pos));
                 }
                 i += 1;
@@ -303,11 +304,7 @@ address = { street: tstr, city: tstr }"#,
 
     #[test]
     fn deeply_nested_braces_rejected_before_pest_runs() {
-        let src = format!(
-            "x = {}uint{}",
-            "{a: ".repeat(1000),
-            "}".repeat(1000)
-        );
+        let src = format!("x = {}uint{}", "{a: ".repeat(1000), "}".repeat(1000));
         assert!(lex(&src).is_err());
     }
 

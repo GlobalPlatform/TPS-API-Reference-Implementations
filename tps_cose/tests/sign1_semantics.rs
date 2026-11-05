@@ -2,8 +2,10 @@
  * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries
  * SPDX-License-Identifier: MIT
  **************************************************************************************************/
+use tps_cose::{
+    Algorithm, CoseError, HeaderParam, Label, ParsedHeaders, Sign1Builder, decode_sign1,
+};
 use tps_minicbor::Encoder;
-use tps_cose::{Algorithm, CoseError, HeaderParam, Label, ParsedHeaders, Sign1Builder, decode_sign1};
 
 #[test]
 fn reject_duplicate_labels_in_protected_map() {
@@ -155,14 +157,16 @@ fn decode_accepts_zero_length_protected_bstr() {
         // so it must be supplied via the unprotected bucket instead.
         array.insert(&[][..]).expect("zero-length protected bstr");
         let mut map = array.map_len(1).expect("unprotected");
-        map.insert_key_value(1i64, -7i64).expect("alg in unprotected");
+        map.insert_key_value(1i64, -7i64)
+            .expect("alg in unprotected");
         map.end().expect("unprotected end");
         array.insert(b"payload".as_slice()).expect("payload");
         array.insert(b"sig".as_slice()).expect("signature");
         array.end().expect("array end");
     }
     let sign1_len = enc.len();
-    let result = decode_sign1(&sign1_buf[..sign1_len]).expect("zero-length protected bstr accepted");
+    let result =
+        decode_sign1(&sign1_buf[..sign1_len]).expect("zero-length protected bstr accepted");
     assert_eq!(result.protected, ParsedHeaders::default());
     assert_eq!(result.unprotected.algorithm, Some(Algorithm::Es256));
 }
@@ -448,8 +452,8 @@ fn decode_rejects_protected_header_map_exceeding_max_entries() {
         array.end().expect("array end");
     }
     let sign1_len = enc.len();
-    let err = decode_sign1(&sign1_buf[..sign1_len])
-        .expect_err("oversized header map must be rejected");
+    let err =
+        decode_sign1(&sign1_buf[..sign1_len]).expect_err("oversized header map must be rejected");
     assert_eq!(err, CoseError::TooManyHeaderParameters);
 }
 
@@ -495,4 +499,3 @@ fn decode_accepts_protected_header_map_at_max_entries() {
         "at-cap header map must not be rejected for size: {result:?}"
     );
 }
-

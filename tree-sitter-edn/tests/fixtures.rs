@@ -39,7 +39,11 @@ fn fixtures_parse_without_errors() {
 
         let had_error = parse_fixture(&path);
         checked += 1;
-        assert!(!had_error, "{} produced an ERROR/MISSING node", path.display());
+        assert!(
+            !had_error,
+            "{} produced an ERROR/MISSING node",
+            path.display()
+        );
     }
 
     assert!(checked > 0, "expected to find at least one .edn fixture");

@@ -360,15 +360,30 @@ mod tests {
     fn version_segment_test_exclusive_above() {
         let bound = version(1, 0, 0);
         assert!(matches!(
-            version_segment_test(&version(2, 0, 0), &bound, BoundsType::Exclusive, CheckType::Above),
+            version_segment_test(
+                &version(2, 0, 0),
+                &bound,
+                BoundsType::Exclusive,
+                CheckType::Above
+            ),
             VersionTest::InBounds
         ));
         assert!(matches!(
-            version_segment_test(&version(1, 0, 0), &bound, BoundsType::Exclusive, CheckType::Above),
+            version_segment_test(
+                &version(1, 0, 0),
+                &bound,
+                BoundsType::Exclusive,
+                CheckType::Above
+            ),
             VersionTest::OutOfBounds
         ));
         assert!(matches!(
-            version_segment_test(&version(0, 9, 9), &bound, BoundsType::Exclusive, CheckType::Above),
+            version_segment_test(
+                &version(0, 9, 9),
+                &bound,
+                BoundsType::Exclusive,
+                CheckType::Above
+            ),
             VersionTest::OutOfBounds
         ));
     }
@@ -377,15 +392,30 @@ mod tests {
     fn version_segment_test_exclusive_below() {
         let bound = version(1, 0, 0);
         assert!(matches!(
-            version_segment_test(&version(0, 9, 9), &bound, BoundsType::Exclusive, CheckType::Below),
+            version_segment_test(
+                &version(0, 9, 9),
+                &bound,
+                BoundsType::Exclusive,
+                CheckType::Below
+            ),
             VersionTest::InBounds
         ));
         assert!(matches!(
-            version_segment_test(&version(1, 0, 0), &bound, BoundsType::Exclusive, CheckType::Below),
+            version_segment_test(
+                &version(1, 0, 0),
+                &bound,
+                BoundsType::Exclusive,
+                CheckType::Below
+            ),
             VersionTest::OutOfBounds
         ));
         assert!(matches!(
-            version_segment_test(&version(1, 0, 1), &bound, BoundsType::Exclusive, CheckType::Below),
+            version_segment_test(
+                &version(1, 0, 1),
+                &bound,
+                BoundsType::Exclusive,
+                CheckType::Below
+            ),
             VersionTest::OutOfBounds
         ));
     }
@@ -394,15 +424,30 @@ mod tests {
     fn version_segment_test_inclusive_above() {
         let bound = version(1, 0, 0);
         assert!(matches!(
-            version_segment_test(&version(1, 0, 0), &bound, BoundsType::Inclusive, CheckType::Above),
+            version_segment_test(
+                &version(1, 0, 0),
+                &bound,
+                BoundsType::Inclusive,
+                CheckType::Above
+            ),
             VersionTest::InBounds
         ));
         assert!(matches!(
-            version_segment_test(&version(2, 0, 0), &bound, BoundsType::Inclusive, CheckType::Above),
+            version_segment_test(
+                &version(2, 0, 0),
+                &bound,
+                BoundsType::Inclusive,
+                CheckType::Above
+            ),
             VersionTest::InBounds
         ));
         assert!(matches!(
-            version_segment_test(&version(0, 9, 9), &bound, BoundsType::Inclusive, CheckType::Above),
+            version_segment_test(
+                &version(0, 9, 9),
+                &bound,
+                BoundsType::Inclusive,
+                CheckType::Above
+            ),
             VersionTest::OutOfBounds
         ));
     }
@@ -411,15 +456,30 @@ mod tests {
     fn version_segment_test_inclusive_below() {
         let bound = version(1, 0, 0);
         assert!(matches!(
-            version_segment_test(&version(1, 0, 0), &bound, BoundsType::Inclusive, CheckType::Below),
+            version_segment_test(
+                &version(1, 0, 0),
+                &bound,
+                BoundsType::Inclusive,
+                CheckType::Below
+            ),
             VersionTest::InBounds
         ));
         assert!(matches!(
-            version_segment_test(&version(0, 9, 9), &bound, BoundsType::Inclusive, CheckType::Below),
+            version_segment_test(
+                &version(0, 9, 9),
+                &bound,
+                BoundsType::Inclusive,
+                CheckType::Below
+            ),
             VersionTest::InBounds
         ));
         assert!(matches!(
-            version_segment_test(&version(1, 0, 1), &bound, BoundsType::Inclusive, CheckType::Below),
+            version_segment_test(
+                &version(1, 0, 1),
+                &bound,
+                BoundsType::Inclusive,
+                CheckType::Below
+            ),
             VersionTest::OutOfBounds
         ));
     }

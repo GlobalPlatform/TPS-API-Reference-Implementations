@@ -18,10 +18,10 @@
 //! Split into a separate crate (which contains essentially no code) to avoid creating circular
 //! dependencies between `tps_client_c`/`tps_connector` and `tps_client_api`.
 
-#[cfg(any(feature = "std", test))]
-extern crate std;
 #[cfg(all(not(feature = "std"), not(test)))]
 extern crate core as std;
+#[cfg(any(feature = "std", test))]
+extern crate std;
 
 /***************************************************************************************************
  * Exported error codes
@@ -558,7 +558,11 @@ pub mod c_priv {
         /// `service_id` must remain valid until the matching [`MessageBufferPriv::clear_transaction`]
         /// call — see the `service_id` field's type-level safety
         /// invariant. This function does not and cannot check that.
-        pub fn set_transaction(&mut self, transaction_id: u32, service_id: *const super::c_structs::UUID) {
+        pub fn set_transaction(
+            &mut self,
+            transaction_id: u32,
+            service_id: *const super::c_structs::UUID,
+        ) {
             self.has_transaction = true;
             self.transaction_id = transaction_id;
             self.service_id = service_id;

@@ -14,9 +14,9 @@ use crate::{
     gen_common::{
         CborseqShape, GenError, MapKeyRepr, RuleKind, array_group, cbor_constraint,
         cbor_field_rust_type, cborseq_shape, check_features_resolved, classify, collect_ordered,
-        default_constraint, default_value_rust_literal, emit_regexp_todo, map_group,
-        map_key_repr, prelude_rust_type, prune_disabled_features, rule_needs_lifetime,
-        to_pascal_case, type2_to_rust_type, union_variant_name,
+        default_constraint, default_value_rust_literal, emit_regexp_todo, map_group, map_key_repr,
+        prelude_rust_type, prune_disabled_features, rule_needs_lifetime, to_pascal_case,
+        type2_to_rust_type, union_variant_name,
     },
 };
 
@@ -70,7 +70,6 @@ pub fn gen_encoder(
 
     Ok(out)
 }
-
 
 // ─── Code emission ─────────────────────────────────────────────────────────────
 
@@ -137,7 +136,11 @@ fn emit_map_struct(out: &mut String, rust_name: &str, rule: &Rule, cddl: &Cddl) 
                 .and_then(map_key_repr)
                 .map(|k| k.field_name())
                 .unwrap_or_default();
-            emit_regexp_todo(out, &ty.choices[0], &format!("`{key_name}` in `{rust_name}`"));
+            emit_regexp_todo(
+                out,
+                &ty.choices[0],
+                &format!("`{key_name}` in `{rust_name}`"),
+            );
         }
     }
     let fields = map_fields(choice, cddl);
@@ -153,7 +156,10 @@ fn emit_map_struct(out: &mut String, rust_name: &str, rule: &Rule, cddl: &Cddl) 
         .iter()
         .filter(|f| !f.optional && f.default_literal.is_none())
         .count();
-    let n_dynamic: usize = fields.iter().filter(|f| f.optional || f.default_literal.is_some()).count();
+    let n_dynamic: usize = fields
+        .iter()
+        .filter(|f| f.optional || f.default_literal.is_some())
+        .count();
 
     // ── Struct definition ─────────────────────────────────────────────────────
     out.push_str("#[derive(Debug)]\n");
@@ -416,7 +422,11 @@ fn emit_fixed_array(out: &mut String, rust_name: &str, rule: &Rule, cddl: &Cddl)
         if let GrpEntBody::Type(ty) = &entry.entry
             && ty.choices.len() == 1
         {
-            emit_regexp_todo(out, &ty.choices[0], &format!("element {i} in `{rust_name}`"));
+            emit_regexp_todo(
+                out,
+                &ty.choices[0],
+                &format!("element {i} in `{rust_name}`"),
+            );
         }
         let (rt, nl, ov) = match &entry.entry {
             GrpEntBody::Type(ty) => {
@@ -476,7 +486,10 @@ fn emit_fixed_array(out: &mut String, rust_name: &str, rule: &Rule, cddl: &Cddl)
     out.push_str(&format!("        s.array_len({count})?;\n"));
     for (i, (rt, _, ov)) in elem_types.iter().enumerate() {
         if let Some(ov) = ov {
-            out.push_str(&format!("        {}\n", cbor_size_stmt(&format!("self.{i}"), ov)));
+            out.push_str(&format!(
+                "        {}\n",
+                cbor_size_stmt(&format!("self.{i}"), ov)
+            ));
         } else {
             out.push_str(&format!(
                 "        {};\n",

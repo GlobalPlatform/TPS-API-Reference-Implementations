@@ -46,17 +46,17 @@ const HIGHLIGHT_NAMES: &[&str] = &[
 
 fn ansi_for(name: &str) -> &'static str {
     match name {
-        "type" | "type.builtin" => "\x1b[36m",           // cyan
-        "type.parameter" => "\x1b[96m",                  // bright cyan
-        "property" => "\x1b[34m",                        // blue
-        "operator" | "keyword.operator" => "\x1b[35m",   // magenta
+        "type" | "type.builtin" => "\x1b[36m",             // cyan
+        "type.parameter" => "\x1b[96m",                    // bright cyan
+        "property" => "\x1b[34m",                          // blue
+        "operator" | "keyword.operator" => "\x1b[35m",     // magenta
         "number" | "constant.numeric.float" => "\x1b[33m", // yellow
-        "string" | "string.special" => "\x1b[32m",       // green
+        "string" | "string.special" => "\x1b[32m",         // green
         "punctuation.bracket" | "punctuation.delimiter" => "\x1b[37m", // white
-        "comment" => "\x1b[90m",                          // bright black
-        "comment.documentation" => "\x1b[94m",            // bright blue
-        "comment.doc" => "\x1b[94m",                      // bright blue
-        "boolean" | "constant.builtin" => "\x1b[91m",    // bright red
+        "comment" => "\x1b[90m",                           // bright black
+        "comment.documentation" => "\x1b[94m",             // bright blue
+        "comment.doc" => "\x1b[94m",                       // bright blue
+        "boolean" | "constant.builtin" => "\x1b[91m",      // bright red
         _ => "\x1b[0m",
     }
 }

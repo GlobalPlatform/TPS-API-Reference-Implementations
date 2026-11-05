@@ -307,17 +307,11 @@ fn decode_self_describe() {
 fn bigint_decodes_small_unsigned_and_negative() {
     let data = hex_to_bytes("0x01"); // unsigned 1
     let mut dec = Decoder::new(&data);
-    assert!(matches!(
-        BigInt::decode(&mut dec),
-        Ok(BigInt::Small(1))
-    ));
+    assert!(matches!(BigInt::decode(&mut dec), Ok(BigInt::Small(1))));
 
     let data = hex_to_bytes("0x20"); // -1
     let mut dec = Decoder::new(&data);
-    assert!(matches!(
-        BigInt::decode(&mut dec),
-        Ok(BigInt::Small(-1))
-    ));
+    assert!(matches!(BigInt::decode(&mut dec), Ok(BigInt::Small(-1))));
 }
 
 #[cfg(feature = "standard_tags")]

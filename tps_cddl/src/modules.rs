@@ -202,7 +202,12 @@ pub fn scan_directives(
         };
     }
 
-    (directives, start_directives, constrain_directives, diagnostics)
+    (
+        directives,
+        start_directives,
+        constrain_directives,
+        diagnostics,
+    )
 }
 
 /// The parsed shape of one directive line, before it is wrapped in its
@@ -238,7 +243,11 @@ fn parse_directive_line(rest: &str) -> Result<DirectiveLine, String> {
         let rest2 = consume_rs(after_kw)
             .ok_or_else(|| "expected a space after directive keyword".to_string())?;
         let (target, new_name, field_override) = parse_constrain_line(rest2)?;
-        Ok(DirectiveLine::Constrain(target, new_name, Box::new(field_override)))
+        Ok(DirectiveLine::Constrain(
+            target,
+            new_name,
+            Box::new(field_override),
+        ))
     } else {
         let (kind, from, module, as_prefix) = parse_import_or_include_line(after_rs1)?;
         Ok(DirectiveLine::Module(kind, from, module, as_prefix))
@@ -253,8 +262,8 @@ fn parse_import_or_include_line(after_rs1: &str) -> Result<ParsedDirective, Stri
     let (kind, after_kw) = consume_keyword(after_rs1).ok_or_else(|| {
         "unknown directive keyword (expected `import`, `include`, or `start`)".to_string()
     })?;
-    let rest2 =
-        consume_rs(after_kw).ok_or_else(|| "expected a space after directive keyword".to_string())?;
+    let rest2 = consume_rs(after_kw)
+        .ok_or_else(|| "expected a space after directive keyword".to_string())?;
 
     if rest2.contains('\t') {
         return Err("tab characters are not permitted within a directive".to_string());
@@ -366,10 +375,14 @@ fn parse_constrain_line(rest: &str) -> Result<(String, String, (String, Type1)),
         }
     };
     if !is_valid_id(target) {
-        return Err(format!("invalid identifier `{target}` in `constrain` directive"));
+        return Err(format!(
+            "invalid identifier `{target}` in `constrain` directive"
+        ));
     }
     if !is_valid_id(new_name) {
-        return Err(format!("invalid identifier `{new_name}` in `constrain` directive"));
+        return Err(format!(
+            "invalid identifier `{new_name}` in `constrain` directive"
+        ));
     }
 
     let field_override = parse_constrain_field_clause(clause)?;
@@ -384,9 +397,9 @@ fn parse_constrain_field_clause(clause: &str) -> Result<(String, Type1), String>
         .and_then(|s| s.strip_suffix('}'))
         .ok_or_else(|| "malformed `{...}` clause in `constrain` directive".to_string())?;
 
-    let colon_idx = inner
-        .find(':')
-        .ok_or_else(|| "expected `field: type` in `constrain` directive's `{...}` clause".to_string())?;
+    let colon_idx = inner.find(':').ok_or_else(|| {
+        "expected `field: type` in `constrain` directive's `{...}` clause".to_string()
+    })?;
     let field = inner[..colon_idx].trim();
     let type_src = inner[colon_idx + 1..].trim();
     if field.is_empty() {
@@ -589,7 +602,9 @@ pub enum ModuleError {
 impl std::fmt::Display for ModuleError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ModuleError::NotFound { module, searched, .. } => {
+            ModuleError::NotFound {
+                module, searched, ..
+            } => {
                 write!(
                     f,
                     "module `{module}` not found; searched: {}",
@@ -630,7 +645,10 @@ impl std::fmt::Display for ModuleError {
                 write!(f, "failed to parse `{}`: {source}", path.display())
             }
             ModuleError::ConstrainTargetNotFound { target, .. } => {
-                write!(f, "`constrain` directive's target rule `{target}` was not found")
+                write!(
+                    f,
+                    "`constrain` directive's target rule `{target}` was not found"
+                )
             }
             ModuleError::ConstrainFieldNotFound { target, field, .. } => {
                 write!(
@@ -711,9 +729,7 @@ fn find_case_insensitive_matches<'a>(
     entries: impl Iterator<Item = &'a str>,
     target: &str,
 ) -> Vec<&'a str> {
-    entries
-        .filter(|e| e.eq_ignore_ascii_case(target))
-        .collect()
+    entries.filter(|e| e.eq_ignore_ascii_case(target)).collect()
 }
 
 /// Pure ordering logic behind [`ModuleSearchPath::from_env_and_cwd`], separated out so
@@ -905,7 +921,10 @@ fn load_module_uncached(ctx: &mut LoaderCtx, canon: &Path, key: &str) -> Result<
     // live only in `ConstrainDirective`, never in any rule body's AST, so
     // both must be added to the reference set explicitly or a bare import
     // won't pull in the names a constrain directive itself depends on.
-    let mut constrain_targets: Vec<String> = constrain_directives.iter().map(|cd| cd.target.clone()).collect();
+    let mut constrain_targets: Vec<String> = constrain_directives
+        .iter()
+        .map(|cd| cd.target.clone())
+        .collect();
     for cd in &constrain_directives {
         let wrapper = Type {
             choices: vec![cd.field_override.1.clone()],
@@ -1058,9 +1077,7 @@ fn select_rules(
         module_cddl.rules.iter().map(|r| r.name.as_str()).collect();
 
     match (directive.kind, &directive.from) {
-        (DirectiveKind::Include, None | Some(FromSelector::All)) => {
-            Ok(module_cddl.rules.clone())
-        }
+        (DirectiveKind::Include, None | Some(FromSelector::All)) => Ok(module_cddl.rules.clone()),
         (DirectiveKind::Include, Some(FromSelector::Named(names))) => {
             let mut out = Vec::new();
             for raw_name in names {
@@ -1389,7 +1406,11 @@ fn stamp_span_type2(t2: &mut Type2, span: &Span) {
         }
         Type2::ParenType(inner) => stamp_span_type(inner, span),
         Type2::Map(g) | Type2::Array(g) | Type2::EnumGroup(g) => stamp_span_group(g, span),
-        Type2::Tagged { tag, inner, span: s } => {
+        Type2::Tagged {
+            tag,
+            inner,
+            span: s,
+        } => {
             *s = span.clone();
             if let Some(HeadNumber::Type(t)) = tag {
                 stamp_span_type(t, span);
@@ -1471,7 +1492,10 @@ mod tests {
             "unexpected warnings: {warnings:?} (source: {source:?})"
         );
         assert!(starts.is_empty(), "unexpected start directives: {starts:?}");
-        assert!(constrains.is_empty(), "unexpected constrain directives: {constrains:?}");
+        assert!(
+            constrains.is_empty(),
+            "unexpected constrain directives: {constrains:?}"
+        );
         assert_eq!(ds.len(), 1, "expected exactly one directive in {source:?}");
         ds.remove(0)
     }
@@ -1483,7 +1507,10 @@ mod tests {
             "expected no directives, got {ds:?} (source: {source:?})"
         );
         assert!(starts.is_empty(), "unexpected start directives: {starts:?}");
-        assert!(constrains.is_empty(), "unexpected constrain directives: {constrains:?}");
+        assert!(
+            constrains.is_empty(),
+            "unexpected constrain directives: {constrains:?}"
+        );
         warnings.into_iter().map(|d| d.message).collect()
     }
 
@@ -1493,9 +1520,19 @@ mod tests {
             warnings.is_empty(),
             "unexpected warnings: {warnings:?} (source: {source:?})"
         );
-        assert!(ds.is_empty(), "unexpected import/include directives: {ds:?}");
-        assert!(constrains.is_empty(), "unexpected constrain directives: {constrains:?}");
-        assert_eq!(starts.len(), 1, "expected exactly one start directive in {source:?}");
+        assert!(
+            ds.is_empty(),
+            "unexpected import/include directives: {ds:?}"
+        );
+        assert!(
+            constrains.is_empty(),
+            "unexpected constrain directives: {constrains:?}"
+        );
+        assert_eq!(
+            starts.len(),
+            1,
+            "expected exactly one start directive in {source:?}"
+        );
         starts.remove(0)
     }
 
@@ -1505,7 +1542,10 @@ mod tests {
             warnings.is_empty(),
             "unexpected warnings: {warnings:?} (source: {source:?})"
         );
-        assert!(ds.is_empty(), "unexpected import/include directives: {ds:?}");
+        assert!(
+            ds.is_empty(),
+            "unexpected import/include directives: {ds:?}"
+        );
         assert!(starts.is_empty(), "unexpected start directives: {starts:?}");
         assert_eq!(
             constrains.len(),
@@ -1514,7 +1554,6 @@ mod tests {
         );
         constrains.remove(0)
     }
-
 
     // ── The six draft worked examples (draft §2.5/§2.6) ──────────────────────
 
@@ -1628,8 +1667,12 @@ mod tests {
 
     #[test]
     fn ordinary_comment_starting_with_hash_is_not_scanned() {
-        let (ds, starts, constrains, warnings) = scan_directives(";#TODO fix this\n; a normal comment\nx = uint");
-        assert!(warnings.len() == 1, "expected exactly one warning: {warnings:?}");
+        let (ds, starts, constrains, warnings) =
+            scan_directives(";#TODO fix this\n; a normal comment\nx = uint");
+        assert!(
+            warnings.len() == 1,
+            "expected exactly one warning: {warnings:?}"
+        );
         assert!(ds.is_empty());
         assert!(starts.is_empty());
         assert!(constrains.is_empty());
@@ -1637,7 +1680,8 @@ mod tests {
 
     #[test]
     fn plain_comments_elsewhere_are_unaffected() {
-        let (ds, starts, constrains, warnings) = scan_directives("; just a comment\nx = uint ; trailing comment\n");
+        let (ds, starts, constrains, warnings) =
+            scan_directives("; just a comment\nx = uint ; trailing comment\n");
         assert!(ds.is_empty());
         assert!(starts.is_empty());
         assert!(constrains.is_empty());
@@ -1653,7 +1697,8 @@ mod tests {
 
     #[test]
     fn crlf_line_endings_are_handled() {
-        let (ds, starts, constrains, warnings) = scan_directives(";# import rfc9052\r\nstart = rfc9052.thing\r\n");
+        let (ds, starts, constrains, warnings) =
+            scan_directives(";# import rfc9052\r\nstart = rfc9052.thing\r\n");
         assert!(warnings.is_empty());
         assert_eq!(ds.len(), 1);
         assert_eq!(ds[0].module, "rfc9052");
@@ -1713,7 +1758,10 @@ mod tests {
     fn start_directive_span_covers_whole_line() {
         let source = ";# start rfc8392.Claims-Set\nend = 2\n";
         let d = one_start(source);
-        assert_eq!(&source[d.span.start..d.span.end], ";# start rfc8392.Claims-Set");
+        assert_eq!(
+            &source[d.span.start..d.span.end],
+            ";# start rfc8392.Claims-Set"
+        );
     }
 
     #[test]
@@ -1770,10 +1818,15 @@ mod tests {
 
     #[test]
     fn resolve_not_found_lists_all_searched_dirs() {
-        let dirs = vec![fixtures_dir("search_path/dir_a"), fixtures_dir("search_path/dir_b")];
+        let dirs = vec![
+            fixtures_dir("search_path/dir_a"),
+            fixtures_dir("search_path/dir_b"),
+        ];
         let search = ModuleSearchPath::new(dirs.clone());
         match search.resolve("nonexistent", Span::new(0, 0)) {
-            Err(ModuleError::NotFound { module, searched, .. }) => {
+            Err(ModuleError::NotFound {
+                module, searched, ..
+            }) => {
                 assert_eq!(module, "nonexistent");
                 assert_eq!(searched, dirs);
             }
@@ -1824,7 +1877,11 @@ mod tests {
         let dir = fixtures_dir(rel_dir);
         let search = ModuleSearchPath::new(vec![dir.clone()]);
         let mut ctx = LoaderCtx::new(search);
-        resolve_module(&mut ctx, &dir.join(format!("{top_module}.cddl")), Span::new(0, 0))
+        resolve_module(
+            &mut ctx,
+            &dir.join(format!("{top_module}.cddl")),
+            Span::new(0, 0),
+        )
     }
 
     #[test]
@@ -1845,7 +1902,10 @@ mod tests {
     fn loader_detects_self_referencing_cycle() {
         match resolve_fixture("loader/cycle", "cycle_a") {
             Err(ModuleError::Circular { cycle, .. }) => {
-                assert!(cycle.len() >= 2, "cycle should list at least 2 paths: {cycle:?}");
+                assert!(
+                    cycle.len() >= 2,
+                    "cycle should list at least 2 paths: {cycle:?}"
+                );
             }
             other => panic!("expected Circular, got {other:?}"),
         }
@@ -1892,7 +1952,12 @@ mod tests {
         cddl.rules
             .iter()
             .find(|r| r.name == name)
-            .unwrap_or_else(|| panic!("rule `{name}` not found; have: {:?}", cddl.rules.iter().map(|r| &r.name).collect::<Vec<_>>()))
+            .unwrap_or_else(|| {
+                panic!(
+                    "rule `{name}` not found; have: {:?}",
+                    cddl.rules.iter().map(|r| &r.name).collect::<Vec<_>>()
+                )
+            })
     }
 
     #[test]
@@ -1924,8 +1989,7 @@ mod tests {
         let Type2::Map(g) = &ty.choices[0].base else {
             panic!("expected a map")
         };
-        let star_entry = g
-            .choices[0]
+        let star_entry = g.choices[0]
             .entries
             .iter()
             .find(|e| {
@@ -1966,7 +2030,10 @@ mod tests {
         let diags = crate::validate_with_config(&cddl, &crate::Config::strict());
         assert!(diags.is_empty(), "unexpected diagnostics: {diags:?}");
         let names: HashSet<&str> = cddl.rules.iter().map(|r| r.name.as_str()).collect();
-        assert_eq!(names, HashSet::from(["mydata", "cose.label", "cose.values"]));
+        assert_eq!(
+            names,
+            HashSet::from(["mydata", "cose.label", "cose.values"])
+        );
     }
 
     #[test]
@@ -1988,7 +2055,11 @@ mod tests {
         );
         // The from-name was written already-prefixed (`cose.empty_or_serialized_map`),
         // so no bare alias rule should be synthesized.
-        assert!(cddl.rules.iter().all(|r| r.name != "empty_or_serialized_map"));
+        assert!(
+            cddl.rules
+                .iter()
+                .all(|r| r.name != "empty_or_serialized_map")
+        );
     }
 
     #[test]
@@ -2019,7 +2090,11 @@ mod tests {
         let span = directive.span.clone();
         let aliases = bare_alias_rules(&directive, "p", &span);
         let names: HashSet<&str> = aliases.iter().map(|r| r.name.as_str()).collect();
-        assert_eq!(names, HashSet::from(["a"]), "only the bare name `a` aliases; `b.c` is already prefixed");
+        assert_eq!(
+            names,
+            HashSet::from(["a"]),
+            "only the bare name `a` aliases; `b.c` is already prefixed"
+        );
     }
 
     #[test]
@@ -2041,13 +2116,24 @@ mod tests {
         assert_eq!(d.new_name, "COSE_Sign1_EAT");
         assert_eq!(d.field_override.0, "payload");
         let Type2::Typename { name, .. } = &d.field_override.1.base else {
-            panic!("expected a typename base, got {:?}", d.field_override.1.base);
+            panic!(
+                "expected a typename base, got {:?}",
+                d.field_override.1.base
+            );
         };
         assert_eq!(name, "bstr");
-        let constraint = d.field_override.1.constraint.as_ref().expect("expected a constraint");
+        let constraint = d
+            .field_override
+            .1
+            .constraint
+            .as_ref()
+            .expect("expected a constraint");
         assert_eq!(constraint.op, ConstraintOp::Control("cborseq".to_string()));
         let Type2::Typename { name, .. } = &constraint.target else {
-            panic!("expected a typename constraint target, got {:?}", constraint.target);
+            panic!(
+                "expected a typename constraint target, got {:?}",
+                constraint.target
+            );
         };
         assert_eq!(name, "eap.Something");
     }
@@ -2113,10 +2199,16 @@ mod tests {
             span: Span::new(0, 0),
         };
         assert!(replace_field_in_rule_body(&mut body, "b", replacement));
-        let RuleBody::Type(ty) = &body else { panic!("expected type rule") };
-        let Type2::Array(g) = &ty.choices[0].base else { panic!("expected array") };
+        let RuleBody::Type(ty) = &body else {
+            panic!("expected type rule")
+        };
+        let Type2::Array(g) = &ty.choices[0].base else {
+            panic!("expected array")
+        };
         let entry = &g.choices[0].entries[1];
-        let GrpEntBody::Type(t) = &entry.entry else { panic!("expected type entry") };
+        let GrpEntBody::Type(t) = &entry.entry else {
+            panic!("expected type entry")
+        };
         assert!(matches!(&t.choices[0].base, Type2::Typename { name, .. } if name == "bool"));
     }
 
@@ -2141,7 +2233,10 @@ mod tests {
         crate::build_cddl(pairs).expect("build failed")
     }
 
-    fn resolve_fixture_modules(rel_dir: &str, top_module: &str) -> Result<ModuleResolution, ModuleError> {
+    fn resolve_fixture_modules(
+        rel_dir: &str,
+        top_module: &str,
+    ) -> Result<ModuleResolution, ModuleError> {
         let dir = fixtures_dir(rel_dir);
         let search = ModuleSearchPath::new(vec![dir.clone()]);
         resolve_modules(&dir.join(format!("{top_module}.cddl")), &search)
@@ -2149,21 +2244,29 @@ mod tests {
 
     #[test]
     fn constrain_end_to_end_replaces_field_without_mutating_original() {
-        let res = resolve_fixture_modules("constrain_cose_sign1", "profile")
-            .expect("should resolve");
+        let res =
+            resolve_fixture_modules("constrain_cose_sign1", "profile").expect("should resolve");
         let constrained = rule_named(&res.cddl, "COSE_Sign1_EAT");
-        let RuleBody::Type(ty) = &constrained.body else { panic!("expected type rule") };
-        let Type2::Array(g) = &ty.choices[0].base else { panic!("expected array") };
-        let payload_entry = g
-            .choices[0]
+        let RuleBody::Type(ty) = &constrained.body else {
+            panic!("expected type rule")
+        };
+        let Type2::Array(g) = &ty.choices[0].base else {
+            panic!("expected array")
+        };
+        let payload_entry = g.choices[0]
             .entries
             .iter()
             .find(|e| member_key_matches(&e.key, "payload"))
             .expect("expected payload field");
-        let GrpEntBody::Type(pt) = &payload_entry.entry else { panic!("expected type entry") };
+        let GrpEntBody::Type(pt) = &payload_entry.entry else {
+            panic!("expected type entry")
+        };
         let base = &pt.choices[0].base;
         assert!(matches!(base, Type2::Typename { name, .. } if name == "bstr"));
-        let constraint = pt.choices[0].constraint.as_ref().expect("expected .cborseq constraint");
+        let constraint = pt.choices[0]
+            .constraint
+            .as_ref()
+            .expect("expected .cborseq constraint");
         assert_eq!(constraint.op, ConstraintOp::Control("cborseq".to_string()));
         assert!(matches!(
             &constraint.target,
@@ -2172,16 +2275,24 @@ mod tests {
 
         // Original rule must be untouched.
         let original = rule_named(&res.cddl, "cose.COSE_Sign1");
-        let RuleBody::Type(orig_ty) = &original.body else { panic!("expected type rule") };
-        let Type2::Array(orig_g) = &orig_ty.choices[0].base else { panic!("expected array") };
-        let orig_payload = orig_g
-            .choices[0]
+        let RuleBody::Type(orig_ty) = &original.body else {
+            panic!("expected type rule")
+        };
+        let Type2::Array(orig_g) = &orig_ty.choices[0].base else {
+            panic!("expected array")
+        };
+        let orig_payload = orig_g.choices[0]
             .entries
             .iter()
             .find(|e| member_key_matches(&e.key, "payload"))
             .expect("expected payload field");
-        let GrpEntBody::Type(opt) = &orig_payload.entry else { panic!("expected type entry") };
-        assert!(opt.choices[0].constraint.is_none(), "original COSE_Sign1.payload must remain unconstrained bstr/nil");
+        let GrpEntBody::Type(opt) = &orig_payload.entry else {
+            panic!("expected type entry")
+        };
+        assert!(
+            opt.choices[0].constraint.is_none(),
+            "original COSE_Sign1.payload must remain unconstrained bstr/nil"
+        );
     }
 
     #[test]

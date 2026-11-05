@@ -83,7 +83,8 @@ fn round_trip(
         &mut plaintext_out,
     )?;
     assert_eq!(
-        &plaintext_out[..plain_len], plaintext,
+        &plaintext_out[..plain_len],
+        plaintext,
         "{algorithm:?}: round-tripped plaintext differs"
     );
     Ok(())

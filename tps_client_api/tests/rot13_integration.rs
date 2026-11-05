@@ -15,11 +15,13 @@ extern crate tps_error;
 extern crate tps_minicbor;
 
 use rot13_service::{
-    GPP_ROT13_CIPHERTEXT_KEY, GPP_ROT13_ENCRYPT_REQ, GPP_ROT13_ENCRYPT_RSP, GPP_ROT13_PLAINTEXT_KEY,
-    GPP_ROT13_SERVICE_NAME,
+    GPP_ROT13_CIPHERTEXT_KEY, GPP_ROT13_ENCRYPT_REQ, GPP_ROT13_ENCRYPT_RSP,
+    GPP_ROT13_PLAINTEXT_KEY, GPP_ROT13_SERVICE_NAME,
 };
 use std::sync::Mutex;
-use tps_client_api::{close_session, execute_transaction, open_session, service_discovery, MessageBuf};
+use tps_client_api::{
+    MessageBuf, close_session, execute_transaction, open_session, service_discovery,
+};
 use tps_client_common::c_login::LOGIN_PUBLIC;
 use tps_client_common::c_structs::{
     ServiceIdentifier, ServiceRange, ServiceSelector, ServiceVersion, Session,
@@ -87,7 +89,10 @@ fn decode_rsp(buf: &[u8], expected_msg_id: u32) -> Map<'_> {
 
 fn map_get<'a>(map: &Map<'a>, key: u64) -> Option<Item<'a>> {
     map.iter()
-        .find_map(|pair| pair.ok().filter(|(k, _)| matches!(k, Item::Unsigned(v) if *v == key)))
+        .find_map(|pair| {
+            pair.ok()
+                .filter(|(k, _)| matches!(k, Item::Unsigned(v) if *v == key))
+        })
         .map(|(_, v)| v)
 }
 
@@ -102,7 +107,10 @@ fn with_rot13_session<R>(f: impl FnOnce(&Session) -> R) -> R {
     let selector = wildcard_selector();
     let mut discovered: [ServiceIdentifier; 10] = core::array::from_fn(|_| empty_id());
     let found = service_discovery(&selector, &mut discovered).expect("service_discovery");
-    assert_eq!(found, 1, "expected exactly the ROT13 service to be discovered");
+    assert_eq!(
+        found, 1,
+        "expected exactly the ROT13 service to be discovered"
+    );
     let rot13 = &discovered[0];
     assert_eq!(rot13.service_id.bytes, GPP_ROT13_SERVICE_NAME);
 

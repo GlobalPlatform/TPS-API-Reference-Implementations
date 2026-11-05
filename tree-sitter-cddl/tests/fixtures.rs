@@ -51,9 +51,17 @@ fn fixtures_parse_without_errors() {
             checked += 1;
 
             if expected_to_error.contains(&file_name) {
-                assert!(had_error, "{} was expected to fail to parse", path.display());
+                assert!(
+                    had_error,
+                    "{} was expected to fail to parse",
+                    path.display()
+                );
             } else {
-                assert!(!had_error, "{} produced an ERROR/MISSING node", path.display());
+                assert!(
+                    !had_error,
+                    "{} produced an ERROR/MISSING node",
+                    path.display()
+                );
             }
         }
     }

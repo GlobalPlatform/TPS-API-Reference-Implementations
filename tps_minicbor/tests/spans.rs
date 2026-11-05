@@ -36,10 +36,7 @@ fn array_iter_with_span() {
         Item::Array(a) => a,
         _ => panic!("expected array"),
     };
-    let spans: Vec<_> = arr
-        .iter_with_span()
-        .map(|r| r.unwrap().1)
-        .collect();
+    let spans: Vec<_> = arr.iter_with_span().map(|r| r.unwrap().1).collect();
     // Spans are relative to the array's own data (starts right after 0x82).
     assert_eq!(spans, vec![0..1, 1..2]);
 }

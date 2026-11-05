@@ -619,14 +619,15 @@ fn feature_resolution(t1: &Type1, manifest: &FeatureManifest) -> Option<bool> {
 pub fn prune_disabled_features(rule: &Rule, manifest: &FeatureManifest) -> Rule {
     let mut rule = rule.clone();
     if let RuleBody::Type(ty) = &mut rule.body {
-        ty.choices.retain_mut(|t1| match feature_resolution(t1, manifest) {
-            Some(false) => false,
-            Some(true) => {
-                t1.constraint = None;
-                true
-            }
-            None => true,
-        });
+        ty.choices
+            .retain_mut(|t1| match feature_resolution(t1, manifest) {
+                Some(false) => false,
+                Some(true) => {
+                    t1.constraint = None;
+                    true
+                }
+                None => true,
+            });
     }
     rule
 }

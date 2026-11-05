@@ -13,10 +13,10 @@
 //! implementation; [`from_c_error_code`] and `From<TPSError> for u32` convert to and
 //! from the numerical error codes defined in `tps_client_common::c_errors`.
 
-#[cfg(any(feature = "std", test))]
-extern crate std;
 #[cfg(all(not(feature = "std"), not(test)))]
 extern crate core as std;
+#[cfg(any(feature = "std", test))]
+extern crate std;
 
 extern crate tps_client_common;
 
@@ -47,7 +47,9 @@ pub enum TPSError {
     OutOfMemory,
     #[error("The requested operation failed because the system was busy.")]
     Busy,
-    #[error("The requested operation failed due to a communication error with the service implementation.")]
+    #[error(
+        "The requested operation failed due to a communication error with the service implementation."
+    )]
     CommunicationError,
     #[error(
         "A security fault was detected. The integrity of the returned value cannot be guaranteed."
@@ -57,7 +59,9 @@ pub enum TPSError {
         "The supplied buffer is too small to contain the requested data. Minimum size returned"
     )]
     ShortBuffer(usize),
-    #[error("The called API is deprecated. Caller can assume that the returned result is valid and correct.")]
+    #[error(
+        "The called API is deprecated. Caller can assume that the returned result is valid and correct."
+    )]
     Deprecated,
     #[error("The supplied UUID is not recognised for the requested usage.")]
     BadIdentifier,
@@ -296,15 +300,21 @@ mod tests {
             (ERROR_ACCESS_DENIED, |e| matches!(e, TPSError::AccessDenied)),
             (ERROR_CANCEL, |e| matches!(e, TPSError::Cancel)),
             (ERROR_BAD_FORMAT, |e| matches!(e, TPSError::BadFormat)),
-            (ERROR_NOT_IMPLEMENTED, |e| matches!(e, TPSError::NotImplemented)),
+            (ERROR_NOT_IMPLEMENTED, |e| {
+                matches!(e, TPSError::NotImplemented)
+            }),
             (ERROR_NOT_SUPPORTED, |e| matches!(e, TPSError::NotSupported)),
             (ERROR_NO_DATA, |e| matches!(e, TPSError::NoData)),
             (ERROR_OUT_OF_MEMORY, |e| matches!(e, TPSError::OutOfMemory)),
             (ERROR_BUSY, |e| matches!(e, TPSError::Busy)),
-            (ERROR_COMMUNICATION, |e| matches!(e, TPSError::CommunicationError)),
+            (ERROR_COMMUNICATION, |e| {
+                matches!(e, TPSError::CommunicationError)
+            }),
             (ERROR_SECURITY, |e| matches!(e, TPSError::SecurityError)),
             (ERROR_DEPRECATED, |e| matches!(e, TPSError::Deprecated)),
-            (ERROR_BAD_IDENTIFIER, |e| matches!(e, TPSError::BadIdentifier)),
+            (ERROR_BAD_IDENTIFIER, |e| {
+                matches!(e, TPSError::BadIdentifier)
+            }),
             (ERROR_NULL_POINTER, |e| matches!(e, TPSError::NullPointer)),
             (ERROR_BAD_STATE, |e| matches!(e, TPSError::BadState)),
             (ERROR_TIMEOUT, |e| matches!(e, TPSError::Timeout)),

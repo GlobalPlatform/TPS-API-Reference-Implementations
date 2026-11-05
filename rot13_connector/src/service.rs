@@ -17,8 +17,8 @@ extern crate tps_client_common;
 extern crate tps_connector;
 
 use rot13_service::{
-    message_handler, GPP_ROT13_SERVICE_NAME, GPP_ROT13_SERVICE_VERSION, GPP_TEST_SC_TYPE,
-    Rot13Error,
+    GPP_ROT13_SERVICE_NAME, GPP_ROT13_SERVICE_VERSION, GPP_TEST_SC_TYPE, Rot13Error,
+    message_handler,
 };
 use tps_client_common::c_login::{
     LOGIN_APPLICATION, LOGIN_GROUP, LOGIN_GROUP_APPLICATION, LOGIN_PUBLIC, LOGIN_USER,
@@ -139,7 +139,9 @@ pub(crate) fn disconnect(_connection_id: u32) -> Result<(), TPSError> {
 ///
 /// Secure Components on which services are installable and updatable will likely require a more
 /// sophisticated implementation.
-pub(crate) fn discover_services(_connection_id: u32) -> Result<&'static [ServiceIdentifier], TPSError> {
+pub(crate) fn discover_services(
+    _connection_id: u32,
+) -> Result<&'static [ServiceIdentifier], TPSError> {
     Ok(SERVICES)
 }
 

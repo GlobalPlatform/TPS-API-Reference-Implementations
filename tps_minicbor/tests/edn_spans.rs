@@ -55,12 +55,15 @@ fn flat_array_spans_map_each_element_to_its_own_edn_text() {
     let elem_spans: Vec<_> = spans[..3].to_vec();
     for (cbor, edn) in &elem_spans {
         assert_eq!(cbor.end - cbor.start, 1);
-        assert_eq!(&out[edn.clone()], match cbor.start {
-            1 => "1",
-            2 => "2",
-            3 => "3",
-            _ => panic!("unexpected cbor offset"),
-        });
+        assert_eq!(
+            &out[edn.clone()],
+            match cbor.start {
+                1 => "1",
+                2 => "2",
+                3 => "3",
+                _ => panic!("unexpected cbor offset"),
+            }
+        );
     }
 
     // The whole array is the last span recorded, covering the full text.

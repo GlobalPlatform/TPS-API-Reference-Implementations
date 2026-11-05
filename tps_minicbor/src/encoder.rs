@@ -39,7 +39,12 @@ fn logical_read_at(buf: &[u8], overflow_scratch: Option<&[u8]>, idx: usize) -> O
 
 // Write `byte` at logical index `idx`. Returns `false` (byte is lost) if `idx` is not backed by
 // `buf` or `overflow_scratch`.
-fn logical_write_at(buf: &mut [u8], overflow_scratch: Option<&mut [u8]>, idx: usize, byte: u8) -> bool {
+fn logical_write_at(
+    buf: &mut [u8],
+    overflow_scratch: Option<&mut [u8]>,
+    idx: usize,
+    byte: u8,
+) -> bool {
     if idx < buf.len() {
         buf[idx] = byte;
         true
@@ -561,7 +566,12 @@ impl<'a, const N: usize> Encoder<'a, N> {
     // are counted but not stored otherwise. Whether the overall operation succeeded is decided
     // later, at `check_complete`, once the complete shape of the request is known.
     fn write_byte(&mut self, byte: u8) -> Result<(), EncodeError> {
-        if !logical_write_at(self.buf, self.overflow_scratch.as_deref_mut(), self.pos, byte) {
+        if !logical_write_at(
+            self.buf,
+            self.overflow_scratch.as_deref_mut(),
+            self.pos,
+            byte,
+        ) {
             self.overflow_lost = true;
         }
         self.pos += 1;
@@ -2075,7 +2085,9 @@ impl<'a, const N: usize> Encoder<'a, N> {
     fn logical_read_be(&self, offset: usize, len: usize) -> Result<u64, EncodeError> {
         let mut out = 0u64;
         for i in 0..len {
-            let b = self.logical_read(offset + i).ok_or(EncodeError::InvalidValue)?;
+            let b = self
+                .logical_read(offset + i)
+                .ok_or(EncodeError::InvalidValue)?;
             out = (out << 8) | (b as u64);
         }
         Ok(out)

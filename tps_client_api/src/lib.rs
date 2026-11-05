@@ -42,7 +42,6 @@ use tps_error::TPSError;
 
 pub use message_buf::MessageBuf;
 
-
 /***************************************************************************************************
  * Debug tracing support under `trace` feature
  **************************************************************************************************/
@@ -143,9 +142,8 @@ pub fn execute_transaction(
     }
     if let Some(connector) = find_service(session.service_id) {
         let send = unsafe { &*slice_from_raw_parts(send_buffer.message, send_buffer.size) };
-        let recv = unsafe {
-            &mut *slice_from_raw_parts_mut(recv_buffer.message, recv_buffer.maxsize)
-        };
+        let recv =
+            unsafe { &mut *slice_from_raw_parts_mut(recv_buffer.message, recv_buffer.maxsize) };
         let (transaction_id, recv_len) =
             connector::execute_transaction(connector, session.session_id, send, recv)?;
         debug_assert!(
@@ -153,7 +151,9 @@ pub fn execute_transaction(
             "connector::execute_transaction is documented to reject recv_len > capacity"
         );
         recv_buffer.size = recv_len;
-        recv_buffer.imp.set_transaction(transaction_id, session.service_id);
+        recv_buffer
+            .imp
+            .set_transaction(transaction_id, session.service_id);
         Ok(())
     } else {
         Err(TPSError::CommunicationError)

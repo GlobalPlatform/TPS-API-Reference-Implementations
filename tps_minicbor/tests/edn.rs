@@ -394,7 +394,10 @@ mod edn_tests {
 
     #[test]
     fn comment_trailing() {
-        assert_eq!(parse_edn("42 /trailing comment/").unwrap(), vec![0x18, 0x2a]);
+        assert_eq!(
+            parse_edn("42 /trailing comment/").unwrap(),
+            vec![0x18, 0x2a]
+        );
     }
 
     #[test]
@@ -417,7 +420,10 @@ mod edn_tests {
     fn comment_inside_hex_bstr() {
         // Example from RFC 8610 Appendix G.6.
         assert_eq!(
-            parse_edn("h'68 65 6c /doubled l!/ 6c 6f /hello/\n  20 /space/\n  77 6f 72 6c 64' /world/").unwrap(),
+            parse_edn(
+                "h'68 65 6c /doubled l!/ 6c 6f /hello/\n  20 /space/\n  77 6f 72 6c 64' /world/"
+            )
+            .unwrap(),
             parse_edn("h'68656c6c6f20776f726c64'").unwrap()
         );
     }

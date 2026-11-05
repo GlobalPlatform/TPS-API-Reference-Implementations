@@ -632,7 +632,10 @@ pub fn generic_bindings(
 /// reference to a bound parameter is replaced by wrapping the bound
 /// [`Type1`] in a [`Type2::ParenType`], which preserves the bound type's own
 /// constraints and precedence regardless of the surrounding context.
-pub fn substitute_generic_type(ty: &Type, bindings: &std::collections::HashMap<String, Type1>) -> Type {
+pub fn substitute_generic_type(
+    ty: &Type,
+    bindings: &std::collections::HashMap<String, Type1>,
+) -> Type {
     Type {
         choices: ty
             .choices
@@ -643,7 +646,10 @@ pub fn substitute_generic_type(ty: &Type, bindings: &std::collections::HashMap<S
     }
 }
 
-fn substitute_generic_type1(t1: &Type1, bindings: &std::collections::HashMap<String, Type1>) -> Type1 {
+fn substitute_generic_type1(
+    t1: &Type1,
+    bindings: &std::collections::HashMap<String, Type1>,
+) -> Type1 {
     Type1 {
         base: substitute_generic_type2(&t1.base, bindings),
         constraint: t1.constraint.as_ref().map(|c| Constraint {
@@ -655,7 +661,10 @@ fn substitute_generic_type1(t1: &Type1, bindings: &std::collections::HashMap<Str
     }
 }
 
-fn substitute_generic_type2(t2: &Type2, bindings: &std::collections::HashMap<String, Type1>) -> Type2 {
+fn substitute_generic_type2(
+    t2: &Type2,
+    bindings: &std::collections::HashMap<String, Type1>,
+) -> Type2 {
     match t2 {
         Type2::Typename {
             name,
@@ -710,7 +719,10 @@ fn substitute_generic_type2(t2: &Type2, bindings: &std::collections::HashMap<Str
 /// Substitute generic parameter names throughout a use-site [`GenericArg`]
 /// list, so a bound parameter passed through as an argument to a *nested*
 /// generic instantiation resolves to its outer binding.
-fn substitute_generic_arg(ga: &GenericArg, bindings: &std::collections::HashMap<String, Type1>) -> GenericArg {
+fn substitute_generic_arg(
+    ga: &GenericArg,
+    bindings: &std::collections::HashMap<String, Type1>,
+) -> GenericArg {
     GenericArg {
         args: ga
             .args
@@ -721,7 +733,10 @@ fn substitute_generic_arg(ga: &GenericArg, bindings: &std::collections::HashMap<
     }
 }
 
-fn substitute_generic_group(g: &Group, bindings: &std::collections::HashMap<String, Type1>) -> Group {
+fn substitute_generic_group(
+    g: &Group,
+    bindings: &std::collections::HashMap<String, Type1>,
+) -> Group {
     Group {
         choices: g
             .choices
@@ -748,7 +763,10 @@ pub fn substitute_generic_grpent(
 ) -> GrpEnt {
     GrpEnt {
         occur: e.occur.clone(),
-        key: e.key.as_ref().map(|k| substitute_generic_memberkey(k, bindings)),
+        key: e
+            .key
+            .as_ref()
+            .map(|k| substitute_generic_memberkey(k, bindings)),
         entry: match &e.entry {
             GrpEntBody::Type(t) => GrpEntBody::Type(substitute_generic_type(t, bindings)),
             // Same nested-instantiation substitution gap as
@@ -760,7 +778,9 @@ pub fn substitute_generic_grpent(
                 args: args.as_ref().map(|ga| substitute_generic_arg(ga, bindings)),
                 span: span.clone(),
             },
-            GrpEntBody::InlineGroup(g) => GrpEntBody::InlineGroup(substitute_generic_group(g, bindings)),
+            GrpEntBody::InlineGroup(g) => {
+                GrpEntBody::InlineGroup(substitute_generic_group(g, bindings))
+            }
         },
         span: e.span.clone(),
     }

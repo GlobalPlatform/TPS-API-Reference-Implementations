@@ -20,10 +20,10 @@ use tps_cddl::{
     json_check::check_json,
     validator::{validate_with_config, validate_with_config_ex},
 };
-#[cfg(not(feature = "modules"))]
-use tps_cddl::{error::ParseError, lexer::lex, parser::build_cddl};
 #[cfg(feature = "modules")]
 use tps_cddl::{ModuleError, ModuleSearchPath, resolve_modules};
+#[cfg(not(feature = "modules"))]
+use tps_cddl::{error::ParseError, lexer::lex, parser::build_cddl};
 
 // ─── CLI definition ───────────────────────────────────────────────────────────
 
@@ -295,10 +295,11 @@ fn load_cddl_file(
     path: &Path,
     include_dirs: &[PathBuf],
 ) -> Result<(String, tps_cddl::Cddl, Vec<CddlDiag>), LoadCddlError> {
-    let search = ModuleSearchPath::from_env_and_cwd(include_dirs).map_err(|e| LoadCddlError::Io {
-        path: path.to_path_buf(),
-        source: e,
-    })?;
+    let search =
+        ModuleSearchPath::from_env_and_cwd(include_dirs).map_err(|e| LoadCddlError::Io {
+            path: path.to_path_buf(),
+            source: e,
+        })?;
     let resolution = resolve_modules(path, &search).map_err(LoadCddlError::Module)?;
     Ok((resolution.source, resolution.cddl, resolution.warnings))
 }
@@ -421,9 +422,10 @@ fn run_validate(
             match grouped.iter_mut().find(|(name, _)| name == &usage.name) {
                 Some((_, details)) => {
                     if let Some(detail) = &usage.detail
-                        && !details.contains(detail) {
-                            details.push(detail.clone());
-                        }
+                        && !details.contains(detail)
+                    {
+                        details.push(detail.clone());
+                    }
                 }
                 None => grouped.push((
                     usage.name.clone(),
@@ -805,8 +807,7 @@ fn load_feature_manifest(path: Option<&Path>) -> Result<FeatureManifest, String>
         Some(path) => {
             let text = fs::read_to_string(path)
                 .map_err(|e| format!("cannot read {}: {e}", path.display()))?;
-            FeatureManifest::from_json(&text)
-                .map_err(|e| format!("{}: {e}", path.display()))
+            FeatureManifest::from_json(&text).map_err(|e| format!("{}: {e}", path.display()))
         }
     }
 }

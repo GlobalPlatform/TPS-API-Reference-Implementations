@@ -12,7 +12,7 @@ use std::ptr;
 
 use tps_client_common::c_structs::{ConnectionData, ServiceIdentifier, UUID};
 use tps_connector::Connector;
-use tps_error::{from_c_error_code, TPSError};
+use tps_error::{TPSError, from_c_error_code};
 
 /***************************************************************************************************
  * Debug tracing support under `trace` feature
