@@ -1,0 +1,16 @@
+{
+  1: "demo-report",
+  2: [
+    {
+      1: "boot",
+      2: h'0a0b0c0d',
+      3: 0
+    },
+    {
+      1: "kernel",
+      2: h'1a1b1c1d',
+      3: "two"
+    }
+  ],
+  3: true
+}

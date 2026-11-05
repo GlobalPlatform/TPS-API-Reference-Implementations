@@ -6,7 +6,7 @@
 [package]
 name = "tps_cddl"
 authors = ["Jeremy O'Donoghue <jodonogh@quti.qualcomm.com>"]
-version = "0.10.0"
+version = "0.10.1"
 edition = "2024"
 description = "IETF CDDL (RFC 8610, RFC9165, RFC9682) parser, validator, and code generator"
 license = "MIT"

@@ -919,7 +919,7 @@ fn decode_hex(input: &[u8]) -> Result<Vec<u8>, String> {
         .copied()
         .filter(|b| !b.is_ascii_whitespace())
         .collect();
-    if !digits.len().is_multiple_of(2) {
+    if digits.len() % 2 != 0 {
         return Err(format!("odd number of hex digits ({})", digits.len()));
     }
     let mut out = Vec::with_capacity(digits.len() / 2);

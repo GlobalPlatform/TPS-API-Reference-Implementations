@@ -34,6 +34,11 @@ const HIGHLIGHT_NAMES: &[&str] = &[
     "punctuation.delimiter",
     "comment",
     "comment.documentation",
+    // tree-sitter-cddl tags `;#` directives with both names, because gpui-component's
+    // highlighter recognises `comment.doc` and not `comment.documentation`. Where a node
+    // carries two captures the last one wins, so without this entry `comment.doc` would
+    // fall back to the plain `comment` style and directives would lose their colour here.
+    "comment.doc",
     "boolean",
     "constant.builtin",
     "constant.numeric.float",
@@ -50,6 +55,7 @@ fn ansi_for(name: &str) -> &'static str {
         "punctuation.bracket" | "punctuation.delimiter" => "\x1b[37m", // white
         "comment" => "\x1b[90m",                          // bright black
         "comment.documentation" => "\x1b[94m",            // bright blue
+        "comment.doc" => "\x1b[94m",                      // bright blue
         "boolean" | "constant.builtin" => "\x1b[91m",    // bright red
         _ => "\x1b[0m",
     }

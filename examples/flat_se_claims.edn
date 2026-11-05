@@ -1,0 +1,47 @@
+/*************************************************************************************************
+Copyright (c) Qualcomm Technologies, Inc. and its subsidiaries
+SPDX-License-Identifier: MIT
+*************************************************************************************************/
+{
+    / eat_nonce - RFC9711 /  10 : h'01020304',
+    / dbgstat - RFC9711 /   252 : 3,
+    / globalplatform_component / -261 : {
+        / gp_eat_version (1.0) / 107 : [ 1,0 ],
+        / gp_security_rating (high) / 100 : 15,
+        / SE IIN / 150 : h'11ee11ee11ee11ee11ee11ee11ee11ee',
+        / SE CIN / 151 : h'22dd22dd22dd22dd22dd22dd22dd22dd',
+        / SE Secure Channel Protocols / 156 : {
+            / SCP Type / 112: {
+            / SCP Options / 1: h'53ae32'
+        },
+            / SCP Type / 3: {
+            / SCP Options / 1: h'91b8a402',
+            / SCP SCP03 Keys / 2: h'737337177172'
+        },
+        / SCP Type / 129: {
+            / SCP Options / 1: h'a07eba9e8ae3',
+            / SCP SCP81 TLS Suites / 3: h'91b8a402',
+            / SCP SCP81 Max Key Length / 4: 128
+        }
+    },
+    / SE Type / 165 : 10,
+    / SE Card Lifecycle State / 171 : 10,
+    / SE Supplementary Security Domains / 173 : [
+        {
+            / Issuer Number / 1: h'98261234',
+            / Image Number / 2: h'21e4918cda74da12',
+            / Key Derivation Data / 3: h'a07eba9e8ae3',
+            / Key Information Data / 4: h'737337177172',
+            / Default KVN / 5: 3,
+            / Default KVN Sequence / 6: h'91b8a402'
+        },
+        {
+            / Issuer Number / 1: h'98266789',
+            / Image Number / 2: h'737337177172',
+            / Key Derivation Data / 3: h'a9301412789124',
+            / Key Information Data / 4: h'02d41e4120db94e1cc24',
+            / Default KVN / 5: 18,
+             / Default KVN Sequence / 6: h'bd9124afe881a991'
+        }
+    ]}
+}

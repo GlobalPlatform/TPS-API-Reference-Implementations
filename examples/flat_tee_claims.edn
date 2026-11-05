@@ -1,0 +1,45 @@
+/*************************************************************************************************
+Copyright (c) Qualcomm Technologies, Inc. and its subsidiaries
+SPDX-License-Identifier: MIT
+*************************************************************************************************/
+{
+    / eat_nonce - RFC9711 /  10 : h'01020304',
+    / dbgstat - RFC9711 /   252 : 3,
+    / globalplatform_component / -261 : {
+        / gp_eat_version (1.0) / 107 : [ 1,0 ],
+        / Security Rating / 100 : 10,
+        / TEE Root Security Domains / 201 : [
+            h'03a29483e29814de9b214b367af4228b'
+        ],
+        / TEE Lifecycle State / 202 : 1,
+        / TEE Implementation Properties / 210 : {
+            / TEE API Version / 0 : "1.2.1",
+            / TEE Cryptography ECC / 10 : true,
+            / TEE Cryptography ML-KEM / 18 : true
+        },
+        / TEE Trusted Applications / 211 : {
+            / TA Identifier / h'44bb44bb44bb44bb44bb44bb44bb44bb' : {
+                / TA Parent / 0 : h'bb44bb44bb44bb44bb44bb44bb44bb44',
+                / TA Lifecycle State / 1 : 2,
+                / TA Version / 2 : "Beta 0.9"
+            },
+            / TA Identifier / h'33cc33cc33cc33cc33cc33cc33cc33cc' : {
+                / TA Parent / 0: h'cc33cc33cc33cc33cc33cc33cc33cc33',
+                / TA Lifecycle State / 1: 0,
+                / TA Version / 2: "Production 2.5.1"
+            }
+        },
+        / TEE Security Domains / 212 : {
+            / SD Identifier / h'00112233445566778899aabbccddeeff' : {
+                / SD Parent / 0 : h'deadbeef00ff00ff00ff00ff00ff00ff',
+                / SD Lifecycle State / 1 : 1,
+                / SD Authority / 2 : "Acme Corp."
+            },
+            / SD Identifier / h'112233445566778899aabbccddeeff00' : {
+                / SD Parent / 0 : h'b01ddeadbeef00ff00ff00ff00ff00ff',
+                / SD Lifecycle State / 1 : 0,
+                / SD Authority / 2 : "Roadrunner Inc."
+            }
+        }
+    }
+}

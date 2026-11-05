@@ -70,11 +70,27 @@ pub fn check_json(
     let root_name = match resolve_root(cddl, root) {
         Some(n) => n,
         None => {
-            return Ok(vec![JsonMismatch {
-                path: String::new(),
-                expected: "a non-empty CDDL schema".into(),
-                got: "empty schema".into(),
-            }]);
+            // Same distinction `cbor_check::run` draws, for the same reason: `resolve_root`
+            // returns None both when the schema defines no rules and when it defines plenty but
+            // none by the requested name, and calling the latter an "empty schema" sends callers
+            // hunting for a problem in a schema that is fine.
+            let mismatch = match root {
+                Some(name) if !cddl.rules.is_empty() => JsonMismatch {
+                    path: String::new(),
+                    expected: format!("a rule named `{name}`"),
+                    got: format!(
+                        "a schema defining {} rule{}, none of them `{name}`",
+                        cddl.rules.len(),
+                        if cddl.rules.len() == 1 { "" } else { "s" }
+                    ),
+                },
+                _ => JsonMismatch {
+                    path: String::new(),
+                    expected: "a non-empty CDDL schema".into(),
+                    got: "empty schema".into(),
+                },
+            };
+            return Ok(vec![mismatch]);
         }
     };
 
@@ -1612,5 +1628,31 @@ mod tests {
         fail("\"ab\"", SCHEMA);
         ok("\"hello!\"", SCHEMA);
         fail("\"hello world!!\"", SCHEMA);
+    }
+
+    /// Mirror of `cbor_check`'s test of the same name: a start rule naming a
+    /// rule the schema does not define used to be reported as an empty
+    /// schema, because `resolve_root` returns `None` for both and the caller
+    /// could not tell them apart.
+    #[test]
+    fn an_unknown_start_rule_is_not_reported_as_an_empty_schema() {
+        let cddl = schema("x = uint\ny = tstr");
+        let m = check_json(b"1", &cddl, Some("z"), &Config::strict()).expect("JSON parse error");
+        assert_eq!(m.len(), 1, "expected exactly one mismatch, got {m:#?}");
+        assert_eq!(m[0].expected, "a rule named `z`");
+        assert_eq!(m[0].got, "a schema defining 2 rules, none of them `z`");
+    }
+
+    /// A genuinely empty schema keeps the original message, whether or not a
+    /// start rule was named.
+    #[test]
+    fn an_empty_schema_is_still_reported_as_an_empty_schema() {
+        let cddl = schema("");
+        for root in [None, Some("x")] {
+            let m = check_json(b"1", &cddl, root, &Config::strict()).expect("JSON parse error");
+            assert_eq!(m.len(), 1, "expected exactly one mismatch, got {m:#?}");
+            assert_eq!(m[0].expected, "a non-empty CDDL schema");
+            assert_eq!(m[0].got, "empty schema");
+        }
     }
 }

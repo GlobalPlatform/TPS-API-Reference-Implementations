@@ -11,6 +11,15 @@
       <package file="$PROJECT_DIR$/rot13_service">
         <feature name="default" enabled="true" />
       </package>
+      <package file="$PROJECT_DIR$/tps_cbor_core">
+        <feature name="default" enabled="true" />
+      </package>
+      <package file="$PROJECT_DIR$/tps_cbor_tui">
+        <feature name="default" enabled="true" />
+      </package>
+      <package file="$PROJECT_DIR$/tps_cddl">
+        <feature name="default" enabled="true" />
+      </package>
       <package file="$PROJECT_DIR$/tps_client_api">
         <feature name="default" enabled="true" />
       </package>
@@ -23,10 +32,28 @@
       <package file="$PROJECT_DIR$/tps_connector">
         <feature name="default" enabled="true" />
       </package>
+      <package file="$PROJECT_DIR$/tps_cose">
+        <feature name="default" enabled="true" />
+      </package>
+      <package file="$PROJECT_DIR$/tps_cose_tool">
+        <feature name="default" enabled="true" />
+      </package>
+      <package file="$PROJECT_DIR$/tps_edn_tool">
+        <feature name="default" enabled="true" />
+      </package>
       <package file="$PROJECT_DIR$/tps_error">
         <feature name="default" enabled="true" />
       </package>
       <package file="$PROJECT_DIR$/tps_minicbor">
+        <feature name="default" enabled="true" />
+      </package>
+      <package file="$PROJECT_DIR$/tps_ts_highlight_tool">
+        <feature name="default" enabled="true" />
+      </package>
+      <package file="$PROJECT_DIR$/tree-sitter-cddl">
+        <feature name="default" enabled="true" />
+      </package>
+      <package file="$PROJECT_DIR$/tree-sitter-edn">
         <feature name="default" enabled="true" />
       </package>
     </cargoProject>
@@ -36,25 +63,35 @@
       <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/deny.toml" beforeDir="false" afterPath="$PROJECT_DIR$/deny.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cbor_tui/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cbor_tui/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cbor_tui/src/app.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cbor_tui/src/app.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cbor_tui/src/cose_ops.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cbor_tui/src/error.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cbor_tui/src/error.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cbor_tui/src/highlight/edn.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cbor_tui/src/highlight/edn.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cbor_tui/src/keystore.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cbor_tui/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cbor_tui/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cbor_tui/src/ui/cbor_view.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cbor_tui/src/ui/cbor_view.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cbor_tui/src/ui/cose_sign.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cbor_tui/src/ui/cose_sign.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cbor_tui/src/ui/keystore_view.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cbor_tui/src/ui/keystore_view.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cbor_tui/src/ui/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cbor_tui/src/ui/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cbor_tui/src/ui/text_editor.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cbor_tui/src/ui/text_editor.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cbor_tui/src/ui/wrap.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cbor_tui/src/ui/wrap.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cbor_tui/src/validate.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cbor_tui/src/validate.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cbor_tui/tests/e2e_workflow6.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cbor_tui/tests/e2e_workflow6.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tps_cddl/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cddl/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_cddl/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_cddl/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cddl/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_cddl/src/bin/astdump/main.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_cddl/src/bin/cddlgen/error.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_cddl/src/bin/cddlgen/ir.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_cddl/src/bin/cddlgen/main.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_cddl/src/cddl.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_cddl/src/cddl/ast.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_cddl/src/cddl/hexfloat.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_cddl/src/cddl/parse.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_cddl/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cddl/src/lib.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_cddl/test/cbor_token.cddl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_cddl/test/claim_set.cddl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_cddl/test/cose_key.cddl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_cddl/test/generic_test.cddl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_cddl/test/prelude.cddl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_cddl/test/reputon1.cddl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tps_cddl/test/reputon2.cddl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/src/cbor_check.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cddl/src/cbor_check.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/src/error.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cddl/src/error.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/src/json_check.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cddl/src/json_check.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_cddl/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_cddl/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_client_c/tpsc_client_api.h" beforeDir="false" afterPath="$PROJECT_DIR$/tps_client_c/tpsc_client_api.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_connector/tpsc_connector_api.h" beforeDir="false" afterPath="$PROJECT_DIR$/tps_connector/tpsc_connector_api.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_minicbor/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/tps_minicbor/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_ts_highlight_tool/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/tps_ts_highlight_tool/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tps_ts_highlight_tool/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/tps_ts_highlight_tool/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tree-sitter-cddl/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/tree-sitter-cddl/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tree-sitter-cddl/queries/highlights.scm" beforeDir="false" afterPath="$PROJECT_DIR$/tree-sitter-cddl/queries/highlights.scm" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -119,7 +156,7 @@
     "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
     "org.rust.first.attach.projects": "true",
     "org.rust.hideNoCargoProjectNotificationsC:/Users/jodonogh/Code/OpenSource/TPS-API-Reference-Implementations/Cargo.toml": "true",
-    "settings.editor.selected.configurable": "language.rust.build.tool.cargo",
+    "settings.editor.selected.configurable": "vcs.Git",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -159,22 +196,6 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration default="true" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-      <option name="command" value="run" />
-      <envs />
-      <option name="emulateTerminal" value="true" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="buildTarget" value="REMOTE" />
-      <option name="backtrace" value="SHORT" />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
   </component>
   <component name="RustProjectSettings">
     <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
@@ -190,6 +211,7 @@
       <workItem from="1793034282445" duration="1170000" />
       <workItem from="1793035469161" duration="2405000" />
       <workItem from="1793037971812" duration="323000" />
+      <workItem from="1793873885380" duration="276000" />
     </task>
     <task id="LOCAL-00001" summary="Update tps_client_common and tps_error to version 0.10&#10;- Prelude to extensive (breaking) changes.&#10;- Updated dependencies and to Rust 2024.&#10;- Added README.md for tps_client_common&#10;- Added test cases&#10;- Added safety invariants to tps_client_common documentation.&#10;- Code review and tests generated with AI assistance.">
       <option name="closed" value="true" />

@@ -1,0 +1,47 @@
+{
+  10: h'01020304',
+  252: 3,
+  -261: {
+    107: [
+      1,
+      0
+    ],
+    100: 10,
+    201: [
+      h'03a29483e29814de9b214b367af4228b'
+    ],
+    202: 1,
+    210: {
+      0: "1.2.1",
+      10: true,
+      18: true
+    },
+    211: {
+      h'44bb44bb44bb44bb44bb44bb44bb44bb': {
+        0: h'bb44bb44bb44bb44bb44bb44bb44bb44',
+        1: 2,
+        2: "Beta 0.9"
+      },
+      h'33cc33cc33cc33cc33cc33cc33cc33cc': {
+        0: h'cc33cc33cc33cc33cc33cc33cc33cc33',
+        1: 0,
+        2: "Production 2.5.1"
+      }
+    },
+    212: {
+      h'00112233445566778899aabbccddeeff': {
+        0: h'deadbeef00ff00ff00ff00ff00ff00ff',
+        1: 1,
+        2: "Acme Corp."
+      },
+      h'112233445566778899aabbccddeeff00': {
+        0: h'b01ddeadbeef00ff00ff00ff00ff00ff',
+        1: 0,
+        2: "Roadrunner Inc."
+      }
+    },
+    208: {
+      "An option": 31
+    }
+  }
+}

@@ -2,6 +2,7 @@
 /.idea
 *.bak
 .DS_Store
+*:Zone.Identifier
 /rp_2040_target/target
 /rp_2040_target/.idea
 /kv_store/.idea
@@ -34,4 +35,5 @@ rp_2040_target/.vscode/launch.json
 /tock/third_party/libtock-rs/target
 /tock/third_party/elf2tab/target
 /tock/build/
-/Cargo.lock
+/tps_cbor_ide/target
+/examples/*_new.cbor

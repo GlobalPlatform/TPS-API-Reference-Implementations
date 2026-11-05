@@ -220,7 +220,7 @@ Both aliasing models currently report no undefined behaviour. Notes on the setup
   under Tree Borrows, against hundredths of a second natively. It is a pre-merge check on the
   `unsafe` crates, not part of the normal edit-compile-test loop.
 
-### Running the TPS Client API End-to-end Example 
+### Running the TPS Client API end-to-end example
 
 `tps_client_c/c_example/c_example.c` is about the simplest possible example of performing a
 service discovery and then performing an "encryption" using the ROT13 service. The object file
@@ -270,3 +270,8 @@ checked in, and this path is not covered by CI. Prefer the Cargo instructions ab
 Credit to the team at [Devolutions](https://devolutions.net) for CMakeRust, which is dual
 MIT/Apache-2.0 licensed.
 
+### Bare-metal (TockOS) builds
+
+`tock/` is a separate Cargo workspace with its own toolchain pinning, git submodules and build
+scripts. See `tock/README.md` for setup and for the `build_opentitan.sh` /
+`run_opentitan_test.sh` / `build_pico.sh` / `flash_pico.sh` workflows.
